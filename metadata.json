@@ -1,0 +1,6 @@
+{
+  "name": "Sistema Integrado de Gestão VERGROUP",
+  "description": "Plataforma integrada de CRM, gestão de clientes, operações, projetos, tarefas, comunicação multi-canal, automações e auditoria multiempresa.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
