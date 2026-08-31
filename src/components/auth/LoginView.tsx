@@ -77,10 +77,10 @@ export const LoginView: React.FC = () => {
         </div>
 
         {/* Right Side Clean Minimal Sign-In Card */}
-        <div className="w-full max-w-sm bg-gradient-to-b from-emerald-50/70 via-white to-white rounded-3xl shadow-2xl p-8 flex flex-col items-center border border-emerald-100 text-slate-900 shrink-0">
+        <div className="w-full max-w-sm bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl p-8 flex flex-col items-center border border-emerald-100 text-slate-900 shrink-0">
           
-          {/* Logo Badge Icon */}
-          <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-white mb-5 shadow-lg border border-slate-100 p-2">
+          {/* Official Green Logo Header */}
+          <div className="mb-6 flex justify-center">
             <VerGroupLogo variant="green" size="md" />
           </div>
 

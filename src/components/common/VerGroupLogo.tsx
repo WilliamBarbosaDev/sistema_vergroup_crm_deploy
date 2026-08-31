@@ -1,5 +1,6 @@
 import React from 'react';
 import greenLogoAsset from '../../assets/vergroup-logo-green.png';
+import whiteLogoAsset from '../../assets/vergroup-logo-white.png';
 
 interface VerGroupLogoProps {
   variant?: 'white' | 'green' | 'dark';
@@ -14,7 +15,7 @@ export const VerGroupLogo: React.FC<VerGroupLogoProps> = ({
   showSubtitle = false,
   className = '',
 }) => {
-  const logoSrc = variant === 'green' ? greenLogoAsset : '/vergroup-logo-white.png';
+  const logoSrc = variant === 'green' ? greenLogoAsset : whiteLogoAsset;
 
   const heightClasses = {
     sm: 'h-8',
