@@ -7,6 +7,7 @@ import {
   MoreHorizontal,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { VerGroupLogo } from '../common/VerGroupLogo';
 
 export const LoginView: React.FC = () => {
   const { users, login, loginAsUser } = useApp();
@@ -44,35 +45,32 @@ export const LoginView: React.FC = () => {
       id="vergroup-login-portal"
       className="relative min-h-screen w-screen font-sans antialiased flex flex-col justify-between p-6 md:p-12 overflow-hidden select-none bg-slate-950 bg-cover bg-center"
       style={{
-        backgroundImage: `linear-gradient(to right, rgba(10, 52, 41, 0.55), rgba(15, 73, 58, 0.45)), url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=2000&q=80')`,
+        backgroundImage: `linear-gradient(to right, rgba(10, 52, 41, 0.65), rgba(15, 73, 58, 0.55)), url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=2000&q=80')`,
       }}
     >
-      {/* MAIN CENTER BODY (EXACT SINGLE CARD BITRIX MODEL MATCH) */}
+      {/* MAIN CENTER BODY (OFFICIAL LOGO + SINGLE CARD BITRIX MODEL MATCH) */}
       <main className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-10 my-auto max-w-6xl w-full mx-auto py-8">
         
-        {/* Left Side Branding matching reference screenshot */}
-        <div className="space-y-4 text-white max-w-lg">
-          <div className="flex items-center gap-3">
-            <span className="text-4xl md:text-6xl font-black tracking-tight drop-shadow-xl text-white font-display">
-              VERGROUP
-            </span>
-            <div className="w-9 h-9 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/40 text-white shadow-md">
-              <Clock className="w-5 h-5" />
-            </div>
+        {/* Left Side Official White Logo & Branding matching reference screenshot */}
+        <div className="space-y-6 text-white max-w-lg">
+          <VerGroupLogo variant="white" size="xl" showSubtitle />
+
+          <div className="space-y-2">
+            <p className="text-xl md:text-2xl font-extrabold text-emerald-100 drop-shadow-md leading-tight">
+              Sua central integrada de trabalho ideal
+            </p>
+            <p className="text-xs md:text-sm text-white/90 font-semibold leading-relaxed max-w-md drop-shadow-xs">
+              Gestão operacional, CRM comercial, automação fiscal, cronômetros de tempo e inteligência VER AI sob permissões RLS.
+            </p>
           </div>
-          <p className="text-xl md:text-2xl font-extrabold text-emerald-100 drop-shadow-md leading-tight">
-            Sua central integrada de trabalho ideal
-          </p>
-          <p className="text-xs md:text-sm text-white/90 font-semibold leading-relaxed max-w-md drop-shadow-xs">
-            Gestão operacional, CRM comercial, automação fiscal, cronômetros de tempo e inteligência VER AI sob permissões RLS.
-          </p>
         </div>
 
-        {/* Right Side Single White Login Card (NO QR CODE BOX) */}
+        {/* Right Side Single White Login Card with Official Green Logo */}
         <div className="w-84 md:w-96 bg-white/98 backdrop-blur-2xl rounded-3xl p-8 shadow-2xl border border-slate-200 shrink-0">
           
-          <div className="space-y-1.5 text-center mb-6">
-            <h2 className="text-xl font-black text-[#0A1C16] tracking-tight font-display">Fazer login no VERGROUP</h2>
+          <div className="space-y-3 text-center mb-6 flex flex-col items-center">
+            <VerGroupLogo variant="green" size="md" />
+            <h2 className="text-lg font-black text-[#0A1C16] tracking-tight font-display">Fazer login no VERGROUP</h2>
             <p className="text-xs text-slate-600 font-bold">
               {step === 'email' ? 'Digite seu e-mail corporativo para continuar' : `Digitar senha de acesso para ${email}`}
             </p>
@@ -150,7 +148,7 @@ export const LoginView: React.FC = () => {
             </a>
           </div>
 
-          {/* Outras opções de login (Social SSO Buttons matching reference screenshot) */}
+          {/* Outras opções de login */}
           <div className="pt-4 border-t border-slate-200 space-y-3">
             <span className="text-[11px] font-extrabold text-slate-600 block text-center uppercase tracking-wider">
               Outras opções de login
@@ -194,7 +192,6 @@ export const LoginView: React.FC = () => {
         <div className="flex items-center gap-5">
           <button className="flex items-center gap-1 hover:text-emerald-300 cursor-pointer font-black">
             <span>Português (Brasil)</span>
-            <ChevronDown className="w-3.5 h-3.5" />
           </button>
           <a
             href="#privacy"
