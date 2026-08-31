@@ -29,6 +29,7 @@ import {
 import { useApp } from '../../context/AppContext';
 import { UserRole } from '../../types';
 import { UserProfileModal } from './UserProfileModal';
+import { VerGroupLogo } from './VerGroupLogo';
 
 export const Header: React.FC = () => {
   const {
@@ -128,14 +129,8 @@ export const Header: React.FC = () => {
     <header id="vergroup-topbar" className="h-16 bg-white border-b border-[#DDE3E8] px-4 md:px-6 flex items-center justify-between sticky top-0 z-30 shadow-xs font-sans">
       {/* Left: Brand & Company Switcher */}
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-[#0F8A4B] text-white flex items-center justify-center font-black text-base shadow-xs">
-            V
-          </div>
-          <div className="hidden sm:block">
-            <span className="font-black text-[#17212B] tracking-tight text-base leading-none">VERGROUP</span>
-            <span className="block text-[11px] text-[#5F6B76] font-semibold leading-none mt-0.5">Sistema Integrado</span>
-          </div>
+        <div className="flex items-center gap-2">
+          <VerGroupLogo variant="green" size="md" />
         </div>
 
         <div className="h-6 w-px bg-[#DDE3E8] hidden md:block" />
