@@ -228,7 +228,7 @@ const STORAGE_KEY = 'vergroup_sig_v3_state';
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Auth State
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    return localStorage.getItem('vergroup_auth_active') !== 'false';
+    return localStorage.getItem('vergroup_auth_active') === 'true';
   });
 
   // Navigation
