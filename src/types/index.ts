@@ -137,19 +137,94 @@ export interface Lead {
   updatedAt: string;
 }
 
+export type ContactRoleType = 
+  | 'decisor' 
+  | 'socio' 
+  | 'representante' 
+  | 'financeiro' 
+  | 'fiscal' 
+  | 'rh' 
+  | 'compras' 
+  | 'operacional' 
+  | 'influenciador' 
+  | 'principal';
+
+export interface ContactPhone {
+  id: string;
+  number: string;
+  type: 'work' | 'personal' | 'whatsapp' | 'other';
+  label?: string;
+  isPrimary?: boolean;
+}
+
+export interface ContactEmail {
+  id: string;
+  email: string;
+  type: 'corporate' | 'personal' | 'financial' | 'other';
+  label?: string;
+  isPrimary?: boolean;
+}
+
+export interface ContactDigitalChannels {
+  whatsapp?: string;
+  instagram?: string;
+  linkedin?: string;
+  telegram?: string;
+  website?: string;
+  messenger?: string;
+}
+
+export interface ContactCompanyLink {
+  companyId: string;
+  companyName?: string;
+  role: string;
+  isPrimary?: boolean;
+}
+
+export interface ContactInternalInfo {
+  businessUnitId?: string;
+  commercialUserId?: string;
+  accountManagerId?: string;
+  operationalUserId?: string;
+  source?: string; // ex: 'whatsapp', 'google_ads', 'outbound', 'referral'
+  classification?: 'VIP' | 'Estratégico' | 'Padrão' | 'Risco';
+  internalNotes?: string;
+}
+
 export interface Contact {
   id: string;
   businessUnitId: string;
   name: string;
+  salutation?: string;
   email: string;
   phone: string;
-  document?: string; // CPF
+  document?: string; // CPF ou RG
+  birthDate?: string;
+  city?: string;
+  state?: string;
+  address?: {
+    street?: string;
+    number?: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
+  };
   companyId?: string;
   jobTitle?: string;
   tags: string[];
   assignedUserId: string;
   avatar?: string;
   notes?: string;
+  
+  // Ficha 360º Additions
+  additionalPhones?: ContactPhone[];
+  additionalEmails?: ContactEmail[];
+  digitalChannels?: ContactDigitalChannels;
+  companyLinks?: ContactCompanyLink[];
+  roles?: ContactRoleType[];
+  internalInfo?: ContactInternalInfo;
+  customFields?: Record<string, string | number | boolean>;
+  
   createdAt: string;
   updatedAt: string;
 }

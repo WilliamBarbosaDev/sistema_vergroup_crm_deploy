@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { Contact } from '../../types';
+import { Contact360Drawer } from './Contact360Drawer';
 
 export const ContactsView: React.FC = () => {
   const {
@@ -244,70 +245,13 @@ export const ContactsView: React.FC = () => {
         </div>
       </div>
 
-      {/* Contact Details Modal */}
+      {/* Ficha 360º do Contato Drawer */}
       {viewContact && (
-        <div className="fixed inset-0 z-60 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full p-5 border border-[#DDE3E8] space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-[#DDE3E8]">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-full bg-[#ECF8F1] text-[#0F8A4B] font-bold text-sm flex items-center justify-center">
-                  {viewContact.name.charAt(0)}
-                </div>
-                <div>
-                  <h2 className="text-sm font-bold text-[#17212B]">{viewContact.name}</h2>
-                  <p className="text-xs text-[#5F6B76]">{viewContact.jobTitle || 'Contato cadastrado'}</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setViewContact(null)}
-                className="p-1 text-[#5F6B76] hover:text-[#17212B] rounded"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="space-y-3 text-xs">
-              <div className="grid grid-cols-2 gap-3 bg-[#F7F9FA] p-3 rounded-lg border border-[#DDE3E8]">
-                <div>
-                  <span className="text-[#5F6B76] block text-[11px]">E-mail</span>
-                  <span className="font-semibold text-[#17212B]">{viewContact.email}</span>
-                </div>
-                <div>
-                  <span className="text-[#5F6B76] block text-[11px]">Telefone (WhatsApp)</span>
-                  <span className="font-semibold text-[#0F8A4B]">{viewContact.phone}</span>
-                </div>
-                <div>
-                  <span className="text-[#5F6B76] block text-[11px]">CPF / Documento</span>
-                  <span className="font-semibold text-[#17212B]">{viewContact.document || 'Não informado'}</span>
-                </div>
-                <div>
-                  <span className="text-[#5F6B76] block text-[11px]">Empresa</span>
-                  <span className="font-semibold text-[#17212B]">
-                    {companies.find((c) => c.id === viewContact.companyId)?.tradeName || 'Nenhuma'}
-                  </span>
-                </div>
-              </div>
-
-              {viewContact.notes && (
-                <div>
-                  <span className="text-[#5F6B76] font-semibold block mb-1">Observações do Contato:</span>
-                  <p className="p-2 bg-[#F7F9FA] rounded border border-[#DDE3E8] text-[#17212B]">
-                    {viewContact.notes}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            <div className="flex justify-end pt-3 border-t border-[#DDE3E8]">
-              <button
-                onClick={() => setViewContact(null)}
-                className="px-4 py-1.5 bg-[#0F8A4B] text-white rounded-md font-semibold text-xs"
-              >
-                Fechar Ficha
-              </button>
-            </div>
-          </div>
-        </div>
+        <Contact360Drawer
+          isOpen={!!viewContact}
+          onClose={() => setViewContact(null)}
+          contact={viewContact}
+        />
       )}
     </div>
   );
