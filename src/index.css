@@ -68,10 +68,6 @@
   color: #3A4B45 !important;
 }
 
-.text-[#5F6B76] {
-  color: #43515D !important; /* Enhanced from muted #5F6B76 to sharp #43515D for maximum readability */
-}
-
 /* Custom refined scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
