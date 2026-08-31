@@ -39,11 +39,32 @@ CREATE TABLE IF NOT EXISTS public.contact_audit_logs (
 
 CREATE INDEX IF NOT EXISTS idx_contact_audit_contact ON public.contact_audit_logs(contact_id);
 
--- 3. ROW LEVEL SECURITY (RLS) POLICIES
+-- 3. RELATIONAL N:N JOIN TABLE FOR MULTI-COMPANY CONTACT LINKAGE
+CREATE TABLE IF NOT EXISTS public.contact_company_links (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  contact_id UUID NOT NULL REFERENCES public.contacts(id) ON DELETE CASCADE,
+  company_id UUID NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
+  role TEXT NOT NULL,
+  is_primary BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(contact_id, company_id, role)
+);
+
+CREATE INDEX IF NOT EXISTS idx_contact_company_links_contact ON public.contact_company_links(contact_id);
+CREATE INDEX IF NOT EXISTS idx_contact_company_links_company ON public.contact_company_links(company_id);
+
+-- 4. ROW LEVEL SECURITY (RLS) POLICIES
 ALTER TABLE public.contact_audit_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.contact_company_links ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "contact_audit_logs_read" ON public.contact_audit_logs
   FOR SELECT USING (true);
 
 CREATE POLICY "contact_audit_logs_insert" ON public.contact_audit_logs
   FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "contact_company_links_read" ON public.contact_company_links
+  FOR SELECT USING (true);
+
+CREATE POLICY "contact_company_links_manage" ON public.contact_company_links
+  FOR ALL USING (auth.uid() IS NOT NULL);
