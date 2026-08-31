@@ -9,6 +9,8 @@ import {
   Contact,
   Company,
   Pipeline,
+  PipelineStage,
+  PipelineCustomField,
   Deal,
   DealDocument,
   Activity,
@@ -177,6 +179,20 @@ interface AppContextType {
   addDealDocument: (dealId: string, doc: Omit<DealDocument, 'id' | 'uploadedAt' | 'uploadedBy'>) => void;
   linkContactToDeal: (dealId: string, contactId: string, role: string) => void;
   unlinkContactFromDeal: (dealId: string, contactId: string) => void;
+
+  // Multi-Company Pipeline Manager (SUPERADMIN Structural Control)
+  addPipeline: (pipelineData: Omit<Pipeline, 'id' | 'createdAt' | 'updatedAt'>) => Pipeline;
+  updatePipeline: (id: string, updates: Partial<Pipeline>) => void;
+  duplicatePipeline: (id: string, targetBusinessUnitId?: string, newName?: string) => Pipeline;
+  archivePipeline: (id: string) => void;
+  deletePipeline: (id: string) => { success: boolean; error?: string };
+  addPipelineStage: (pipelineId: string, stage: Omit<PipelineStage, 'id'>) => void;
+  updatePipelineStage: (pipelineId: string, stageId: string, updates: Partial<PipelineStage>) => void;
+  reorderPipelineStages: (pipelineId: string, stageIdsInOrder: string[]) => void;
+  deletePipelineStage: (pipelineId: string, stageId: string) => { success: boolean; error?: string };
+  addPipelineCustomField: (field: Omit<PipelineCustomField, 'id' | 'createdAt'>) => void;
+  updatePipelineCustomField: (fieldId: string, updates: Partial<PipelineCustomField>) => void;
+  deletePipelineCustomField: (fieldId: string) => void;
 
   addClientAccount: (client: Omit<ClientAccount, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateClientAccount: (id: string, updates: Partial<ClientAccount>) => void;
@@ -740,12 +756,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const stage = pipeline.stages.find((s) => s.id === targetStageId);
     const stageName = stage ? stage.name : targetStageId;
 
+    // Check if target stage is a 'won' or 'lost' stageType
+    const isWonStage = stage?.stageType === 'won' || stage?.stageType === 'completed';
+    const isLostStage = stage?.stageType === 'lost' || stage?.stageType === 'cancelled';
+    const dealStatus = isWonStage ? 'won' : isLostStage ? 'lost' : 'open';
+
     setDeals((prev) =>
       prev.map((d) =>
         d.id === dealId
           ? {
               ...d,
               stageId: targetStageId,
+              status: dealStatus,
               stageChangedAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
             }
@@ -753,7 +775,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       )
     );
 
-    addAuditLog('stage_change', 'deal', dealId, `Negócio "${deal.title}" movido para a etapa "${stageName}"`);
+    addAuditLog('stage_change', 'deal', dealId, `Negócio "${deal.title}" movido para a etapa "${stageName}" (${stage?.stageType || 'intermediate'})`);
     addActivity({
       entityType: 'deal',
       entityId: deal.id,
@@ -762,6 +784,196 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       type: 'stage_change',
       title: `Negócio avançou para "${stageName}"`,
       description: `Alteração realizada por ${currentUser.name}`,
+    });
+  };
+
+  // MULTI-COMPANY PIPELINE MANAGER (STRICT SUPERADMIN CONTROL)
+  const addPipeline = (pipelineData: Omit<Pipeline, 'id' | 'createdAt' | 'updatedAt'>): Pipeline => {
+    const newPipeline: Pipeline = {
+      ...pipelineData,
+      id: `pipe-${Date.now()}`,
+      status: pipelineData.status || 'active',
+      stages: pipelineData.stages || [],
+      customFields: pipelineData.customFields || [],
+      createdByUserId: currentUser.id,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    setPipelines((prev) => {
+      const next = [newPipeline, ...prev];
+      localStorage.setItem(`${STORAGE_KEY}_pipelines`, JSON.stringify(next));
+      return next;
+    });
+
+    addAuditLog('create', 'pipeline', newPipeline.id, `Pipeline "${newPipeline.name}" criado para a empresa ${newPipeline.businessUnitId}`);
+    return newPipeline;
+  };
+
+  const updatePipeline = (id: string, updates: Partial<Pipeline>) => {
+    setPipelines((prev) => {
+      const next = prev.map((p) => (p.id === id ? { ...p, ...updates, updatedAt: new Date().toISOString() } : p));
+      localStorage.setItem(`${STORAGE_KEY}_pipelines`, JSON.stringify(next));
+      return next;
+    });
+    addAuditLog('update', 'pipeline', id, `Pipeline "${id}" atualizado por ${currentUser.name}`);
+  };
+
+  const duplicatePipeline = (id: string, targetBusinessUnitId?: string, newName?: string): Pipeline => {
+    const source = pipelines.find((p) => p.id === id);
+    if (!source) throw new Error('Pipeline não encontrado');
+
+    const duplicatedStages: PipelineStage[] = source.stages.map((stg, index) => ({
+      ...stg,
+      id: `stg-dup-${Date.now()}-${index}`,
+      pipelineId: `pipe-dup-${Date.now()}`,
+    }));
+
+    const duplicatedCustomFields: PipelineCustomField[] = (source.customFields || []).map((field, index) => ({
+      ...field,
+      id: `cf-dup-${Date.now()}-${index}`,
+      pipelineId: `pipe-dup-${Date.now()}`,
+    }));
+
+    const duplicatedPipeline: Pipeline = {
+      ...source,
+      id: `pipe-dup-${Date.now()}`,
+      businessUnitId: targetBusinessUnitId || source.businessUnitId,
+      name: newName || `${source.name} (Cópia)`,
+      stages: duplicatedStages,
+      customFields: duplicatedCustomFields,
+      isDefault: false,
+      createdByUserId: currentUser.id,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    setPipelines((prev) => {
+      const next = [duplicatedPipeline, ...prev];
+      localStorage.setItem(`${STORAGE_KEY}_pipelines`, JSON.stringify(next));
+      return next;
+    });
+
+    addAuditLog('create', 'pipeline', duplicatedPipeline.id, `Pipeline "${source.name}" duplicado para "${duplicatedPipeline.name}"`);
+    return duplicatedPipeline;
+  };
+
+  const archivePipeline = (id: string) => {
+    updatePipeline(id, { status: 'inactive' });
+    addAuditLog('update', 'pipeline', id, `Pipeline "${id}" arquivado pelo Administrador`);
+  };
+
+  const deletePipeline = (id: string): { success: boolean; error?: string } => {
+    const hasDeals = deals.some((d) => d.pipelineId === id);
+    if (hasDeals) {
+      return {
+        success: false,
+        error: 'Este pipeline possui negócios vinculados. Arquive o pipeline em vez de excluí-lo.',
+      };
+    }
+
+    setPipelines((prev) => {
+      const next = prev.filter((p) => p.id !== id);
+      localStorage.setItem(`${STORAGE_KEY}_pipelines`, JSON.stringify(next));
+      return next;
+    });
+
+    addAuditLog('delete', 'pipeline', id, `Pipeline "${id}" excluído com segurança`);
+    return { success: true };
+  };
+
+  const addPipelineStage = (pipelineId: string, stageData: Omit<PipelineStage, 'id'>) => {
+    const pipeline = pipelines.find((p) => p.id === pipelineId);
+    if (!pipeline) return;
+
+    const newStage: PipelineStage = {
+      ...stageData,
+      id: `stg-${Date.now()}`,
+      pipelineId,
+      order: stageData.order || pipeline.stages.length + 1,
+      color: stageData.color || '#3B82F6',
+      stageType: stageData.stageType || 'intermediate',
+    };
+
+    const updatedStages = [...pipeline.stages, newStage];
+    updatePipeline(pipelineId, { stages: updatedStages });
+  };
+
+  const updatePipelineStage = (pipelineId: string, stageId: string, updates: Partial<PipelineStage>) => {
+    const pipeline = pipelines.find((p) => p.id === pipelineId);
+    if (!pipeline) return;
+
+    const updatedStages = pipeline.stages.map((stg) => (stg.id === stageId ? { ...stg, ...updates } : stg));
+    updatePipeline(pipelineId, { stages: updatedStages });
+  };
+
+  const reorderPipelineStages = (pipelineId: string, stageIdsInOrder: string[]) => {
+    const pipeline = pipelines.find((p) => p.id === pipelineId);
+    if (!pipeline) return;
+
+    const stageMap = new Map<string, PipelineStage>(pipeline.stages.map((s) => [s.id, s]));
+    const reorderedStages: PipelineStage[] = stageIdsInOrder
+      .map((id, index) => {
+        const stg = stageMap.get(id);
+        return stg ? ({ ...stg, order: index + 1 } as PipelineStage) : null;
+      })
+      .filter((s): s is PipelineStage => s !== null);
+
+    updatePipeline(pipelineId, { stages: reorderedStages });
+  };
+
+  const deletePipelineStage = (pipelineId: string, stageId: string): { success: boolean; error?: string } => {
+    const hasDealsInStage = deals.some((d) => d.pipelineId === pipelineId && d.stageId === stageId);
+    if (hasDealsInStage) {
+      return {
+        success: false,
+        error: 'Esta etapa possui negócios vinculados. Mova os negócios para outra etapa antes de excluir.',
+      };
+    }
+
+    const pipeline = pipelines.find((p) => p.id === pipelineId);
+    if (!pipeline) return { success: false, error: 'Pipeline não encontrado' };
+
+    const updatedStages = pipeline.stages.filter((s) => s.id !== stageId);
+    updatePipeline(pipelineId, { stages: updatedStages });
+    return { success: true };
+  };
+
+  const addPipelineCustomField = (fieldData: Omit<PipelineCustomField, 'id' | 'createdAt'>) => {
+    const pipeline = pipelines.find((p) => p.id === fieldData.pipelineId);
+    if (!pipeline) return;
+
+    const newField: PipelineCustomField = {
+      ...fieldData,
+      id: `cf-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+    };
+
+    const updatedFields = [...(pipeline.customFields || []), newField];
+    updatePipeline(fieldData.pipelineId, { customFields: updatedFields });
+  };
+
+  const updatePipelineCustomField = (fieldId: string, updates: Partial<PipelineCustomField>) => {
+    setPipelines((prev) => {
+      const next = prev.map((p) => {
+        if (!p.customFields?.some((f) => f.id === fieldId)) return p;
+        const updatedFields = (p.customFields || []).map((f) => (f.id === fieldId ? { ...f, ...updates } : f));
+        return { ...p, customFields: updatedFields, updatedAt: new Date().toISOString() };
+      });
+      localStorage.setItem(`${STORAGE_KEY}_pipelines`, JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const deletePipelineCustomField = (fieldId: string) => {
+    setPipelines((prev) => {
+      const next = prev.map((p) => {
+        if (!p.customFields?.some((f) => f.id === fieldId)) return p;
+        const updatedFields = (p.customFields || []).filter((f) => f.id !== fieldId);
+        return { ...p, customFields: updatedFields, updatedAt: new Date().toISOString() };
+      });
+      localStorage.setItem(`${STORAGE_KEY}_pipelines`, JSON.stringify(next));
+      return next;
     });
   };
 
@@ -1719,6 +1931,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addDealDocument,
     linkContactToDeal,
     unlinkContactFromDeal,
+    addPipeline,
+    updatePipeline,
+    duplicatePipeline,
+    archivePipeline,
+    deletePipeline,
+    addPipelineStage,
+    updatePipelineStage,
+    reorderPipelineStages,
+    deletePipelineStage,
+    addPipelineCustomField,
+    updatePipelineCustomField,
+    deletePipelineCustomField,
     addClientAccount,
     updateClientAccount,
     addTask,

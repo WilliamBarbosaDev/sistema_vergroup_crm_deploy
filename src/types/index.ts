@@ -181,24 +181,83 @@ export interface Company {
   updatedAt: string;
 }
 
+export type StageType = 'initial' | 'intermediate' | 'won' | 'lost' | 'completed' | 'cancelled';
+export type PipelineType = 'sales' | 'client_success' | 'onboarding' | 'operations' | 'billing' | 'projects' | 'custom';
+export type PipelineStatus = 'active' | 'inactive' | 'draft';
+export type CustomFieldType = 
+  | 'text' 
+  | 'long_text' 
+  | 'number' 
+  | 'currency' 
+  | 'percent' 
+  | 'date' 
+  | 'datetime' 
+  | 'select' 
+  | 'multiselect' 
+  | 'checkbox' 
+  | 'user' 
+  | 'company' 
+  | 'contact' 
+  | 'phone' 
+  | 'email' 
+  | 'url';
+
+export interface PipelineStageChecklistItem {
+  id: string;
+  label: string;
+  completed?: boolean;
+}
+
+export interface PipelineCustomField {
+  id: string;
+  pipelineId: string;
+  name: string;
+  internalKey: string;
+  fieldType: CustomFieldType;
+  description?: string;
+  isRequired?: boolean;
+  options?: string[];
+  position: number;
+  isVisible?: boolean;
+  isEditable?: boolean;
+  createdAt?: string;
+}
+
 export interface PipelineStage {
   id: string;
+  pipelineId?: string;
   name: string;
-  order: number;
+  description?: string;
+  order: number; // sort_order
   color: string;
   probability: number; // 0 - 100%
+  stageType: StageType;
+  slaHours?: number; // SLA limite por etapa
   maxDaysWarning?: number; // alerta de permanência
   requiredFields?: string[];
+  checklistItems?: PipelineStageChecklistItem[];
   enterAutomation?: string;
   exitAutomation?: string;
+  enterAutomationRuleId?: string;
+  exitAutomationRuleId?: string;
 }
 
 export interface Pipeline {
   id: string;
   businessUnitId: string;
+  departmentId?: string;
+  teamId?: string;
   name: string;
-  type: 'sales' | 'client_success' | 'onboarding';
+  description?: string;
+  type: PipelineType;
+  status: PipelineStatus;
+  isDefault?: boolean;
   stages: PipelineStage[];
+  customFields?: PipelineCustomField[];
+  sortOrder?: number;
+  createdByUserId?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export type DealStatus = 'open' | 'won' | 'lost';

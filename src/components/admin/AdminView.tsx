@@ -21,6 +21,7 @@ import {
   Sparkles,
   Filter,
   Search,
+  Trash2,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { UserRole, CollaboratorInvite } from '../../types';
@@ -28,8 +29,10 @@ import { InviteCollaboratorModal } from './InviteCollaboratorModal';
 import { AcceptInviteModal } from './AcceptInviteModal';
 import { CollaboratorCockpitModal } from './CollaboratorCockpitModal';
 import { StayCloudConfigModal } from './StayCloudConfigModal';
+import { PipelineModal } from './PipelineModal';
+import { PipelineStageConfigModal } from './PipelineStageConfigModal';
 import { Tabs } from '../ui/vercel-tabs';
-import { User } from '../../types';
+import { User, Pipeline } from '../../types';
 
 export const AdminView: React.FC = () => {
   const {
@@ -38,16 +41,27 @@ export const AdminView: React.FC = () => {
     teams,
     users,
     invites,
+    pipelines,
+    deals,
     onboardingTasks,
     currentUser,
     switchUserRole,
     revokeInvite,
     resendInvite,
+    duplicatePipeline,
+    archivePipeline,
+    deletePipeline,
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'users' | 'invites' | 'units' | 'rbac'>('users');
+  const isSuperadmin = currentUser.role === 'superadmin';
+
+  const [activeTab, setActiveTab] = useState<'users' | 'invites' | 'units' | 'rbac' | 'pipelines'>('users');
   const [showInviteModal, setShowInviteModal] = useState<boolean>(false);
   const [showStayCloudModal, setShowStayCloudModal] = useState<boolean>(false);
+  const [showPipelineModal, setShowPipelineModal] = useState<boolean>(false);
+  const [pipelineToEdit, setPipelineToEdit] = useState<Pipeline | null>(null);
+  const [showStageConfigModal, setShowStageConfigModal] = useState<boolean>(false);
+  const [pipelineForStageConfig, setPipelineForStageConfig] = useState<Pipeline | null>(null);
   const [activeAcceptInvite, setActiveAcceptInvite] = useState<CollaboratorInvite | null>(null);
   const [activeCockpitCollaborator, setActiveCockpitCollaborator] = useState<User | null>(null);
 
@@ -160,6 +174,7 @@ export const AdminView: React.FC = () => {
               { id: 'invites', label: 'Gestão de Convites', badge: invites.length },
               { id: 'units', label: 'Unidades & CNPJs', badge: businessUnits.length },
               { id: 'rbac', label: 'Matriz RBAC' },
+              { id: 'pipelines', label: 'Pipelines & Funis (Multiempresa)', badge: pipelines.length },
             ]}
             activeTab={activeTab}
             onTabChange={(id) => setActiveTab(id as any)}
@@ -544,6 +559,155 @@ export const AdminView: React.FC = () => {
             })}
           </div>
         </div>
+      )}
+
+      {/* TAB 5: MULTI-COMPANY PIPELINE MANAGER (EXCLUSIVE SUPERADMIN CONTROL) */}
+      {activeTab === 'pipelines' && (
+        <div className="space-y-4 font-sans">
+          {!isSuperadmin ? (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 text-center space-y-2">
+              <ShieldAlert className="w-8 h-8 text-amber-600 mx-auto" />
+              <h3 className="text-sm font-semibold text-slate-900 font-display">Acesso Restrito a Estrutura de Pipelines</h3>
+              <p className="text-xs text-slate-600 max-w-lg mx-auto font-normal leading-relaxed">
+                Conforme definido no modelo de governança VERGROUP (PRD 5.1 & RBAC), somente o <strong>Administrador Principal (Superadmin)</strong> possui permissão para criar, editar, duplicar, ordenar ou alterar a estrutura de pipelines e etapas por empresa.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Header Bar */}
+              <div className="bg-white rounded-xl border border-[#E2E6EA] p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-base font-semibold text-slate-900 font-display">Gerenciador de Pipelines por Empresa</h3>
+                  <p className="text-xs text-slate-500 font-normal">
+                    Configuração estrutural de funis, etapas com SLA, automações de entrada/saída e campos personalizados
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => {
+                    setPipelineToEdit(null);
+                    setShowPipelineModal(true);
+                  }}
+                  className="btn-primary flex items-center gap-1.5 text-xs"
+                >
+                  <Briefcase className="w-4 h-4" />
+                  <span>+ Criar Novo Pipeline</span>
+                </button>
+              </div>
+
+              {/* Pipelines Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {pipelines.map((pipe) => {
+                  const bu = businessUnits.find((b) => b.id === pipe.businessUnitId);
+                  const pipeDeals = deals.filter((d) => d.pipelineId === pipe.id);
+
+                  return (
+                    <div
+                      key={pipe.id}
+                      className="bg-white p-5 rounded-xl border border-[#E2E6EA] space-y-4 flex flex-col justify-between hover:border-slate-300 transition-colors"
+                    >
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-semibold text-[#0B6B3A] uppercase tracking-wider bg-[#ECF8F1] px-2 py-0.5 rounded border border-[#0F8A4B]/20">
+                            {bu?.name || pipe.businessUnitId}
+                          </span>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
+                            pipe.status === 'active'
+                              ? 'bg-emerald-100 text-[#0B6B3A]'
+                              : 'bg-slate-100 text-slate-600'
+                          }`}>
+                            {pipe.status || 'Ativo'}
+                          </span>
+                        </div>
+
+                        <div>
+                          <h4 className="text-sm font-semibold text-slate-900 font-display">{pipe.name}</h4>
+                          <p className="text-xs text-slate-500 font-normal mt-0.5 line-clamp-2">
+                            {pipe.description || 'Sem descrição cadastrada.'}
+                          </p>
+                        </div>
+
+                        <div className="pt-2 border-t border-[#E2E6EA] flex items-center justify-between text-xs text-slate-500 font-normal">
+                          <span>{pipe.stages.length} etapas cadastradas</span>
+                          <strong className="text-slate-900 font-semibold">{pipeDeals.length} negócios no funil</strong>
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="pt-3 border-t border-[#E2E6EA] flex items-center justify-between gap-2">
+                        <button
+                          onClick={() => {
+                            setPipelineForStageConfig(pipe);
+                            setShowStageConfigModal(true);
+                          }}
+                          className="btn-secondary text-xs flex-1 py-1.5"
+                        >
+                          Etapas & Regras
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            setPipelineToEdit(pipe);
+                            setShowPipelineModal(true);
+                          }}
+                          className="btn-secondary text-xs px-2.5 py-1.5"
+                          title="Editar Pipeline"
+                        >
+                          Editar
+                        </button>
+
+                        <button
+                          onClick={() => duplicatePipeline(pipe.id)}
+                          className="btn-secondary text-xs px-2.5 py-1.5"
+                          title="Duplicar Pipeline"
+                        >
+                          Duplicar
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            const res = deletePipeline(pipe.id);
+                            if (!res.success) {
+                              alert(res.error);
+                            }
+                          }}
+                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-slate-50 rounded cursor-pointer"
+                          title="Excluir Pipeline"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Pipeline Modal */}
+      {showPipelineModal && (
+        <PipelineModal
+          isOpen={showPipelineModal}
+          onClose={() => {
+            setShowPipelineModal(false);
+            setPipelineToEdit(null);
+          }}
+          pipelineToEdit={pipelineToEdit}
+        />
+      )}
+
+      {/* Stage Configurator Modal */}
+      {showStageConfigModal && pipelineForStageConfig && (
+        <PipelineStageConfigModal
+          isOpen={showStageConfigModal}
+          onClose={() => {
+            setShowStageConfigModal(false);
+            setPipelineForStageConfig(null);
+          }}
+          pipeline={pipelineForStageConfig}
+        />
       )}
 
       {/* Invite Modal */}
