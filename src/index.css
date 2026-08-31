@@ -1,24 +1,31 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-display: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  
+  --color-page: #F8FAFB;
+  --color-surface: #FFFFFF;
+  --color-surface-secondary: #F5F7F8;
+  --color-surface-hover: #F3F5F6;
+  --color-surface-selected: #ECF8F1;
+  --color-border-subtle: #E2E6EA;
 }
 
 @layer base {
   * {
-    border-color: #DDE3E8;
+    border-color: #E2E6EA;
   }
   html, body, input, button, select, textarea, th, td, h1, h2, h3, h4, h5, h6, label, span, div, a, p {
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    letter-spacing: -0.015em;
+    letter-spacing: -0.012em;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
   html, body {
-    color: #0A1C16;
-    background-color: #F7F9FA;
+    color: #111827;
+    background-color: #F8FAFB;
   }
   h1, h2, h3, h4, .font-display {
     font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
@@ -28,7 +35,7 @@
   }
 }
 
-/* Explicit contrast utility classes */
+/* Refined Typography Classes */
 .font-normal {
   font-family: 'Plus Jakarta Sans', sans-serif !important;
   font-weight: 400 !important;
@@ -46,32 +53,75 @@
 
 .font-bold {
   font-family: 'Plus Jakarta Sans', sans-serif !important;
-  font-weight: 700 !important;
+  font-weight: 600 !important;
 }
 
 .font-extrabold {
-  font-family: 'Plus Jakarta Sans', sans-serif !important;
-  font-weight: 800 !important;
+  font-family: 'Outfit', sans-serif !important;
+  font-weight: 600 !important;
 }
 
 .font-black {
   font-family: 'Outfit', sans-serif !important;
-  font-weight: 900 !important;
+  font-weight: 700 !important;
 }
 
-/* High Contrast Text Enhancements */
-.text-high-contrast {
-  color: #0A1C16 !important;
+/* Surface & Background Helper Tokens */
+.bg-page {
+  background-color: #F8FAFB !important;
 }
 
-.text-subtle-contrast {
-  color: #3A4B45 !important;
+.bg-surface {
+  background-color: #FFFFFF !important;
+}
+
+.bg-surface-secondary {
+  background-color: #F5F7F8 !important;
+}
+
+.bg-surface-hover:hover {
+  background-color: #F3F5F6 !important;
+}
+
+.border-subtle {
+  border-color: #E2E6EA !important;
+}
+
+/* Refined SaaS Button Styles */
+.btn-primary {
+  background-color: #0F8A4B;
+  color: #FFFFFF;
+  font-weight: 600;
+  font-size: 13px;
+  border-radius: 8px;
+  padding: 8px 16px;
+  transition: all 150ms ease;
+  cursor: pointer;
+}
+.btn-primary:hover {
+  background-color: #0B6B3A;
+}
+
+.btn-secondary {
+  background-color: #FFFFFF;
+  color: #1F2937;
+  border: 1px solid #D6DCE1;
+  font-weight: 500;
+  font-size: 13px;
+  border-radius: 8px;
+  padding: 8px 14px;
+  transition: all 150ms ease;
+  cursor: pointer;
+}
+.btn-secondary:hover {
+  background-color: #F5F7F8;
+  border-color: #CBD5E1;
 }
 
 /* Custom refined scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
@@ -85,5 +135,5 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar {
-  width: 5px;
+  width: 4px;
 }

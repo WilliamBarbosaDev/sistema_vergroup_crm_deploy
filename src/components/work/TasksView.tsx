@@ -177,7 +177,7 @@ export const TasksView: React.FC = () => {
       </div>
 
       {/* 2. FILTERS BAR & SEARCH */}
-      <div className="bg-white rounded-2xl border border-slate-200 px-4 py-3 flex flex-wrap items-center justify-between gap-3 shadow-2xs">
+      <div className="bg-white rounded-xl border border-[#E2E6EA] px-4 py-3 flex flex-wrap items-center justify-between gap-3 font-sans">
         <div className="flex items-center gap-1.5 overflow-x-auto">
           {[
             { id: 'all', label: 'TODAS', count: filteredTasks.length },
@@ -189,14 +189,14 @@ export const TasksView: React.FC = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTabFilter(tab.id as any)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg text-xs transition-all cursor-pointer flex items-center gap-1.5 ${
                 activeTabFilter === tab.id
-                  ? 'bg-[#0F8A4B] text-white shadow-2xs'
-                  : 'text-slate-600 hover:bg-slate-100'
+                  ? 'bg-[#ECF8F1] text-[#0B6B3A] font-semibold border border-[#0F8A4B]/30'
+                  : 'text-slate-600 hover:bg-[#F5F7F8] font-medium'
               }`}
             >
               <span>{tab.label}</span>
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/10 font-bold">{tab.count}</span>
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 text-slate-700 font-semibold">{tab.count}</span>
             </button>
           ))}
         </div>
@@ -205,7 +205,7 @@ export const TasksView: React.FC = () => {
           {viewMode === 'list' && (
             <button
               onClick={() => setIsColumnConfigOpen(!isColumnConfigOpen)}
-              className="p-2 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl border border-slate-200 text-xs font-bold flex items-center gap-1 cursor-pointer"
+              className="btn-secondary flex items-center gap-1 text-xs"
               title="Configurar Colunas"
             >
               <SlidersHorizontal className="w-4 h-4 text-[#0F8A4B]" />
@@ -213,14 +213,14 @@ export const TasksView: React.FC = () => {
             </button>
           )}
 
-          <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 min-w-[220px]">
+          <div className="flex items-center gap-2 bg-[#F5F7F8] px-3 py-1.5 rounded-lg border border-[#E2E6EA] min-w-[220px]">
             <Search className="w-4 h-4 text-slate-400 shrink-0" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Pesquisar por título, projeto, cliente..."
-              className="w-full bg-transparent outline-none text-xs text-slate-900 font-semibold placeholder:text-slate-400"
+              placeholder="Buscar tarefa..."
+              className="bg-transparent text-xs text-slate-900 focus:outline-none w-full font-medium"
             />
           </div>
         </div>

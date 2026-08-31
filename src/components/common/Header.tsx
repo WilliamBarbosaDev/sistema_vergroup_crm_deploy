@@ -126,7 +126,7 @@ export const Header: React.FC = () => {
   ];
 
   return (
-    <header id="vergroup-topbar" className="h-16 bg-white border-b border-[#DDE3E8] px-4 md:px-6 flex items-center justify-between sticky top-0 z-30 shadow-xs font-sans">
+    <header id="vergroup-topbar" className="h-14 bg-white border-b border-[#E2E6EA] px-4 md:px-6 flex items-center justify-between sticky top-0 z-30 font-sans select-none">
       {/* Left: Brand & Company Switcher */}
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">

@@ -121,24 +121,24 @@ export const DealsPipelineView: React.FC = () => {
   };
 
   return (
-    <div id="deals-pipeline-view" className="p-4 md:p-6 max-w-full space-y-4">
+    <div id="deals-pipeline-view" className="p-4 md:p-6 max-w-full space-y-4 font-sans select-none">
       {/* Top Header & Pipeline Selector */}
-      <div className="bg-white rounded-xl border border-[#DDE3E8] p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white rounded-xl border border-[#E2E6EA] p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="p-2.5 bg-[#ECF8F1] text-[#0F8A4B] rounded-lg">
+          <div className="p-2 bg-[#ECF8F1] text-[#0B6B3A] rounded-lg">
             <Layers className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-base font-bold text-[#17212B]">Pipeline de Negócios & Clientes (CRM)</h1>
-              <span className="text-xs font-semibold px-2 py-0.5 bg-[#ECF8F1] border border-[#0F8A4B]/20 text-[#0F8A4B] rounded-md">
+              <h1 className="text-base font-semibold text-slate-900 tracking-tight font-display">Pipeline de Negócios & Clientes (CRM)</h1>
+              <span className="text-xs font-semibold px-2 py-0.5 bg-[#ECF8F1] border border-[#0F8A4B]/20 text-[#0B6B3A] rounded-md">
                 {filteredPipelineDeals.length} negócios
               </span>
             </div>
-            <p className="text-xs text-[#5F6B76] mt-0.5 flex items-center gap-2">
-              <span>Volume no funil: <strong className="text-[#0F8A4B]">R$ {totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong></span>
+            <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-2 font-normal">
+              <span>Volume no funil: <strong className="text-[#0F8A4B] font-semibold">R$ {totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong></span>
               <span>•</span>
-              <span>Funil selecionado: <strong>{activePipeline?.name}</strong></span>
+              <span>Funil selecionado: <strong className="text-slate-800 font-semibold">{activePipeline?.name}</strong></span>
             </p>
           </div>
         </div>
@@ -149,7 +149,7 @@ export const DealsPipelineView: React.FC = () => {
             id="pipeline-select"
             value={selectedPipelineId}
             onChange={(e) => setSelectedPipelineId(e.target.value)}
-            className="px-3 py-1.5 border border-[#DDE3E8] rounded-md text-xs font-bold bg-[#F7F9FA] text-[#17212B] outline-none cursor-pointer hover:border-[#0F8A4B] transition-colors"
+            className="px-3 py-1.5 border border-[#E2E6EA] rounded-lg text-xs font-semibold bg-[#F5F7F8] text-slate-900 outline-none cursor-pointer hover:border-[#0F8A4B] transition-colors"
           >
             {pipelines.map((pipe) => (
               <option key={pipe.id} value={pipe.id}>

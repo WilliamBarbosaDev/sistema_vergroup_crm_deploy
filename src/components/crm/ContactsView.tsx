@@ -82,22 +82,22 @@ export const ContactsView: React.FC = () => {
   };
 
   return (
-    <div id="contacts-view" className="p-4 md:p-6 max-w-full space-y-4">
+    <div id="contacts-view" className="p-4 md:p-6 max-w-full space-y-4 font-sans select-none">
       {/* Header */}
-      <div className="bg-white rounded-xl border border-[#DDE3E8] p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white rounded-xl border border-[#E2E6EA] p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
+          <div className="p-2 bg-[#ECF8F1] text-[#0B6B3A] rounded-lg">
             <Users className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-base font-bold text-[#17212B]">Gestão de Contatos</h1>
-              <span className="text-xs font-semibold px-2 py-0.5 bg-[#F7F9FA] border border-[#DDE3E8] rounded text-[#5F6B76]">
+              <h1 className="text-base font-semibold text-slate-900 tracking-tight font-display">Gestão de Contatos</h1>
+              <span className="text-xs font-semibold px-2 py-0.5 bg-[#F5F7F8] border border-[#E2E6EA] rounded-md text-slate-600 font-mono">
                 {displayedContacts.length} contatos
               </span>
             </div>
-            <p className="text-xs text-[#5F6B76] mt-0.5">
-              Base centralizada com proteção ativa contra duplicidades (PRD CRM-04)
+            <p className="text-xs text-slate-500 mt-0.5 font-normal">
+              Base centralizada de contatos com validação de duplicidade
             </p>
           </div>
         </div>
@@ -105,24 +105,25 @@ export const ContactsView: React.FC = () => {
         <div className="flex items-center gap-2">
           <button
             onClick={handleExportCSV}
-            className="flex items-center gap-1.5 px-3 py-2 border border-[#DDE3E8] hover:bg-[#F7F9FA] text-[#17212B] rounded-md text-xs font-semibold cursor-pointer"
+            className="btn-secondary flex items-center gap-1.5 text-xs px-3 py-2 border border-[#E2E6EA] rounded-lg hover:bg-slate-50 text-slate-700"
             title="Exportar base de contatos em formato CSV"
           >
-            <Download className="w-3.5 h-3.5 text-[#5F6B76]" />
+            <Download className="w-3.5 h-3.5 text-slate-500" />
             <span>Exportar CSV</span>
           </button>
+
           <button
             onClick={() => setQuickCreateType('contact')}
-            className="flex items-center gap-1.5 px-3 py-2 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white rounded-md text-xs font-semibold shadow-xs cursor-pointer"
+            className="btn-primary flex items-center gap-1.5 text-xs px-3 py-2 bg-[#0F8A4B] text-white rounded-lg hover:bg-[#0B6B3A]"
           >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Novo Contato</span>
+            <Plus className="w-4 h-4" />
+            <span>+ Novo Contato</span>
           </button>
         </div>
       </div>
 
       {/* Filter Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3 rounded-lg border border-[#DDE3E8] text-xs">
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3 rounded-lg border border-[#E2E6EA] text-xs">
         <div className="flex items-center gap-2 flex-1 max-w-sm">
           <Search className="w-4 h-4 text-[#5F6B76]" />
           <input

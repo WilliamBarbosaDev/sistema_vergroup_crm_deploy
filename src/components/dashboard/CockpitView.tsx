@@ -47,286 +47,240 @@ export const CockpitView: React.FC = () => {
   const hotDeals = openDeals.filter((d) => d.value >= 50000).slice(0, 4);
 
   return (
-    <div id="cockpit-view" className="p-4 md:p-6 max-w-7xl mx-auto space-y-6">
-      {/* Welcome Banner */}
-      <div className="bg-white rounded-xl border border-[#DDE3E8] p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div id="cockpit-view" className="p-4 md:p-6 max-w-7xl mx-auto space-y-6 select-none font-sans">
+      
+      {/* 1. WELCOME HEADER (CLEAN LIGHT SAAS STYLE) */}
+      <div className="bg-white rounded-xl border border-[#E2E6EA] p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-[#0F8A4B] uppercase tracking-wider bg-[#ECF8F1] px-2 py-0.5 rounded">
+            <span className="text-[11px] font-semibold text-[#0B6B3A] uppercase tracking-wider bg-[#ECF8F1] px-2 py-0.5 rounded-md">
               {currentBU.name}
             </span>
-            <span className="text-xs text-[#5F6B76]">• Papel ativo: <strong className="text-[#17212B] uppercase">{currentUser.role}</strong></span>
+            <span className="text-xs text-slate-500">• Papel ativo: <strong className="text-slate-800 uppercase font-semibold">{currentUser.role}</strong></span>
           </div>
-          <h1 className="text-xl font-bold text-[#17212B] mt-1">
-            Olá, {currentUser.name.split(' ')[0]}! Aqui está o panorama operacional de hoje.
+          <h1 className="text-xl font-semibold text-slate-900 tracking-tight mt-1 font-display">
+            Olá, {currentUser.name.split(' ')[0]}! Aqui está o panorama de hoje.
           </h1>
-          <p className="text-xs text-[#5F6B76] mt-0.5">
-            Você possui <strong className="text-[#17212B]">{urgentTasks.length} tarefas prioritárias</strong> e <strong className="text-[#0F8A4B]">{openDeals.length} negócios ativos</strong> no funil.
+          <p className="text-xs text-slate-500 mt-0.5 font-normal">
+            Você possui <strong className="text-slate-900 font-semibold">{urgentTasks.length} tarefas prioritárias</strong> e <strong className="text-[#0F8A4B] font-semibold">{openDeals.length} negócios ativos</strong> no funil.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-2">
           <button
             onClick={() => setQuickCreateType('deal')}
-            className="flex items-center gap-1.5 px-3 py-2 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white rounded-md text-xs font-semibold shadow-xs cursor-pointer"
+            className="btn-primary flex items-center gap-1.5"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="w-4 h-4" />
             <span>Novo Negócio</span>
           </button>
+
           <button
             onClick={() => setQuickCreateType('task')}
-            className="flex items-center gap-1.5 px-3 py-2 border border-[#DDE3E8] hover:bg-[#F7F9FA] text-[#17212B] rounded-md text-xs font-semibold cursor-pointer"
+            className="btn-secondary flex items-center gap-1.5"
           >
-            <CheckSquare className="w-3.5 h-3.5 text-[#5F6B76]" />
+            <CheckSquare className="w-4 h-4 text-slate-500" />
             <span>Nova Tarefa</span>
           </button>
         </div>
       </div>
 
-      {/* KPI Cards Grid */}
+      {/* 2. COMPACT KPI METRIC BLOCKS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        
         {/* KPI 1: Pipeline Value */}
         <div
           onClick={() => setCurrentTab('crm-deals')}
-          className="bg-white p-4 rounded-xl border border-[#DDE3E8] hover:border-[#0F8A4B] shadow-xs cursor-pointer transition-all group"
+          className="bg-white p-4 rounded-xl border border-[#E2E6EA] hover:border-[#0F8A4B] transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-[#5F6B76] uppercase tracking-wider">Pipeline Aberto</span>
-            <div className="p-2 bg-[#ECF8F1] text-[#0F8A4B] rounded-lg">
+            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Pipeline Aberto</span>
+            <div className="p-1.5 bg-[#ECF8F1] text-[#0F8A4B] rounded-md">
               <DollarSign className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-2xl font-bold text-[#17212B] mt-2">
+          <p className="text-2xl font-semibold text-slate-900 mt-2 font-display">
             R$ {totalPipelineValue.toLocaleString('pt-BR')}
           </p>
-          <p className="text-[11px] text-[#5F6B76] mt-1 flex items-center justify-between">
-            <span>{openDeals.length} negócios em andamento</span>
-            <ArrowRight className="w-3 h-3 text-[#0F8A4B] opacity-0 group-hover:opacity-100 transition-opacity" />
+          <p className="text-xs text-slate-500 mt-1 flex items-center justify-between font-normal">
+            <span>{openDeals.length} negócios ativos</span>
+            <ArrowRight className="w-3.5 h-3.5 text-[#0F8A4B] opacity-0 group-hover:opacity-100 transition-opacity" />
           </p>
         </div>
 
         {/* KPI 2: Leads */}
         <div
           onClick={() => setCurrentTab('crm-leads')}
-          className="bg-white p-4 rounded-xl border border-[#DDE3E8] hover:border-blue-500 shadow-xs cursor-pointer transition-all group"
+          className="bg-white p-4 rounded-xl border border-[#E2E6EA] hover:border-sky-500 transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-[#5F6B76] uppercase tracking-wider">Novos Leads</span>
-            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Novos Leads</span>
+            <div className="p-1.5 bg-sky-50 text-sky-600 rounded-md">
               <UserPlus className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-2xl font-bold text-[#17212B] mt-2">
+          <p className="text-2xl font-semibold text-slate-900 mt-2 font-display">
             {newLeads.length}
           </p>
-          <p className="text-[11px] text-[#5F6B76] mt-1 flex items-center justify-between">
+          <p className="text-xs text-slate-500 mt-1 flex items-center justify-between font-normal">
             <span>Aguardando qualificação</span>
-            <ArrowRight className="w-3 h-3 text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <ArrowRight className="w-3.5 h-3.5 text-sky-600 opacity-0 group-hover:opacity-100 transition-opacity" />
           </p>
         </div>
 
         {/* KPI 3: Urgent Tasks */}
         <div
           onClick={() => setCurrentTab('work-tasks')}
-          className="bg-white p-4 rounded-xl border border-[#DDE3E8] hover:border-amber-500 shadow-xs cursor-pointer transition-all group"
+          className="bg-white p-4 rounded-xl border border-[#E2E6EA] hover:border-amber-500 transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-[#5F6B76] uppercase tracking-wider">Tarefas Críticas</span>
-            <div className="p-2 bg-amber-50 text-amber-600 rounded-lg">
-              <CheckSquare className="w-4 h-4" />
+            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Tarefas Críticas</span>
+            <div className="p-1.5 bg-amber-50 text-amber-600 rounded-md">
+              <AlertCircle className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-2xl font-bold text-[#17212B] mt-2">
+          <p className="text-2xl font-semibold text-slate-900 mt-2 font-display">
             {urgentTasks.length}
           </p>
-          <p className="text-[11px] text-[#5F6B76] mt-1 flex items-center justify-between">
+          <p className="text-xs text-slate-500 mt-1 flex items-center justify-between font-normal">
             <span>Prioridade Urgente / Alta</span>
-            <ArrowRight className="w-3 h-3 text-amber-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <ArrowRight className="w-3.5 h-3.5 text-amber-600 opacity-0 group-hover:opacity-100 transition-opacity" />
           </p>
         </div>
 
         {/* KPI 4: Monthly Recurring Revenue */}
         <div
-          onClick={() => setCurrentTab('clients-pipeline')}
-          className="bg-white p-4 rounded-xl border border-[#DDE3E8] hover:border-purple-500 shadow-xs cursor-pointer transition-all group"
+          onClick={() => setCurrentTab('crm-companies')}
+          className="bg-white p-4 rounded-xl border border-[#E2E6EA] hover:border-emerald-500 transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-[#5F6B76] uppercase tracking-wider">Receita Recorrente (MRR)</span>
-            <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
-              <Building2 className="w-4 h-4" />
+            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">MRR Carteira</span>
+            <div className="p-1.5 bg-emerald-50 text-emerald-600 rounded-md">
+              <TrendingUp className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-2xl font-bold text-[#17212B] mt-2">
-            R$ {totalMRR.toLocaleString('pt-BR')}/mês
+          <p className="text-2xl font-semibold text-slate-900 mt-2 font-display">
+            R$ {totalMRR.toLocaleString('pt-BR')} /mês
           </p>
-          <p className="text-[11px] text-[#5F6B76] mt-1 flex items-center justify-between">
-            <span>{filteredClients.length} contas ativas na carteira</span>
-            <ArrowRight className="w-3 h-3 text-purple-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+          <p className="text-xs text-slate-500 mt-1 flex items-center justify-between font-normal">
+            <span>{filteredClients.length} contas de clientes</span>
+            <ArrowRight className="w-3.5 h-3.5 text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+          </p>
+        </div>
+
+      </div>
+
+      {/* 3. VER AI COPILOT BRIEFING (CLEAN ELEGANT BOX) */}
+      <div className="bg-white rounded-xl border border-[#E2E6EA] p-5 space-y-3">
+        <div className="flex items-center justify-between border-b border-[#E2E6EA] pb-3">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-[#ECF8F1] text-[#0B6B3A] rounded-md">
+              <Sparkles className="w-4 h-4" />
+            </div>
+            <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+              <span>✨ VER AI Briefing Executivo</span>
+              <span className="text-[10px] font-mono bg-emerald-50 text-[#0B6B3A] border border-emerald-200 px-2 py-0.5 rounded font-bold uppercase">
+                Auditoria em Tempo Real
+              </span>
+            </h2>
+          </div>
+
+          <button
+            onClick={() => alert('Sintese atualizada pela inteligência VER AI.')}
+            className="btn-secondary text-xs"
+          >
+            Atualizar Análise IA
+          </button>
+        </div>
+
+        <div className="p-3.5 bg-[#F5F7F8] rounded-lg border border-[#E2E6EA] text-xs text-slate-700 leading-relaxed font-normal">
+          <p>
+            O motor de inteligência <strong>VER AI Copilot</strong> realizou a varredura contínua dos eventos e identificou conformidade estrita de prazos operacionais, com <strong>{openDeals.length} negócios em negociação ativa</strong> e <strong>{urgentTasks.length} entregas críticas sob monitoramento SLA</strong>.
           </p>
         </div>
       </div>
 
-      {/* Main Content Grid: 2 Columns */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left: Critical Tasks & Hot Deals */}
-        <div className="lg:col-span-7 space-y-6">
-          {/* Critical Tasks Section */}
-          <div className="bg-white rounded-xl border border-[#DDE3E8] p-4 shadow-xs">
-            <div className="flex items-center justify-between pb-3 border-b border-[#DDE3E8]">
-              <div className="flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-amber-600" />
-                <h2 className="text-xs font-bold text-[#17212B] uppercase tracking-wider">
-                  Tarefas Prioritárias & SLAs
-                </h2>
-              </div>
-              <button
-                onClick={() => setCurrentTab('work-tasks')}
-                className="text-[11px] font-semibold text-[#0F8A4B] hover:underline"
-              >
-                Ver todas ({filteredTasks.length})
-              </button>
-            </div>
-
-            <div className="divide-y divide-[#F0F4F7] mt-1">
-              {urgentTasks.length === 0 ? (
-                <div className="py-8 text-center text-xs text-[#5F6B76]">
-                  Nenhuma tarefa urgente pendente no momento. Excelente trabalho!
-                </div>
-              ) : (
-                urgentTasks.map((task) => (
-                  <div key={task.id} className="py-3 flex items-start justify-between gap-3 text-xs">
-                    <div className="flex items-start gap-2.5">
-                      <button
-                        onClick={() => toggleTaskStatus(task.id)}
-                        className="mt-0.5 w-4 h-4 rounded border border-[#DDE3E8] hover:border-[#0F8A4B] flex items-center justify-center cursor-pointer transition-colors"
-                      >
-                        {task.status === 'completed' && <CheckCircle2 className="w-4 h-4 text-[#0F8A4B]" />}
-                      </button>
-                      <div>
-                        <p
-                          onClick={() => {
-                            setSelectedTaskId(task.id);
-                            setCurrentTab('work-tasks');
-                          }}
-                          className="font-semibold text-[#17212B] hover:text-[#0F8A4B] cursor-pointer"
-                        >
-                          {task.title}
-                        </p>
-                        <div className="flex items-center gap-2 mt-1 text-[11px] text-[#5F6B76]">
-                          <span className="flex items-center gap-1">
-                            <Clock className="w-3 h-3 text-amber-600" />
-                            <span>Vence em {task.dueDate}</span>
-                          </span>
-                          <span>•</span>
-                          <span className="bg-red-50 text-red-700 px-1.5 py-0.2 rounded font-semibold text-[10px]">
-                            {task.priority.toUpperCase()}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={() => {
-                        setSelectedTaskId(task.id);
-                        setCurrentTab('work-tasks');
-                      }}
-                      className="px-2.5 py-1 bg-[#F7F9FA] hover:bg-[#EAEFF3] border border-[#DDE3E8] rounded text-[11px] font-medium text-[#17212B] shrink-0"
-                    >
-                      Detalhes
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
+      {/* 4. MAIN OPERATIONAL SECTIONS (HOT DEALS & PENDING TASKS) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        {/* Hot Deals Section */}
+        <div className="bg-white rounded-xl border border-[#E2E6EA] p-5 space-y-4">
+          <div className="flex items-center justify-between border-b border-[#E2E6EA] pb-3">
+            <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+              <Trello className="w-4 h-4 text-[#0F8A4B]" />
+              <span>Oportunidades em Destaque (Hot Deals)</span>
+            </h2>
+            <button
+              onClick={() => setCurrentTab('crm-deals')}
+              className="text-xs text-[#0F8A4B] font-semibold hover:underline cursor-pointer"
+            >
+              Ver Funil Completo →
+            </button>
           </div>
 
-          {/* Hot Deals Section */}
-          <div className="bg-white rounded-xl border border-[#DDE3E8] p-4 shadow-xs">
-            <div className="flex items-center justify-between pb-3 border-b border-[#DDE3E8]">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-[#0F8A4B]" />
-                <h2 className="text-xs font-bold text-[#17212B] uppercase tracking-wider">
-                  Oportunidades em Destaque (VGV Alto)
-                </h2>
-              </div>
-              <button
-                onClick={() => setCurrentTab('crm-deals')}
-                className="text-[11px] font-semibold text-[#0F8A4B] hover:underline"
+          <div className="space-y-2">
+            {hotDeals.map((deal) => (
+              <div
+                key={deal.id}
+                onClick={() => { setSelectedDealId(deal.id); setCurrentTab('crm-deals'); }}
+                className="p-3 bg-[#F5F7F8] hover:bg-[#F3F5F6] border border-[#E2E6EA] rounded-lg flex items-center justify-between transition-colors cursor-pointer"
               >
-                Abrir Funil Completo
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-              {hotDeals.map((deal) => (
-                <div
-                  key={deal.id}
-                  onClick={() => {
-                    setSelectedDealId(deal.id);
-                    setCurrentTab('crm-deals');
-                  }}
-                  className="p-3 rounded-lg border border-[#DDE3E8] hover:border-[#0F8A4B] bg-[#F7F9FA] hover:bg-white transition-all cursor-pointer space-y-1.5"
-                >
-                  <div className="flex items-start justify-between gap-1">
-                    <p className="text-xs font-bold text-[#17212B] line-clamp-1">{deal.title}</p>
-                  </div>
-                  <p className="text-base font-bold text-[#0F8A4B]">
-                    R$ {deal.value.toLocaleString('pt-BR')}
-                  </p>
-                  <p className="text-[11px] text-[#5F6B76] truncate">{deal.serviceCategory}</p>
+                <div>
+                  <h3 className="text-xs font-semibold text-slate-900">{deal.title}</h3>
+                  <span className="text-[11px] text-slate-500 font-normal">{deal.companyName}</span>
                 </div>
-              ))}
-            </div>
+                <span className="text-xs font-semibold text-[#0F8A4B]">
+                  R$ {deal.value.toLocaleString('pt-BR')}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Right: Live Timeline & System Activity */}
-        <div className="lg:col-span-5 space-y-6">
-          <div className="bg-white rounded-xl border border-[#DDE3E8] p-4 shadow-xs">
-            <div className="flex items-center justify-between pb-3 border-b border-[#DDE3E8]">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-blue-600" />
-                <h2 className="text-xs font-bold text-[#17212B] uppercase tracking-wider">
-                  Atividades & Linha do Tempo
-                </h2>
-              </div>
-              <span className="text-[11px] text-[#5F6B76]">Tempo Real</span>
-            </div>
+        {/* Priority Tasks Section */}
+        <div className="bg-white rounded-xl border border-[#E2E6EA] p-5 space-y-4">
+          <div className="flex items-center justify-between border-b border-[#E2E6EA] pb-3">
+            <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+              <CheckSquare className="w-4 h-4 text-amber-600" />
+              <span>Entregas Prioritárias & SLA</span>
+            </h2>
+            <button
+              onClick={() => setCurrentTab('work-tasks')}
+              className="text-xs text-[#0F8A4B] font-semibold hover:underline cursor-pointer"
+            >
+              Ver Central de Tarefas →
+            </button>
+          </div>
 
-            <div className="divide-y divide-[#F0F4F7] max-h-[420px] overflow-y-auto">
-              {activities.slice(0, 6).map((act) => (
-                <div key={act.id} className="py-3 flex items-start gap-2.5 text-xs">
-                  <div className="w-6 h-6 rounded-full bg-[#ECF8F1] text-[#0F8A4B] flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-bold">
-                    ✓
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-[#17212B] leading-tight">{act.title}</p>
-                    {act.description && (
-                      <p className="text-[11px] text-[#5F6B76] mt-0.5 line-clamp-2 leading-relaxed">
-                        {act.description}
-                      </p>
-                    )}
-                    <span className="text-[10px] text-[#5F6B76] block mt-1">
-                      {new Date(act.createdAt).toLocaleDateString('pt-BR')} {new Date(act.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                    </span>
+          <div className="space-y-2">
+            {urgentTasks.slice(0, 4).map((task) => (
+              <div
+                key={task.id}
+                className="p-3 bg-[#F5F7F8] border border-[#E2E6EA] rounded-lg flex items-center justify-between text-xs"
+              >
+                <div className="flex items-center gap-2.5">
+                  <button
+                    onClick={() => toggleTaskStatus(task.id)}
+                    className="p-1 rounded-md text-slate-400 hover:text-[#0F8A4B] cursor-pointer"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                  </button>
+                  <div>
+                    <h3 className="font-semibold text-slate-900">{task.title}</h3>
+                    <span className="text-[11px] text-slate-500 font-normal">Prazo: {new Date(task.dueDate).toLocaleDateString('pt-BR')}</span>
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
 
-          {/* Quick Direct Actions */}
-          <div className="bg-[#ECF8F1] rounded-xl border border-[#0F8A4B]/20 p-4 space-y-2">
-            <div className="flex items-center gap-2 text-[#0F8A4B]">
-              <ShieldCheck className="w-4 h-4" />
-              <h3 className="text-xs font-bold uppercase tracking-wider">Governança VERGROUP</h3>
-            </div>
-            <p className="text-[11px] text-[#17212B] leading-relaxed">
-              Sistema em conformidade total com a matriz de segurança, isolamento multiempresa e trilha imutável de auditoria.
-            </p>
+                <span className="px-2 py-0.5 bg-amber-50 text-amber-700 text-[10px] font-semibold rounded border border-amber-200">
+                  {task.priority === 'urgent' ? 'Urgente' : 'Alta'}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
+
       </div>
+
     </div>
   );
 };
