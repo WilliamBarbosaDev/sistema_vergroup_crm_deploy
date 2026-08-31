@@ -121,7 +121,7 @@ export const Sidebar: React.FC = () => {
       {/* Top Logo Banner */}
       <div className="p-3 border-b border-[#E2E6EA] flex items-center justify-between bg-white">
         {!isCollapsed ? (
-          <VerGroupLogo variant="green" size="sm" showSubtitle={false} />
+          <VerGroupLogo variant="green" size="md" showSubtitle={false} />
         ) : (
           <div className="w-8 h-8 rounded-lg bg-[#0F8A4B] text-white flex items-center justify-center font-bold text-sm font-display">
             V

@@ -132,7 +132,7 @@ export const Header: React.FC = () => {
       {/* Left: Brand & Company Switcher */}
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
-          <VerGroupLogo variant="green" size="sm" />
+          <VerGroupLogo variant="green" size="md" />
         </div>
 
         <div className="h-6 w-px bg-[#DDE3E8] hidden md:block" />

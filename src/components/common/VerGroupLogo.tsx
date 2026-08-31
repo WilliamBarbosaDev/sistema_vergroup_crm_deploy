@@ -18,10 +18,10 @@ export const VerGroupLogo: React.FC<VerGroupLogoProps> = ({
   const logoSrc = variant === 'green' ? greenLogoAsset : whiteLogoAsset;
 
   const heightClasses = {
-    sm: 'h-8',
-    md: 'h-12',
-    lg: 'h-16',
-    xl: 'h-24',
+    sm: 'h-9 text-base',
+    md: 'h-12 text-xl',
+    lg: 'h-16 text-2xl',
+    xl: 'h-24 text-4xl',
   };
 
   return (
@@ -29,7 +29,8 @@ export const VerGroupLogo: React.FC<VerGroupLogoProps> = ({
       <img
         src={logoSrc}
         alt="VERGROUP Logo"
-        className={`${heightClasses[size]} w-auto object-contain drop-shadow-2xs`}
+        className={`${heightClasses[size]} w-auto object-contain shrink-0`}
+        style={{ maxHeight: size === 'sm' ? '36px' : size === 'md' ? '48px' : '64px' }}
       />
       {showSubtitle && (
         <span
