@@ -27,6 +27,7 @@ import { UserRole, CollaboratorInvite } from '../../types';
 import { InviteCollaboratorModal } from './InviteCollaboratorModal';
 import { AcceptInviteModal } from './AcceptInviteModal';
 import { CollaboratorCockpitModal } from './CollaboratorCockpitModal';
+import { StayCloudConfigModal } from './StayCloudConfigModal';
 import { User } from '../../types';
 
 export const AdminView: React.FC = () => {
@@ -45,6 +46,7 @@ export const AdminView: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<'users' | 'invites' | 'units' | 'rbac'>('users');
   const [showInviteModal, setShowInviteModal] = useState<boolean>(false);
+  const [showStayCloudModal, setShowStayCloudModal] = useState<boolean>(false);
   const [activeAcceptInvite, setActiveAcceptInvite] = useState<CollaboratorInvite | null>(null);
   const [activeCockpitCollaborator, setActiveCockpitCollaborator] = useState<User | null>(null);
 
@@ -134,6 +136,14 @@ export const AdminView: React.FC = () => {
 
         {/* Top Header Actions */}
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowStayCloudModal(true)}
+            className="flex items-center gap-2 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black shadow-sm cursor-pointer transition-all border border-slate-700"
+          >
+            <Sparkles className="w-4 h-4 text-amber-400" />
+            <span>StayCloud Config</span>
+          </button>
+
           <button
             onClick={() => setShowInviteModal(true)}
             className="flex items-center gap-2 px-4 py-2 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white rounded-xl text-xs font-black shadow-sm shadow-emerald-700/20 hover:shadow-md cursor-pointer transition-all"
@@ -578,6 +588,13 @@ export const AdminView: React.FC = () => {
         <CollaboratorCockpitModal
           collaborator={activeCockpitCollaborator}
           onClose={() => setActiveCockpitCollaborator(null)}
+        />
+      )}
+
+      {/* StayCloud Deployment Readiness Modal */}
+      {showStayCloudModal && (
+        <StayCloudConfigModal
+          onClose={() => setShowStayCloudModal(false)}
         />
       )}
     </div>

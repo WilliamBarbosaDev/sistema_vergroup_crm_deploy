@@ -47,6 +47,7 @@ export const Header: React.FC = () => {
     setSelectedDealId,
     setSelectedTaskId,
     resetAllData,
+    logout,
   } = useApp();
 
   const [isBUDropdownOpen, setIsBUDropdownOpen] = useState(false);
@@ -581,7 +582,10 @@ export const Header: React.FC = () => {
 
                 <button
                   type="button"
-                  onClick={resetAllData}
+                  onClick={() => {
+                    setIsRoleDropdownOpen(false);
+                    logout();
+                  }}
                   className="hover:text-rose-600 cursor-pointer flex items-center gap-1"
                 >
                   <LogOut className="w-3.5 h-3.5" />

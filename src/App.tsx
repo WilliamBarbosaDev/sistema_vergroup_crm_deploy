@@ -6,6 +6,7 @@ import { GlobalSearchModal } from './components/common/GlobalSearchModal';
 import { QuickCreateDrawer } from './components/common/QuickCreateDrawer';
 import { DealDetailDrawer } from './components/crm/DealDetailDrawer';
 import { RightChatWidgetRail } from './components/common/RightChatWidgetRail';
+import { LoginView } from './components/auth/LoginView';
 
 // Views
 import { CockpitView } from './components/dashboard/CockpitView';
@@ -26,7 +27,11 @@ import { AuditView } from './components/management/AuditView';
 import { AdminView } from './components/admin/AdminView';
 
 const MainLayout: React.FC = () => {
-  const { currentTab } = useApp();
+  const { currentTab, isAuthenticated } = useApp();
+
+  if (!isAuthenticated) {
+    return <LoginView />;
+  }
 
   const renderContent = () => {
     switch (currentTab) {
@@ -36,6 +41,7 @@ const MainLayout: React.FC = () => {
         return <DealsPipelineView />;
       case 'crm-leads':
         return <LeadsView />;
+      case 'crm-[#17212B]':
       case 'crm-contacts':
         return <ContactsView />;
       case 'crm-companies':
@@ -63,6 +69,7 @@ const MainLayout: React.FC = () => {
       case 'mgmt-automations':
       case 'manage-automations':
         return <AutomationsView />;
+      case 'mgmt-[#17212B]':
       case 'mgmt-audit':
       case 'manage-audit':
         return <AuditView />;

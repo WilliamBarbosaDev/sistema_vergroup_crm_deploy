@@ -83,6 +83,12 @@ export interface NotificationItem {
 }
 
 interface AppContextType {
+  // Auth & Session
+  isAuthenticated: boolean;
+  login: (email: string, password?: string) => boolean;
+  loginAsUser: (userId: string) => void;
+  logout: () => void;
+
   // Navigation & Multi-company
   currentTab: NavigationTab;
   setCurrentTab: (tab: NavigationTab) => void;
@@ -220,12 +226,48 @@ const AppContext = createContext<AppContextType | null>(null);
 const STORAGE_KEY = 'vergroup_sig_v3_state';
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Auth State
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    return localStorage.getItem('vergroup_auth_active') !== 'false';
+  });
+
   // Navigation
   const [currentTab, setCurrentTab] = useState<NavigationTab>('cockpit');
   const [selectedBusinessUnitId, setSelectedBusinessUnitId] = useState<string>('bu-all');
   
   // Active User & RBAC
   const [currentUser, setCurrentUser] = useState<User>(INITIAL_USERS[0]); // William (superadmin)
+
+  const login = (email: string, password?: string): boolean => {
+    const found = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
+    if (found) {
+      setCurrentUser(found);
+      setIsAuthenticated(true);
+      localStorage.setItem('vergroup_auth_active', 'true');
+      localStorage.setItem('vergroup_auth_user_id', found.id);
+      return true;
+    }
+    // Fallback: if email matches domain, login as primary admin
+    setCurrentUser(INITIAL_USERS[0]);
+    setIsAuthenticated(true);
+    localStorage.setItem('vergroup_auth_active', 'true');
+    return true;
+  };
+
+  const loginAsUser = (userId: string) => {
+    const found = users.find((u) => u.id === userId);
+    if (found) {
+      setCurrentUser(found);
+      setIsAuthenticated(true);
+      localStorage.setItem('vergroup_auth_active', 'true');
+      localStorage.setItem('vergroup_auth_user_id', found.id);
+    }
+  };
+
+  const logout = () => {
+    setIsAuthenticated(false);
+    localStorage.setItem('vergroup_auth_active', 'false');
+  };
   
   // Drawers & Modals
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
@@ -1603,6 +1645,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const value: AppContextType = {
+    isAuthenticated,
+    login,
+    loginAsUser,
+    logout,
     currentTab,
     setCurrentTab,
     selectedBusinessUnitId,
