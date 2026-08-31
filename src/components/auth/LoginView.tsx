@@ -79,11 +79,6 @@ export const LoginView: React.FC = () => {
         {/* Right Side Clean Minimal Sign-In Card */}
         <div className="w-full max-w-sm bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl p-8 flex flex-col items-center border border-emerald-100 text-slate-900 shrink-0">
           
-          {/* Official Green Logo Header */}
-          <div className="mb-6 flex justify-center">
-            <VerGroupLogo variant="green" size="md" />
-          </div>
-
           <h2 className="text-xl font-black text-[#0A1C16] mb-1 text-center font-display">
             Entrar no VERGROUP
           </h2>
