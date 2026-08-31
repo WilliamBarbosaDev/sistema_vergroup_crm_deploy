@@ -21,6 +21,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { useApp, NavigationTab } from '../../context/AppContext';
+import { VerGroupLogo } from './VerGroupLogo';
 
 interface NavItem {
   id: NavigationTab;
@@ -117,6 +118,17 @@ export const Sidebar: React.FC = () => {
         isCollapsed ? 'w-16' : 'w-60'
       }`}
     >
+      {/* Top Logo Banner */}
+      <div className="p-3 border-b border-[#E2E6EA] flex items-center justify-between bg-white">
+        {!isCollapsed ? (
+          <VerGroupLogo variant="green" size="sm" showSubtitle={false} />
+        ) : (
+          <div className="w-8 h-8 rounded-lg bg-[#0F8A4B] text-white flex items-center justify-center font-bold text-sm font-display">
+            V
+          </div>
+        )}
+      </div>
+
       {/* Navigation Groups */}
       <div className="flex-1 overflow-y-auto py-3 px-2 space-y-3 custom-scrollbar">
         {navigationGroups.map((group) => (
