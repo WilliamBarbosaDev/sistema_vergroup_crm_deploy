@@ -10,6 +10,7 @@ import {
   Company,
   Pipeline,
   PipelineStage,
+  StageType,
   PipelineCustomField,
   Deal,
   DealDocument,
@@ -801,7 +802,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     setPipelines((prev) => {
-      const next = [newPipeline, ...prev];
+      // If new pipeline is default, unset default for other pipelines of same BU and type
+      const sanitized = pipelineData.isDefault
+        ? prev.map((p) => (p.businessUnitId === pipelineData.businessUnitId && p.type === pipelineData.type ? { ...p, isDefault: false } : p))
+        : prev;
+
+      const next = [newPipeline, ...sanitized];
       localStorage.setItem(`${STORAGE_KEY}_pipelines`, JSON.stringify(next));
       return next;
     });
@@ -812,7 +818,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const updatePipeline = (id: string, updates: Partial<Pipeline>) => {
     setPipelines((prev) => {
-      const next = prev.map((p) => (p.id === id ? { ...p, ...updates, updatedAt: new Date().toISOString() } : p));
+      const target = prev.find((p) => p.id === id);
+      const targetBU = updates.businessUnitId || target?.businessUnitId;
+      const targetType = updates.type || target?.type;
+
+      const next = prev.map((p) => {
+        if (p.id === id) {
+          return { ...p, ...updates, updatedAt: new Date().toISOString() };
+        }
+        // If updates set isDefault = true, unset isDefault for other pipelines of same BU and type
+        if (updates.isDefault && p.businessUnitId === targetBU && p.type === targetType) {
+          return { ...p, isDefault: false };
+        }
+        return p;
+      });
+
       localStorage.setItem(`${STORAGE_KEY}_pipelines`, JSON.stringify(next));
       return next;
     });
@@ -843,6 +863,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       stages: duplicatedStages,
       customFields: duplicatedCustomFields,
       isDefault: false,
+      departmentId: undefined, // Clear specific department reference upon multi-company duplicate for safety
+      teamId: undefined,
       createdByUserId: currentUser.id,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -886,16 +908,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const pipeline = pipelines.find((p) => p.id === pipelineId);
     if (!pipeline) return;
 
+    // Enforce unique initial stage: If new stage is 'initial', convert other 'initial' stages to 'intermediate'
+    const sanitizedStages = stageData.stageType === 'initial'
+      ? pipeline.stages.map((s) => (s.stageType === 'initial' ? { ...s, stageType: 'intermediate' as StageType } : s))
+      : pipeline.stages;
+
     const newStage: PipelineStage = {
       ...stageData,
       id: `stg-${Date.now()}`,
       pipelineId,
-      order: stageData.order || pipeline.stages.length + 1,
+      order: stageData.order || sanitizedStages.length + 1,
       color: stageData.color || '#3B82F6',
       stageType: stageData.stageType || 'intermediate',
     };
 
-    const updatedStages = [...pipeline.stages, newStage];
+    const updatedStages = [...sanitizedStages, newStage];
     updatePipeline(pipelineId, { stages: updatedStages });
   };
 
@@ -903,7 +930,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const pipeline = pipelines.find((p) => p.id === pipelineId);
     if (!pipeline) return;
 
-    const updatedStages = pipeline.stages.map((stg) => (stg.id === stageId ? { ...stg, ...updates } : stg));
+    // Enforce unique initial stage: If updated stage is set to 'initial', convert other 'initial' stages to 'intermediate'
+    const updatedStages = pipeline.stages.map((stg) => {
+      if (stg.id === stageId) {
+        return { ...stg, ...updates };
+      }
+      if (updates.stageType === 'initial' && stg.stageType === 'initial') {
+        return { ...stg, stageType: 'intermediate' as StageType };
+      }
+      return stg;
+    });
+
     updatePipeline(pipelineId, { stages: updatedStages });
   };
 
