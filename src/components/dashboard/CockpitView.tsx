@@ -66,12 +66,23 @@ export const CockpitView: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => {
+              const btn = document.getElementById('ver-ai-agents-btn');
+              if (btn) btn.click();
+            }}
+            className="btn-primary flex items-center gap-1.5 text-xs bg-[#0F8A4B]"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>Centro de IA & Agentes</span>
+          </button>
+
           <button
             onClick={() => setQuickCreateType('deal')}
-            className="btn-primary flex items-center gap-1.5"
+            className="btn-secondary flex items-center gap-1.5"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4 text-slate-500" />
             <span>Novo Negócio</span>
           </button>
 

@@ -18,6 +18,7 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  Sparkles,
 } from 'lucide-react';
 import { useApp, NavigationTab } from '../../context/AppContext';
 
@@ -56,9 +57,10 @@ export const Sidebar: React.FC = () => {
 
   const navigationGroups: NavGroup[] = [
     {
-      title: 'Início',
+      title: 'Início & IA',
       items: [
         { id: 'cockpit', label: 'Visão Geral (Cockpit)', icon: LayoutDashboard },
+        { id: 'cockpit', label: 'Centro de IA & Agentes', icon: Sparkles, badge: 4, badgeColor: 'bg-[#0F8A4B]' },
       ],
     },
     {

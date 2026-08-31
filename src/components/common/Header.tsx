@@ -30,6 +30,7 @@ import { useApp } from '../../context/AppContext';
 import { UserRole } from '../../types';
 import { UserProfileModal } from './UserProfileModal';
 import { VerGroupLogo } from './VerGroupLogo';
+import { AIAgentCenterModal } from '../ai/AIAgentCenterModal';
 
 export const Header: React.FC = () => {
   const {
@@ -56,6 +57,7 @@ export const Header: React.FC = () => {
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isQuickCreateOpen, setIsQuickCreateOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isAIAgentCenterOpen, setIsAIAgentCenterOpen] = useState(false);
   const [showRbacSimulator, setShowRbacSimulator] = useState(false);
 
   // Active Work Timer State (Bitrix24 Timecard)
@@ -210,6 +212,17 @@ export const Header: React.FC = () => {
           title="Buscar"
         >
           <Search className="w-4 h-4" />
+        </button>
+
+        {/* VER AI Agents Status Button */}
+        <button
+          id="ver-ai-agents-btn"
+          onClick={() => setIsAIAgentCenterOpen(true)}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-[#ECF8F1] hover:bg-emerald-100 border border-[#0F8A4B]/30 text-[#0B6B3A] rounded-lg text-xs font-semibold cursor-pointer transition-colors"
+          title="Centro de Agentes de Inteligência Artificial VER AI"
+        >
+          <Sparkles className="w-3.5 h-3.5 text-[#0F8A4B]" />
+          <span>VER AI <strong className="font-mono bg-[#0F8A4B] text-white px-1.5 py-0.2 rounded-full text-[10px]">4 Ativos</strong></span>
         </button>
 
         {/* Quick Create Button "+ Novo" */}
@@ -596,6 +609,11 @@ export const Header: React.FC = () => {
       <UserProfileModal
         isOpen={isProfileModalOpen}
         onClose={() => setIsProfileModalOpen(false)}
+      />
+
+      <AIAgentCenterModal
+        isOpen={isAIAgentCenterOpen}
+        onClose={() => setIsAIAgentCenterOpen(false)}
       />
     </header>
   );
