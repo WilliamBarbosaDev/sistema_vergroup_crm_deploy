@@ -1,21 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   MessageSquare,
   Send,
   X,
   Phone,
   Video,
-  Bell,
   Paperclip,
   Smile,
-  Hash,
-  Clock,
-  Sparkles,
-  ChevronLeft,
+  Mic,
   Search,
+  Bot,
+  Play,
+  FileText,
+  PhoneOff,
+  MicOff,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { User, ChatChannel } from '../../types';
+import { ChatChannel } from '../../types';
 
 export const RightChatWidgetRail: React.FC = () => {
   const {
@@ -31,6 +32,15 @@ export const RightChatWidgetRail: React.FC = () => {
   const [activeChatChannelId, setActiveChatChannelId] = useState<string | null>(null);
   const [inputText, setInputText] = useState('');
   const [currentTime, setCurrentTime] = useState('');
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [isRecordingVoice, setIsRecordingVoice] = useState(false);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+
+  // Call modal simulator state
+  const [activeCallType, setActiveCallType] = useState<'audio' | 'video' | null>(null);
+  const [callDuration, setCallDuration] = useState(0);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAvatarClick = (channelId: string) => {
     setGlobalActiveChannelId(channelId);
@@ -47,6 +57,32 @@ export const RightChatWidgetRail: React.FC = () => {
     const interval = setInterval(updateTime, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  // Voice Recording Ticker
+  useEffect(() => {
+    let timer: NodeJS.Timeout | null = null;
+    if (isRecordingVoice) {
+      timer = setInterval(() => setRecordingSeconds((prev) => prev + 1), 1000);
+    } else {
+      setRecordingSeconds(0);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [isRecordingVoice]);
+
+  // Call Duration Ticker
+  useEffect(() => {
+    let timer: NodeJS.Timeout | null = null;
+    if (activeCallType) {
+      timer = setInterval(() => setCallDuration((prev) => prev + 1), 1000);
+    } else {
+      setCallDuration(0);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [activeCallType]);
 
   // Combine all registered users across all companies + group channels
   const allConversations: ChatChannel[] = [
@@ -79,207 +115,251 @@ export const RightChatWidgetRail: React.FC = () => {
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputText.trim() || !activeChatChannelId) return;
+    if (!activeChatChannelId) return;
+
+    if (isRecordingVoice) {
+      const voiceText = `🎤 Mensagem de Áudio (${formatTime(recordingSeconds)})`;
+      sendChatMessage(activeChatChannelId, voiceText);
+      setIsRecordingVoice(false);
+      return;
+    }
+
+    if (!inputText.trim()) return;
 
     sendChatMessage(activeChatChannelId, inputText.trim());
     setInputText('');
+    setShowEmojiPicker(false);
   };
+
+  const formatTime = (totalSec: number) => {
+    const min = Math.floor(totalSec / 60);
+    const sec = totalSec % 60;
+    return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+  };
+
+  const directUser = activeChannel ? getDirectUser(activeChannel) : null;
 
   return (
     <>
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file && activeChatChannelId) {
+            sendChatMessage(activeChatChannelId, `📎 Arquivo enviado: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`);
+          }
+        }}
+        className="hidden"
+      />
+
+      {/* CALL MODAL */}
+      {activeCallType && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-[#0A3429] text-white rounded-3xl p-8 max-w-md w-full shadow-2xl border border-[#197960]/50 text-center space-y-6">
+            <img
+              src={directUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
+              alt="Chamada"
+              className="w-24 h-24 rounded-full object-cover ring-4 ring-[#0F8A4B] mx-auto shadow-xl"
+            />
+            <div className="space-y-1">
+              <h3 className="text-xl font-black text-white">{activeChannel?.name || 'Chamada Corporativa'}</h3>
+              <p className="text-xs text-emerald-300 font-extrabold uppercase">Chamada em Andamento</p>
+              <p className="text-sm font-mono font-bold text-white pt-1">{formatTime(callDuration)}</p>
+            </div>
+            <button
+              onClick={() => setActiveCallType(null)}
+              className="p-4 rounded-full bg-rose-600 hover:bg-rose-700 text-white shadow-lg cursor-pointer mx-auto block"
+            >
+              <PhoneOff className="w-6 h-6" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* BITRIX24 FLOATING RIGHT RAIL WIDGET (VERGROUP BRAND GREEN PALETTE) */}
       <aside
         id="bitrix-right-chat-rail"
         className="fixed right-0 top-16 bottom-0 w-16 bg-[#0A3429] text-emerald-100 flex flex-col items-center py-3 space-y-3 z-40 border-l border-[#13604C]/60 shadow-2xl font-sans overflow-y-auto custom-scrollbar select-none"
       >
-        {/* Top Clock & Logged User Avatar */}
+        {/* Top Clock */}
         <div className="flex flex-col items-center space-y-1 bg-[#0F493A] p-1.5 rounded-2xl border border-[#197960]/40 shadow-2xs">
           <span className="text-[10px] font-mono font-black text-emerald-300 tracking-tight">
-            {currentTime || '16:28'}
+            {currentTime || '17:55'}
           </span>
           <img
             src={currentUser.avatar}
             alt={currentUser.name}
-            className="w-8 h-8 rounded-full object-cover border border-emerald-400/80 shadow-2xs"
-            title={currentUser.name}
+            className="w-7 h-7 rounded-full object-cover ring-2 ring-[#0F8A4B]"
+            title={`Conectado como: ${currentUser.name}`}
           />
         </div>
 
-        {/* Global Notifications Bell Action */}
-        <button
-          className="relative p-2 bg-[#0F493A] hover:bg-[#13604C] text-emerald-200 rounded-full cursor-pointer transition-colors"
-          title="Notificações & Mensagens Frequentes"
-        >
-          <Bell className="w-4 h-4 text-emerald-300" />
-          <span className="absolute top-0 right-0 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-[#0A3429] animate-pulse" />
-        </button>
+        <div className="w-8 h-px bg-[#13604C]/60 my-1" />
 
-        <div className="w-8 h-px bg-[#13604C]/60" />
-
-        {/* Channels & Team Avatars List (Bitrix Style Vertical Bar) */}
-        <div className="flex-1 flex flex-col items-center space-y-2.5 w-full px-2">
-          {allConversations.map((channel) => {
-            const directUser = getDirectUser(channel);
-            const isActive = activeChatChannelId === channel.id;
+        {/* User Avatars List across all Companies */}
+        <div className="flex-1 w-full space-y-2.5 px-2">
+          {allConversations.map((chan) => {
+            const user = getDirectUser(chan);
+            const isSelected = chan.id === activeChatChannelId;
 
             return (
-              <div key={channel.id} className="relative group flex items-center justify-center">
-                <button
-                  onClick={() => handleAvatarClick(channel.id)}
-                  className={`relative p-0.5 rounded-full transition-all cursor-pointer ${
-                    isActive
-                      ? 'ring-2 ring-emerald-400 ring-offset-2 ring-offset-[#0A3429] scale-110'
-                      : 'hover:scale-105 opacity-90 hover:opacity-100'
-                  }`}
-                >
-                  {directUser ? (
+              <button
+                key={chan.id}
+                onClick={() => setActiveChatChannelId(chan.id)}
+                className={`relative w-full aspect-square rounded-2xl flex items-center justify-center transition-all cursor-pointer group ${
+                  isSelected
+                    ? 'bg-[#197960] ring-2 ring-emerald-400 shadow-md scale-105'
+                    : 'hover:bg-[#0F493A]'
+                }`}
+                title={chan.name}
+              >
+                {chan.type === 'direct' && user ? (
+                  <div className="relative">
                     <img
-                      src={directUser.avatar}
-                      alt={directUser.name}
-                      className="w-10 h-10 rounded-full object-cover border border-[#197960]/60 shadow-sm"
+                      src={user.avatar}
+                      alt={user.name}
+                      className="w-9 h-9 rounded-full object-cover border border-emerald-400/40"
                     />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-[#1F9879] text-white flex items-center justify-center font-black text-xs border border-emerald-400/40 shadow-sm">
-                      <Hash className="w-5 h-5" />
-                    </div>
-                  )}
-
-                  {/* Online dot indicator */}
-                  <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-400 ring-2 ring-[#0A3429]" />
-                </button>
-
-                {/* Floating Tooltip matching Bitrix style */}
-                <div className="absolute right-14 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center px-3 py-1.5 bg-slate-900 text-white text-xs font-extrabold rounded-xl shadow-xl whitespace-nowrap z-50 border border-slate-700 animate-in fade-in">
-                  <span className="truncate">{channel.name}</span>
-                  <div className="w-2 h-2 bg-slate-900 rotate-45 absolute -right-1 top-1/2 -translate-y-1/2 border-r border-t border-slate-700" />
-                </div>
-              </div>
+                    <span
+                      className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#0A3429] ${
+                        user.status === 'online'
+                          ? 'bg-emerald-400'
+                          : user.status === 'busy'
+                          ? 'bg-amber-400'
+                          : 'bg-slate-400'
+                      }`}
+                    />
+                  </div>
+                ) : (
+                  <div className="w-9 h-9 rounded-full bg-[#13604C] text-emerald-200 flex items-center justify-center font-bold text-xs">
+                    <MessageSquare className="w-4 h-4" />
+                  </div>
+                )}
+              </button>
             );
           })}
         </div>
 
-        {/* Bottom Floating App Toggle */}
-        <div className="pt-2">
-          <button
-            onClick={() => setActiveChatChannelId(activeChatChannelId ? null : chatChannels[0]?.id)}
-            className="w-9 h-9 rounded-full bg-[#1F9879] text-white flex items-center justify-center cursor-pointer shadow-lg hover:bg-[#197960] transition-colors"
-            title="Abrir Chat Flutuante"
-          >
-            <MessageSquare className="w-4 h-4" />
-          </button>
-        </div>
       </aside>
 
-      {/* FLOATING INSTANT CHAT OVERLAY DRAWER (MATCHING REFERENCE SCREENSHOT 1 & 2) */}
-      {activeChannel && (
-        <div className="fixed right-20 bottom-4 w-96 h-[540px] bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col z-50 overflow-hidden font-sans animate-in slide-in-from-right duration-200">
+      {/* FLOATING DRAWER WHEN A CONVERSATION AVATAR IS CLICKED */}
+      {activeChatChannelId && activeChannel && (
+        <div className="fixed right-16 top-16 bottom-0 w-96 bg-white shadow-2xl border-l border-[#DDE3E8] z-40 flex flex-col animate-in slide-in-from-right duration-200">
           
-          {/* Header matching Screenshot 1 (Phone, Video, Bell, Close) */}
-          <div className="p-3.5 bg-slate-900 text-white flex items-center justify-between shadow-md">
+          {/* Drawer Header */}
+          <div className="p-4 bg-[#0F493A] text-white flex items-center justify-between shadow-xs">
             <div className="flex items-center gap-3">
-              {getDirectUser(activeChannel) ? (
-                <div className="relative">
-                  <img
-                    src={getDirectUser(activeChannel)?.avatar}
-                    alt={activeChannel.name}
-                    className="w-10 h-10 rounded-full object-cover border border-[#0F8A4B]"
-                  />
-                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-slate-900" />
-                </div>
+              {directUser ? (
+                <img
+                  src={directUser.avatar}
+                  alt={directUser.name}
+                  className="w-9 h-9 rounded-full object-cover ring-2 ring-emerald-400"
+                />
               ) : (
-                <div className="w-10 h-10 rounded-full bg-[#0F8A4B] text-white flex items-center justify-center font-black">
-                  <Hash className="w-5 h-5" />
+                <div className="w-9 h-9 rounded-full bg-emerald-700 text-white flex items-center justify-center font-bold">
+                  <MessageSquare className="w-5 h-5" />
                 </div>
               )}
-
               <div>
-                <h3 className="text-xs font-black tracking-tight text-white flex items-center gap-1.5">
-                  <span>{activeChannel.name}</span>
-                </h3>
-                <p className="text-[11px] text-slate-300 font-semibold">
-                  {getDirectUser(activeChannel)?.jobTitle || 'Canal de Equipe'}
-                </p>
+                <h3 className="font-black text-xs text-white leading-tight">{activeChannel.name}</h3>
+                <span className="text-[10px] text-emerald-200 font-bold block">
+                  {directUser?.jobTitle || 'Chat Interno'}
+                </span>
               </div>
             </div>
 
-            {/* Header Action Icons matching Screenshot 1 */}
             <div className="flex items-center gap-1">
               <button
-                className="p-2 text-slate-300 hover:text-emerald-400 hover:bg-slate-800 rounded-xl cursor-pointer transition-colors"
-                title="Ligar via Fale Fácil VoIP"
+                onClick={() => setActiveCallType('audio')}
+                className="p-1.5 text-emerald-200 hover:text-white hover:bg-[#13604C] rounded-lg cursor-pointer"
+                title="Chamada de Voz"
               >
                 <Phone className="w-4 h-4" />
               </button>
               <button
-                className="p-2 text-slate-300 hover:text-emerald-400 hover:bg-slate-800 rounded-xl cursor-pointer transition-colors"
-                title="Iniciar Vídeo Chamada"
+                onClick={() => setActiveCallType('video')}
+                className="p-1.5 text-emerald-200 hover:text-white hover:bg-[#13604C] rounded-lg cursor-pointer"
+                title="Chamada de Vídeo"
               >
                 <Video className="w-4 h-4" />
               </button>
               <button
-                className="p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl cursor-pointer transition-colors"
-                title="Notificações"
+                onClick={() => handleAvatarClick(activeChannel.id)}
+                className="p-1.5 text-emerald-200 hover:text-white hover:bg-[#13604C] rounded-lg cursor-pointer text-[10px] font-bold"
+                title="Abrir Tela Cheia"
               >
-                <Bell className="w-4 h-4" />
+                Expandir
               </button>
               <button
                 onClick={() => setActiveChatChannelId(null)}
-                className="p-2 text-slate-400 hover:text-white rounded-xl cursor-pointer"
-                title="Fechar"
+                className="p-1.5 text-emerald-200 hover:text-white hover:bg-[#13604C] rounded-lg cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
           </div>
 
-          {/* Messages Stream */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/60 custom-scrollbar">
-            {activeMessages.length === 0 ? (
-              <p className="text-xs text-slate-400 font-semibold p-4 text-center">Nenhuma mensagem recente nesta conversa.</p>
-            ) : (
-              activeMessages.map((msg) => {
-                const sender = users.find((u) => u.id === msg.senderId);
-                const isMe = msg.senderId === currentUser.id;
-
-                return (
-                  <div key={msg.id} className={`flex items-start gap-2.5 text-xs ${isMe ? 'flex-row-reverse' : ''}`}>
-                    <img
-                      src={sender?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
-                      alt={sender?.name}
-                      className="w-7 h-7 rounded-full object-cover shrink-0 mt-0.5 border border-slate-200"
-                    />
-                    <div className={`space-y-1 max-w-[240px] ${isMe ? 'items-end text-right' : ''}`}>
-                      <div className={`p-3 rounded-2xl text-xs font-semibold leading-relaxed shadow-2xs ${
-                        isMe ? 'bg-[#0F8A4B] text-white rounded-tr-xs' : 'bg-white text-slate-800 border border-slate-200 rounded-tl-xs'
-                      }`}>
-                        {msg.text}
-                      </div>
-                      <span className="text-[10px] text-slate-400 font-medium block px-1">
-                        {new Date(msg.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    </div>
+          {/* Drawer Messages Stream */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#F4F7F5] custom-scrollbar">
+            {activeMessages.map((msg) => {
+              const isMe = msg.senderId === currentUser.id;
+              return (
+                <div key={msg.id} className={`flex text-xs ${isMe ? 'justify-end' : 'justify-start'}`}>
+                  <div
+                    className={`p-3 rounded-2xl max-w-[80%] whitespace-pre-line border ${
+                      isMe
+                        ? 'bg-[#DCF8C6] text-slate-900 border-[#BBEBA2] rounded-tr-xs'
+                        : 'bg-white text-slate-900 border-[#DDE3E8] rounded-tl-xs'
+                    }`}
+                  >
+                    {msg.text}
+                    <span className="block text-[9px] text-slate-400 text-right mt-1 font-semibold">
+                      {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
                   </div>
-                );
-              })
-            )}
+                </div>
+              );
+            })}
           </div>
 
-          {/* Input Footer matching Screenshot 1 (Rounded Green Button with Send Icon) */}
+          {/* Drawer Input Area */}
           <form onSubmit={handleSend} className="p-3 bg-white border-t border-slate-200 flex items-center gap-2">
+            
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="p-2 text-slate-400 hover:text-[#0F8A4B] cursor-pointer"
+              title="Anexar Arquivo"
+            >
+              <Paperclip className="w-4 h-4" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsRecordingVoice(!isRecordingVoice)}
+              className={`p-2 rounded-lg cursor-pointer ${
+                isRecordingVoice ? 'bg-rose-600 text-white' : 'text-slate-400 hover:text-[#0F8A4B]'
+              }`}
+              title="Gravar Áudio"
+            >
+              <Mic className="w-4 h-4" />
+            </button>
+
             <input
               type="text"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              placeholder="Escreva uma mensagem..."
-              className="flex-1 px-3.5 py-2 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-[#0F8A4B] bg-slate-50 focus:bg-white text-slate-800 placeholder:text-slate-400"
+              placeholder={isRecordingVoice ? `Gravando... ${formatTime(recordingSeconds)}` : 'Enviar mensagem...'}
+              className="flex-1 text-xs font-bold outline-none text-slate-900 bg-transparent placeholder:text-slate-400"
             />
+
             <button
               type="submit"
-              disabled={!inputText.trim()}
-              className="px-4 py-2 bg-[#0F8A4B] hover:bg-[#0B6B3A] disabled:opacity-40 text-white rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-2xs cursor-pointer transition-all shrink-0"
+              disabled={!inputText.trim() && !isRecordingVoice}
+              className="p-2.5 bg-[#0F8A4B] hover:bg-[#0B6B3A] disabled:opacity-40 text-white rounded-full cursor-pointer shadow-md transition-all"
             >
               <Send className="w-3.5 h-3.5" />
-              <span>Enviar</span>
             </button>
           </form>
 
