@@ -28,6 +28,7 @@ import { InviteCollaboratorModal } from './InviteCollaboratorModal';
 import { AcceptInviteModal } from './AcceptInviteModal';
 import { CollaboratorCockpitModal } from './CollaboratorCockpitModal';
 import { StayCloudConfigModal } from './StayCloudConfigModal';
+import { Tabs } from '../ui/vercel-tabs';
 import { User } from '../../types';
 
 export const AdminView: React.FC = () => {
@@ -153,43 +154,16 @@ export const AdminView: React.FC = () => {
           </button>
 
           {/* Tab Switcher */}
-          <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold">
-            <button
-              onClick={() => setActiveTab('users')}
-              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                activeTab === 'users' ? 'bg-white shadow-2xs text-[#0F8A4B] font-black' : 'text-slate-600'
-              }`}
-            >
-              Usuários Ativos ({users.length})
-            </button>
-
-            <button
-              onClick={() => setActiveTab('invites')}
-              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                activeTab === 'invites' ? 'bg-white shadow-2xs text-[#0F8A4B] font-black' : 'text-slate-600'
-              }`}
-            >
-              Gestão de Convites ({invites.length})
-            </button>
-
-            <button
-              onClick={() => setActiveTab('units')}
-              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                activeTab === 'units' ? 'bg-white shadow-2xs text-[#0F8A4B] font-black' : 'text-slate-600'
-              }`}
-            >
-              Unidades ({businessUnits.length})
-            </button>
-
-            <button
-              onClick={() => setActiveTab('rbac')}
-              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                activeTab === 'rbac' ? 'bg-white shadow-2xs text-[#0F8A4B] font-black' : 'text-slate-600'
-              }`}
-            >
-              Matriz RBAC
-            </button>
-          </div>
+          <Tabs
+            tabs={[
+              { id: 'users', label: 'Usuários Ativos', badge: users.length },
+              { id: 'invites', label: 'Gestão de Convites', badge: invites.length },
+              { id: 'units', label: 'Unidades & CNPJs', badge: businessUnits.length },
+              { id: 'rbac', label: 'Matriz RBAC' },
+            ]}
+            activeTab={activeTab}
+            onTabChange={(id) => setActiveTab(id as any)}
+          />
         </div>
       </div>
 

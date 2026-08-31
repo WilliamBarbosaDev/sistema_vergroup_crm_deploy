@@ -37,6 +37,7 @@ import { useApp } from '../../context/AppContext';
 import { Task, TaskPriority, TaskStatus } from '../../types';
 import { TaskOperationalDrawer } from './TaskOperationalDrawer';
 import { TaskTemplateModal } from './TaskTemplateModal';
+import { Tabs } from '../ui/vercel-tabs';
 
 export const TasksView: React.FC = () => {
   const {
@@ -143,27 +144,19 @@ export const TasksView: React.FC = () => {
         </div>
 
         {/* View Selector & Action Buttons */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center bg-slate-100 p-1 rounded-xl text-xs font-bold border border-slate-200">
-            {[
+        <div className="flex items-center gap-3 flex-wrap">
+          <Tabs
+            tabs={[
               { id: 'list', label: 'Lista' },
               { id: 'kanban', label: 'Kanban' },
               { id: 'deadline', label: 'Prazo' },
               { id: 'planner', label: 'Planejador' },
               { id: 'calendar', label: 'Calendário' },
               { id: 'gantt', label: 'Gantt' },
-            ].map((v) => (
-              <button
-                key={v.id}
-                onClick={() => setViewMode(v.id as any)}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                  viewMode === v.id ? 'bg-white text-[#0F8A4B] shadow-2xs font-black' : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                {v.label}
-              </button>
-            ))}
-          </div>
+            ]}
+            activeTab={viewMode}
+            onTabChange={(id) => setViewMode(id as any)}
+          />
 
           <button
             onClick={() => setIsTemplateModalOpen(true)}
