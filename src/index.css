@@ -1,18 +1,92 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
+
+@theme {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-inter: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
 
 @layer base {
   * {
     border-color: #DDE3E8;
   }
+  html, body, input, button, select, textarea, th, td, h1, h2, h3, h4, h5, h6, label, span, div, a, p {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    letter-spacing: -0.011em;
+  }
   html, body {
-    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     color: #17212B;
     background-color: #F7F9FA;
-    letter-spacing: -0.01em;
   }
   code, kbd, samp, pre {
     font-family: 'JetBrains Mono', monospace;
   }
+}
+
+@utility font-normal {
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 400 !important;
+}
+
+@utility font-regular {
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 400 !important;
+}
+
+@utility font-medium {
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 500 !important;
+}
+
+@utility font-semibold {
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 600 !important;
+}
+
+@utility font-bold {
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 700 !important;
+}
+
+@utility font-extrabold {
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 800 !important;
+}
+
+@utility font-black {
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 900 !important;
+}
+
+/* Explicit fallback utility classes */
+.font-inter-regular, .font-regular {
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 400 !important;
+}
+
+.font-inter-medium, .font-medium {
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 500 !important;
+}
+
+.font-inter-semibold, .font-semibold {
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 600 !important;
+}
+
+.font-inter-bold, .font-bold {
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 700 !important;
+}
+
+.font-inter-extrabold, .font-extrabold {
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 800 !important;
+}
+
+.font-inter-black, .font-black {
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 900 !important;
 }
 
 /* Custom refined scrollbar */

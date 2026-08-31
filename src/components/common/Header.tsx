@@ -5,6 +5,7 @@ import {
   Bell,
   Building2,
   ChevronDown,
+  ChevronRight,
   Shield,
   UserCheck,
   CheckCircle2,
@@ -14,6 +15,16 @@ import {
   Check,
   User,
   Activity,
+  Pause,
+  Square,
+  Pencil,
+  Box,
+  QrCode,
+  Smartphone,
+  Palette,
+  Users,
+  LogOut,
+  ShieldCheck,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { UserRole } from '../../types';
@@ -43,6 +54,13 @@ export const Header: React.FC = () => {
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isQuickCreateOpen, setIsQuickCreateOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [showRbacSimulator, setShowRbacSimulator] = useState(false);
+
+  // Active Work Timer State (Bitrix24 Timecard)
+  const [isWorking, setIsWorking] = useState<boolean>(true);
+  const [isPaused, setIsPaused] = useState<boolean>(false);
+  const [secondsWorked, setSecondsWorked] = useState<number>(16156); // ~ 04:29:16
+  const [secondsPaused, setSecondsPaused] = useState<number>(9358);  // ~ 02:35:58
 
   const buDropdownRef = useRef<HTMLDivElement>(null);
   const roleDropdownRef = useRef<HTMLDivElement>(null);
@@ -59,6 +77,7 @@ export const Header: React.FC = () => {
       }
       if (roleDropdownRef.current && !roleDropdownRef.current.contains(event.target as Node)) {
         setIsRoleDropdownOpen(false);
+        setShowRbacSimulator(false);
       }
       if (notifDropdownRef.current && !notifDropdownRef.current.contains(event.target as Node)) {
         setIsNotifOpen(false);
@@ -71,6 +90,30 @@ export const Header: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Timer Ticker Effect
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    if (isWorking && !isPaused) {
+      interval = setInterval(() => {
+        setSecondsWorked((prev) => prev + 1);
+      }, 1000);
+    } else if (isWorking && isPaused) {
+      interval = setInterval(() => {
+        setSecondsPaused((prev) => prev + 1);
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isWorking, isPaused]);
+
+  const formatHMS = (totalSeconds: number) => {
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const secs = totalSeconds % 60;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
   const rolesList: { role: UserRole; label: string; desc: string }[] = [
     { role: 'superadmin', label: 'Superadministrador', desc: 'Acesso total a todas as empresas, configurações e auditoria' },
     { role: 'manager', label: 'Gestor de Área', desc: 'Acompanhamento de equipes, aprovações e relatórios do setor' },
@@ -81,16 +124,16 @@ export const Header: React.FC = () => {
   ];
 
   return (
-    <header id="vergroup-topbar" className="h-16 bg-white border-b border-[#DDE3E8] px-4 md:px-6 flex items-center justify-between sticky top-0 z-30 shadow-xs">
+    <header id="vergroup-topbar" className="h-16 bg-white border-b border-[#DDE3E8] px-4 md:px-6 flex items-center justify-between sticky top-0 z-30 shadow-xs font-sans">
       {/* Left: Brand & Company Switcher */}
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-[#0F8A4B] text-white flex items-center justify-center font-bold text-base shadow-xs">
+          <div className="w-8 h-8 rounded-lg bg-[#0F8A4B] text-white flex items-center justify-center font-black text-base shadow-xs">
             V
           </div>
           <div className="hidden sm:block">
-            <span className="font-bold text-[#17212B] tracking-tight text-base leading-none">VERGROUP</span>
-            <span className="block text-[11px] text-[#5F6B76] font-medium leading-none mt-0.5">Sistema Integrado</span>
+            <span className="font-black text-[#17212B] tracking-tight text-base leading-none">VERGROUP</span>
+            <span className="block text-[11px] text-[#5F6B76] font-semibold leading-none mt-0.5">Sistema Integrado</span>
           </div>
         </div>
 
@@ -101,18 +144,18 @@ export const Header: React.FC = () => {
           <button
             id="company-switcher-btn"
             onClick={() => setIsBUDropdownOpen(!isBUDropdownOpen)}
-            className="flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs font-semibold bg-[#F7F9FA] hover:bg-[#EAEFF3] border border-[#DDE3E8] transition-colors cursor-pointer text-[#17212B]"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold bg-[#F7F9FA] hover:bg-[#EAEFF3] border border-[#DDE3E8] transition-colors cursor-pointer text-[#17212B]"
             title="Alternar Unidade do Grupo"
           >
-            <Building2 className="w-3.5 h-3.5 text-[#0F8A4B]" />
+            <Building2 className="w-4 h-4 text-[#0F8A4B]" />
             <span className="max-w-[140px] sm:max-w-[200px] truncate">{currentBU.name}</span>
-            <ChevronDown className="w-3 h-3 text-[#5F6B76]" />
+            <ChevronDown className="w-3.5 h-3.5 text-[#5F6B76]" />
           </button>
 
           {isBUDropdownOpen && (
-            <div className="absolute left-0 mt-1.5 w-72 bg-white rounded-lg shadow-lg border border-[#DDE3E8] py-1 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
+            <div className="absolute left-0 mt-1.5 w-72 bg-white rounded-xl shadow-xl border border-[#DDE3E8] py-1 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
               <div className="px-3 py-2 border-b border-[#DDE3E8] bg-[#F7F9FA]">
-                <p className="text-[11px] font-semibold text-[#5F6B76] uppercase tracking-wider">Empresas do Grupo VERGROUP</p>
+                <p className="text-[11px] font-black text-[#5F6B76] uppercase tracking-wider">Empresas do Grupo VERGROUP</p>
               </div>
               <div className="max-h-60 overflow-y-auto py-1">
                 {businessUnits.map((bu) => {
@@ -124,15 +167,15 @@ export const Header: React.FC = () => {
                         setSelectedBusinessUnitId(bu.id);
                         setIsBUDropdownOpen(false);
                       }}
-                      className={`w-full text-left px-3 py-2 flex items-center justify-between text-xs transition-colors ${
-                        isSelected ? 'bg-[#ECF8F1] text-[#0F8A4B] font-semibold' : 'text-[#17212B] hover:bg-[#F7F9FA]'
+                      className={`w-full text-left px-3 py-2 flex items-center justify-between text-xs transition-colors cursor-pointer ${
+                        isSelected ? 'bg-[#ECF8F1] text-[#0F8A4B] font-extrabold' : 'text-[#17212B] hover:bg-[#F7F9FA]'
                       }`}
                     >
                       <div className="flex items-center gap-2">
                         <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: bu.color }} />
                         <div>
                           <p className="leading-tight">{bu.name}</p>
-                          {bu.cnpj && <p className="text-[10px] text-[#5F6B76]">CNPJ: {bu.cnpj}</p>}
+                          {bu.cnpj && <p className="text-[10px] text-[#5F6B76] font-normal">CNPJ: {bu.cnpj}</p>}
                         </div>
                       </div>
                       {isSelected && <Check className="w-4 h-4 text-[#0F8A4B]" />}
@@ -150,24 +193,24 @@ export const Header: React.FC = () => {
         <button
           id="global-search-trigger-btn"
           onClick={() => setIsSearchOpen(true)}
-          className="w-full flex items-center justify-between px-3 py-1.5 text-xs text-[#5F6B76] bg-[#F7F9FA] hover:bg-[#EAEFF3] border border-[#DDE3E8] rounded-md transition-colors cursor-pointer group"
+          className="w-full flex items-center justify-between px-3 py-1.5 text-xs text-[#5F6B76] bg-[#F7F9FA] hover:bg-[#EAEFF3] border border-[#DDE3E8] rounded-xl transition-colors cursor-pointer group"
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 font-medium">
             <Search className="w-3.5 h-3.5 text-[#5F6B76] group-hover:text-[#0F8A4B]" />
             <span>Buscar contatos, empresas, negócios, tarefas...</span>
           </div>
-          <kbd className="text-[10px] font-mono bg-white px-1.5 py-0.5 border border-[#DDE3E8] rounded text-[#5F6B76] shadow-2xs">
+          <kbd className="text-[10px] font-mono bg-white px-1.5 py-0.5 border border-[#DDE3E8] rounded-md text-[#5F6B76] shadow-2xs font-bold">
             ⌘K
           </kbd>
         </button>
       </div>
 
-      {/* Right: Actions, Notifications, Role Simulator & User Profile */}
-      <div className="flex items-center gap-2.5">
+      {/* Right: Actions, Notifications & User Profile */}
+      <div className="flex items-center gap-3">
         {/* Mobile Search Icon */}
         <button
           onClick={() => setIsSearchOpen(true)}
-          className="p-2 text-[#5F6B76] hover:text-[#17212B] hover:bg-[#F7F9FA] rounded-md lg:hidden"
+          className="p-2 text-[#5F6B76] hover:text-[#17212B] hover:bg-[#F7F9FA] rounded-xl lg:hidden cursor-pointer"
           title="Buscar"
         >
           <Search className="w-4 h-4" />
@@ -178,7 +221,7 @@ export const Header: React.FC = () => {
           <button
             id="quick-create-btn"
             onClick={() => setIsQuickCreateOpen(!isQuickCreateOpen)}
-            className="flex items-center gap-1.5 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white px-3 py-1.5 rounded-md text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white px-3.5 py-1.5 rounded-xl text-xs font-black shadow-xs transition-colors cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Novo</span>
@@ -186,16 +229,16 @@ export const Header: React.FC = () => {
           </button>
 
           {isQuickCreateOpen && (
-            <div className="absolute right-0 mt-1.5 w-48 bg-white rounded-lg shadow-lg border border-[#DDE3E8] py-1 z-50 animate-in fade-in duration-100">
+            <div className="absolute right-0 mt-1.5 w-48 bg-white rounded-xl shadow-xl border border-[#DDE3E8] py-1 z-50 animate-in fade-in duration-100">
               <div className="px-3 py-1.5 border-b border-[#DDE3E8] bg-[#F7F9FA]">
-                <p className="text-[10px] font-semibold text-[#5F6B76] uppercase">Criação Rápida</p>
+                <p className="text-[10px] font-black text-[#5F6B76] uppercase">Criação Rápida</p>
               </div>
               <button
                 onClick={() => {
                   setQuickCreateType('deal');
                   setIsQuickCreateOpen(false);
                 }}
-                className="w-full text-left px-3 py-2 text-xs text-[#17212B] hover:bg-[#ECF8F1] hover:text-[#0F8A4B] flex items-center gap-2"
+                className="w-full text-left px-3 py-2 text-xs text-[#17212B] hover:bg-[#ECF8F1] hover:text-[#0F8A4B] font-semibold flex items-center gap-2 cursor-pointer"
               >
                 <Sparkles className="w-3.5 h-3.5 text-[#0F8A4B]" />
                 <span>Novo Negócio</span>
@@ -205,7 +248,7 @@ export const Header: React.FC = () => {
                   setQuickCreateType('lead');
                   setIsQuickCreateOpen(false);
                 }}
-                className="w-full text-left px-3 py-2 text-xs text-[#17212B] hover:bg-[#ECF8F1] hover:text-[#0F8A4B] flex items-center gap-2"
+                className="w-full text-left px-3 py-2 text-xs text-[#17212B] hover:bg-[#ECF8F1] hover:text-[#0F8A4B] font-semibold flex items-center gap-2 cursor-pointer"
               >
                 <UserCheck className="w-3.5 h-3.5 text-blue-600" />
                 <span>Novo Lead</span>
@@ -215,7 +258,7 @@ export const Header: React.FC = () => {
                   setQuickCreateType('contact');
                   setIsQuickCreateOpen(false);
                 }}
-                className="w-full text-left px-3 py-2 text-xs text-[#17212B] hover:bg-[#ECF8F1] hover:text-[#0F8A4B] flex items-center gap-2"
+                className="w-full text-left px-3 py-2 text-xs text-[#17212B] hover:bg-[#ECF8F1] hover:text-[#0F8A4B] font-semibold flex items-center gap-2 cursor-pointer"
               >
                 <Building2 className="w-3.5 h-3.5 text-purple-600" />
                 <span>Novo Contato</span>
@@ -225,7 +268,7 @@ export const Header: React.FC = () => {
                   setQuickCreateType('company');
                   setIsQuickCreateOpen(false);
                 }}
-                className="w-full text-left px-3 py-2 text-xs text-[#17212B] hover:bg-[#ECF8F1] hover:text-[#0F8A4B] flex items-center gap-2"
+                className="w-full text-left px-3 py-2 text-xs text-[#17212B] hover:bg-[#ECF8F1] hover:text-[#0F8A4B] font-semibold flex items-center gap-2 cursor-pointer"
               >
                 <Building2 className="w-3.5 h-3.5 text-amber-600" />
                 <span>Nova Empresa</span>
@@ -235,7 +278,7 @@ export const Header: React.FC = () => {
                   setQuickCreateType('task');
                   setIsQuickCreateOpen(false);
                 }}
-                className="w-full text-left px-3 py-2 text-xs text-[#17212B] hover:bg-[#ECF8F1] hover:text-[#0F8A4B] flex items-center gap-2"
+                className="w-full text-left px-3 py-2 text-xs text-[#17212B] hover:bg-[#ECF8F1] hover:text-[#0F8A4B] font-semibold flex items-center gap-2 cursor-pointer"
               >
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                 <span>Nova Tarefa</span>
@@ -245,7 +288,7 @@ export const Header: React.FC = () => {
                   setQuickCreateType('event');
                   setIsQuickCreateOpen(false);
                 }}
-                className="w-full text-left px-3 py-2 text-xs text-[#17212B] hover:bg-[#ECF8F1] hover:text-[#0F8A4B] flex items-center gap-2"
+                className="w-full text-left px-3 py-2 text-xs text-[#17212B] hover:bg-[#ECF8F1] hover:text-[#0F8A4B] font-semibold flex items-center gap-2 cursor-pointer"
               >
                 <Clock className="w-3.5 h-3.5 text-indigo-600" />
                 <span>Novo Evento / Reunião</span>
@@ -259,26 +302,26 @@ export const Header: React.FC = () => {
           <button
             id="notifications-bell-btn"
             onClick={() => setIsNotifOpen(!isNotifOpen)}
-            className="p-2 text-[#5F6B76] hover:text-[#17212B] hover:bg-[#F7F9FA] rounded-md transition-colors relative cursor-pointer"
+            className="p-2 text-[#5F6B76] hover:text-[#17212B] hover:bg-[#F7F9FA] rounded-xl transition-colors relative cursor-pointer"
             title="Notificações do Sistema"
           >
-            <Bell className="w-4 h-4" />
+            <Bell className="w-4.5 h-4.5" />
             {unreadNotifs.length > 0 && (
-              <span className="absolute top-1 right-1 w-2 h-2 bg-[#DC2626] rounded-full ring-2 ring-white animate-pulse" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#DC2626] rounded-full ring-2 ring-white animate-pulse" />
             )}
           </button>
 
           {isNotifOpen && (
-            <div className="absolute right-0 mt-1.5 w-80 bg-white rounded-lg shadow-xl border border-[#DDE3E8] py-2 z-50 animate-in fade-in duration-100">
+            <div className="absolute right-0 mt-1.5 w-80 bg-white rounded-xl shadow-xl border border-[#DDE3E8] py-2 z-50 animate-in fade-in duration-100">
               <div className="px-3 pb-2 border-b border-[#DDE3E8] flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
                   <Bell className="w-3.5 h-3.5 text-[#0F8A4B]" />
-                  <span className="text-xs font-semibold text-[#17212B]">Notificações ({unreadNotifs.length})</span>
+                  <span className="text-xs font-black text-[#17212B]">Notificações ({unreadNotifs.length})</span>
                 </div>
                 {unreadNotifs.length > 0 && (
                   <button
                     onClick={markAllNotificationsRead}
-                    className="text-[11px] text-[#0F8A4B] hover:underline font-medium cursor-pointer"
+                    className="text-[11px] text-[#0F8A4B] hover:underline font-extrabold cursor-pointer"
                   >
                     Marcar lidas
                   </button>
@@ -304,10 +347,10 @@ export const Header: React.FC = () => {
                       }`}
                     >
                       <div className="flex items-start justify-between gap-1">
-                        <p className="font-semibold text-[#17212B] leading-tight">{notif.title}</p>
-                        <span className="text-[10px] text-[#5F6B76] shrink-0">{notif.time}</span>
+                        <p className="font-extrabold text-[#17212B] leading-tight">{notif.title}</p>
+                        <span className="text-[10px] text-[#5F6B76] shrink-0 font-medium">{notif.time}</span>
                       </div>
-                      <p className="text-[11px] text-[#5F6B76] mt-0.5 leading-snug">{notif.description}</p>
+                      <p className="text-[11px] text-[#5F6B76] mt-0.5 leading-snug font-medium">{notif.description}</p>
                     </div>
                   ))
                 )}
@@ -316,92 +359,236 @@ export const Header: React.FC = () => {
           )}
         </div>
 
-        {/* RBAC Role Switcher & User Profile */}
+        {/* LOGGED-IN USER PILL & BITRIX24 PROFILE DROPDOWN CARD */}
         <div className="relative" ref={roleDropdownRef}>
+          {/* Top Bar Pill Button matching User Reference */}
           <button
             id="user-profile-role-btn"
             onClick={() => setIsRoleDropdownOpen(!isRoleDropdownOpen)}
-            className="flex items-center gap-2 p-1 pl-1.5 hover:bg-[#F7F9FA] rounded-md border border-[#DDE3E8] transition-colors cursor-pointer"
-            title="Simulador de Papéis RBAC e Perfil"
+            className="flex items-center gap-2 px-2.5 py-1 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl transition-all shadow-2xs cursor-pointer"
+            title="Perfil e Controle de Ponto"
           >
             <img
               src={currentUser.avatar}
               alt={currentUser.name}
-              className="w-6 h-6 rounded-full object-cover ring-1 ring-[#DDE3E8]"
+              className="w-7 h-7 rounded-full object-cover ring-1 ring-slate-200"
             />
-            <div className="hidden md:block text-left">
-              <p className="text-xs font-semibold text-[#17212B] leading-none">{currentUser.name.split(' ')[0]}</p>
-              <span className="text-[10px] font-medium text-[#0F8A4B] leading-none uppercase tracking-wider block mt-0.5">
+            <div className="text-left hidden sm:block leading-tight">
+              <p className="text-xs font-black text-slate-900 leading-none">{currentUser.name.split(' ')[0]}</p>
+              <span className="text-[10px] font-black text-[#0F8A4B] leading-none uppercase tracking-wider block mt-0.5">
                 {currentUser.role}
               </span>
             </div>
-            <Shield className="w-3 h-3 text-[#5F6B76]" />
+            <Shield className="w-3.5 h-3.5 text-slate-400" />
           </button>
 
+          {/* BITRIX24 PROFILE POPUP CARD MATCHING REFERENCE 3 */}
           {isRoleDropdownOpen && (
-            <div className="absolute right-0 mt-1.5 w-72 bg-white rounded-lg shadow-xl border border-[#DDE3E8] py-1 z-50 animate-in fade-in duration-100">
-              <div className="px-3 py-2 border-b border-[#DDE3E8] bg-[#F7F9FA] flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-semibold text-[#17212B]">{currentUser.name}</p>
-                  <p className="text-[11px] text-[#5F6B76]">{currentUser.email}</p>
-                  <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-[#0F8A4B] font-medium">
-                    <Shield className="w-3 h-3" />
-                    <span>Cargo: {currentUser.jobTitle}</span>
+            <div className="absolute right-0 mt-2 w-84 bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 space-y-3.5 font-sans z-50 animate-in fade-in zoom-in-95 duration-150">
+              
+              {/* 1. Header Row: Avatar + Name + Title */}
+              <div
+                onClick={() => {
+                  setIsRoleDropdownOpen(false);
+                  setIsProfileModalOpen(true);
+                }}
+                className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer"
+              >
+                <div className="flex items-center gap-3">
+                  <img
+                    src={currentUser.avatar}
+                    alt={currentUser.name}
+                    className="w-12 h-12 rounded-full object-cover border border-slate-200 shadow-2xs"
+                  />
+                  <div className="text-left">
+                    <h3 className="text-sm font-black text-slate-900 flex items-center gap-1">
+                      <span>{currentUser.name}</span>
+                      <ChevronRight className="w-4 h-4 text-slate-400" />
+                    </h3>
+                    <p className="text-xs text-slate-500 font-semibold">{currentUser.jobTitle}</p>
                   </div>
                 </div>
               </div>
 
-              <div className="p-2 border-b border-[#DDE3E8]">
+              {/* 2. Work Timecard Box ("No trabalho | 04:29:16") */}
+              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 space-y-2.5 text-xs">
+                <div className="flex items-center justify-between text-slate-800 font-extrabold">
+                  <div className="flex items-center gap-1.5">
+                    <span>{isWorking ? 'No trabalho' : 'Dia finalizado'}</span>
+                    <span>|</span>
+                    <span className="font-mono text-slate-900 text-sm">{formatHMS(secondsWorked)}</span>
+                    <Pencil className="w-3.5 h-3.5 text-slate-400 hover:text-slate-700 cursor-pointer ml-0.5" title="Editar hora" />
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-slate-400" />
+                </div>
+
+                <div className="text-[11px] text-slate-500 font-semibold">
+                  Duração do intervalo: <span className="font-mono text-slate-700">{formatHMS(secondsPaused)}</span>
+                </div>
+
+                <div className="flex items-center gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setIsPaused(!isPaused)}
+                    className={`w-1/2 py-2 rounded-xl font-extrabold text-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
+                      isPaused
+                        ? 'bg-amber-50 border border-amber-300 text-amber-800'
+                        : 'border border-[#0F8A4B] text-[#0F8A4B] hover:bg-emerald-50'
+                    }`}
+                  >
+                    <Pause className="w-3.5 h-3.5" />
+                    <span>{isPaused ? 'Retomar' : 'Pausar'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsWorking(!isWorking)}
+                    className={`w-1/2 py-2 rounded-xl font-extrabold text-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-2xs ${
+                      isWorking
+                        ? 'bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white'
+                        : 'bg-slate-800 hover:bg-slate-900 text-white'
+                    }`}
+                  >
+                    <Square className="w-3.5 h-3.5 fill-current" />
+                    <span>{isWorking ? 'Finalizar' : 'Iniciar'}</span>
+                    <ChevronDown className="w-3 h-3 opacity-70" />
+                  </button>
+                </div>
+              </div>
+
+              {/* 3. Quick Feature Grid Cards (Segurança & Extensões) */}
+              <div className="grid grid-cols-2 gap-2 text-xs">
                 <button
+                  type="button"
+                  onClick={() => setShowRbacSimulator(!showRbacSimulator)}
+                  className="p-3 bg-white hover:bg-slate-50 rounded-xl border border-slate-200 flex flex-col items-center justify-center gap-1.5 text-slate-800 font-extrabold cursor-pointer transition-colors shadow-2xs"
+                >
+                  <ShieldCheck className="w-5 h-5 text-[#0F8A4B]" />
+                  <span>Segurança</span>
+                </button>
+
+                <button
+                  type="button"
                   onClick={() => {
                     setIsRoleDropdownOpen(false);
                     setIsProfileModalOpen(true);
                   }}
-                  className="w-full flex items-center gap-2 px-3 py-2 bg-[#ECF8F1] hover:bg-[#D4EFE0] text-[#0F8A4B] font-bold text-xs rounded-lg transition-colors cursor-pointer"
+                  className="p-3 bg-white hover:bg-slate-50 rounded-xl border border-slate-200 flex flex-col items-center justify-center gap-1.5 text-slate-800 font-extrabold cursor-pointer transition-colors shadow-2xs"
                 >
-                  <Activity className="w-4 h-4" />
-                  <span>Painel de Eficiência & Horas (Bitrix)</span>
+                  <Box className="w-5 h-5 text-blue-600" />
+                  <span>Extensões</span>
                 </button>
               </div>
 
-              <div className="px-3 py-1.5 bg-neutral-100 border-b border-[#DDE3E8]">
-                <p className="text-[10px] font-semibold text-[#5F6B76] uppercase">Simular Papel RBAC (PRD Seção 7.1)</p>
-              </div>
+              {/* Nested RBAC Role Simulator Selector (shown if clicked Segurança or switch account) */}
+              {showRbacSimulator && (
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 space-y-2 animate-in fade-in">
+                  <div className="flex items-center justify-between text-[10px] font-black uppercase text-slate-500">
+                    <span>Simular Papel RBAC</span>
+                    <button onClick={() => setShowRbacSimulator(false)} className="text-slate-400 hover:text-slate-700">Fechar</button>
+                  </div>
+                  <div className="space-y-1">
+                    {rolesList.map((r) => (
+                      <button
+                        key={r.role}
+                        onClick={() => {
+                          switchUserRole(r.role);
+                          setShowRbacSimulator(false);
+                        }}
+                        className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center justify-between ${
+                          userRole === r.role ? 'bg-[#0F8A4B] text-white' : 'hover:bg-slate-200/70 text-slate-700'
+                        }`}
+                      >
+                        <span>{r.label}</span>
+                        {userRole === r.role && <Check className="w-3.5 h-3.5" />}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
-              <div className="max-h-60 overflow-y-auto py-1">
-                {rolesList.map((r) => {
-                  const isActive = userRole === r.role;
-                  return (
-                    <button
-                      key={r.role}
-                      onClick={() => {
-                        switchUserRole(r.role);
-                        setIsRoleDropdownOpen(false);
-                      }}
-                      className={`w-full text-left px-3 py-2 text-xs transition-colors ${
-                        isActive ? 'bg-[#ECF8F1] text-[#0F8A4B] font-semibold' : 'text-[#17212B] hover:bg-[#F7F9FA]'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium">{r.label}</span>
-                        {isActive && <Check className="w-3.5 h-3.5 text-[#0F8A4B]" />}
-                      </div>
-                      <p className="text-[10px] text-[#5F6B76] font-normal mt-0.5">{r.desc}</p>
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className="p-2 border-t border-[#DDE3E8]">
+              {/* 4. Options List Card */}
+              <div className="p-1.5 bg-slate-50 rounded-xl border border-slate-200/80 space-y-0.5 text-xs font-extrabold text-slate-800">
                 <button
-                  onClick={resetAllData}
-                  className="w-full flex items-center justify-center gap-1.5 py-1 text-[11px] text-[#5F6B76] hover:text-[#DC2626] transition-colors rounded hover:bg-red-50"
-                  title="Restaurar dados iniciais do protótipo"
+                  type="button"
+                  onClick={() => {
+                    setIsRoleDropdownOpen(false);
+                    setIsProfileModalOpen(true);
+                  }}
+                  className="w-full px-3 py-2 hover:bg-white rounded-lg flex items-center justify-between transition-colors cursor-pointer"
                 >
-                  <RotateCcw className="w-3 h-3" />
-                  <span>Restaurar dados padrão</span>
+                  <div className="flex items-center gap-2.5">
+                    <QrCode className="w-4 h-4 text-slate-500" />
+                    <span>Login rápido pelo celular</span>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-slate-400" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsRoleDropdownOpen(false);
+                    setIsProfileModalOpen(true);
+                  }}
+                  className="w-full px-3 py-2 hover:bg-white rounded-lg flex items-center justify-between transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Smartphone className="w-4 h-4 text-slate-500" />
+                    <span>Aplicativos instalados</span>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-slate-400" />
                 </button>
               </div>
+
+              {/* 5. Theme & Account List Card */}
+              <div className="p-1.5 bg-slate-50 rounded-xl border border-slate-200/80 space-y-0.5 text-xs font-extrabold text-slate-800">
+                <button
+                  type="button"
+                  className="w-full px-3 py-2 hover:bg-white rounded-lg flex items-center justify-between transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Palette className="w-4 h-4 text-slate-500" />
+                    <span>Tema visual</span>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-slate-400" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowRbacSimulator(!showRbacSimulator)}
+                  className="w-full px-3 py-2 hover:bg-white rounded-lg flex items-center justify-between transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Users className="w-4 h-4 text-slate-500" />
+                    <span>Trocar conta / Simular papel</span>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-slate-400" />
+                </button>
+              </div>
+
+              {/* 6. Footer Links */}
+              <div className="pt-1 flex items-center justify-between text-xs text-slate-500 font-bold px-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsRoleDropdownOpen(false);
+                    setCurrentTab('cockpit');
+                  }}
+                  className="hover:text-slate-900 cursor-pointer"
+                >
+                  Pulso da Empresa
+                </button>
+
+                <button
+                  type="button"
+                  onClick={resetAllData}
+                  className="hover:text-rose-600 cursor-pointer flex items-center gap-1"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Sair</span>
+                </button>
+              </div>
+
             </div>
           )}
         </div>

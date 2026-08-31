@@ -10,6 +10,10 @@ import {
   Clock,
   Flag,
   ArrowRight,
+  Trash2,
+  Edit3,
+  CheckSquare,
+  X,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { Project, ProjectStatus } from '../../types';
@@ -22,12 +26,76 @@ export const ProjectsView: React.FC = () => {
     tasks,
     filterByBU,
     setQuickCreateType,
+    updateProject,
+    deleteProject,
+    toggleMilestone,
+    addMilestone,
+    deleteMilestone,
+    setSelectedTaskId,
+    setCurrentTab,
   } = useApp();
 
   const filteredProjects = filterByBU(projects);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+
+  // New milestone state inside modal
+  const [newMilestoneTitle, setNewMilestoneTitle] = useState('');
+  const [newMilestoneDueDate, setNewMilestoneDueDate] = useState(
+    new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0]
+  );
+
+  // Edit mode inside modal
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editStatus, setEditStatus] = useState<ProjectStatus>('in_progress');
+  const [editHealth, setEditHealth] = useState<'on_track' | 'at_risk' | 'delayed'>('on_track');
+  const [editManagerId, setEditManagerId] = useState('');
+  const [editTargetEndDate, setEditTargetEndDate] = useState('');
+  const [editBudget, setEditBudget] = useState('');
+
+  const activeProject = projects.find((p) => p.id === selectedProjectId) || null;
+
+  const handleOpenProject = (proj: Project) => {
+    setSelectedProjectId(proj.id);
+    setEditName(proj.name);
+    setEditStatus(proj.status);
+    setEditHealth(proj.health);
+    setEditManagerId(proj.managerId);
+    setEditTargetEndDate(proj.targetEndDate);
+    setEditBudget(proj.budget ? String(proj.budget) : '');
+    setIsEditing(false);
+  };
+
+  const handleSaveEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeProject) return;
+    updateProject(activeProject.id, {
+      name: editName,
+      status: editStatus,
+      health: editHealth,
+      managerId: editManagerId,
+      targetEndDate: editTargetEndDate,
+      budget: Number(editBudget) || 0,
+    });
+    setIsEditing(false);
+  };
+
+  const handleAddMilestone = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMilestoneTitle.trim() || !activeProject) return;
+    addMilestone(activeProject.id, newMilestoneTitle.trim(), newMilestoneDueDate);
+    setNewMilestoneTitle('');
+  };
+
+  const handleDeleteProject = () => {
+    if (!activeProject) return;
+    if (confirm(`Tem certeza que deseja excluir o projeto "${activeProject.name}"?`)) {
+      deleteProject(activeProject.id);
+      setSelectedProjectId(null);
+    }
+  };
 
   const displayedProjects = filteredProjects.filter((p) => {
     if (selectedStatus !== 'all' && p.status !== selectedStatus) return false;
@@ -55,6 +123,8 @@ export const ProjectsView: React.FC = () => {
         return <span className="bg-[#ECF8F1] text-[#0F8A4B] px-2 py-0.5 rounded text-[10px] font-bold">Concluído</span>;
       case 'cancelled':
         return <span className="bg-red-50 text-red-700 px-2 py-0.5 rounded text-[10px] font-bold">Cancelado</span>;
+      default:
+        return <span className="bg-neutral-100 text-neutral-700 px-2 py-0.5 rounded text-[10px] font-bold">{status}</span>;
     }
   };
 
@@ -74,33 +144,42 @@ export const ProjectsView: React.FC = () => {
       {/* Header */}
       <div className="bg-white rounded-xl border border-[#DDE3E8] p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-[#ECF8F1] text-[#0F8A4B] rounded-lg">
+          <div className="p-2.5 bg-[#ECF8F1] text-[#0F8A4B] rounded-lg">
             <FolderKanban className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-base font-bold text-[#17212B]">Gestão de Projetos & Entregáveis</h1>
-              <span className="text-xs font-semibold px-2 py-0.5 bg-[#F7F9FA] border border-[#DDE3E8] rounded text-[#5F6B76]">
+              <span className="text-xs font-semibold px-2 py-0.5 bg-[#ECF8F1] border border-[#0F8A4B]/20 text-[#0F8A4B] rounded-md">
                 {displayedProjects.length} projetos
               </span>
             </div>
             <p className="text-xs text-[#5F6B76] mt-0.5">
-              Acompanhamento de marcos estratégicos, cronogramas e entregas contratuais (PRD 5.8)
+              Acompanhamento de marcos estratégicos, cronogramas e entregas contratuais do time VERGROUP
             </p>
           </div>
         </div>
 
-        <button
-          onClick={() => setQuickCreateType('task')}
-          className="flex items-center gap-1.5 px-3 py-2 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white rounded-md text-xs font-semibold shadow-xs cursor-pointer"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          <span>Vincular Nova Demanda</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setQuickCreateType('project')}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white rounded-md text-xs font-bold shadow-xs cursor-pointer transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Novo Projeto</span>
+          </button>
+          <button
+            onClick={() => setQuickCreateType('task')}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-white border border-[#DDE3E8] hover:bg-[#F7F9FA] text-[#17212B] rounded-md text-xs font-bold shadow-2xs cursor-pointer transition-colors"
+          >
+            <Plus className="w-4 h-4 text-[#0F8A4B]" />
+            <span>Nova Tarefa</span>
+          </button>
+        </div>
       </div>
 
       {/* Filter Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3 rounded-lg border border-[#DDE3E8] text-xs">
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3 rounded-lg border border-[#DDE3E8] text-xs shadow-xs">
         <div className="flex items-center gap-2 flex-1 max-w-sm">
           <Search className="w-4 h-4 text-[#5F6B76]" />
           <input
@@ -117,13 +196,14 @@ export const ProjectsView: React.FC = () => {
           <select
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
-            className="px-2 py-1 border border-[#DDE3E8] rounded bg-white outline-none cursor-pointer"
+            className="px-2.5 py-1 border border-[#DDE3E8] rounded bg-white outline-none cursor-pointer text-xs"
           >
             <option value="all">Todos os Status</option>
             <option value="planning">Planejamento</option>
             <option value="in_progress">Em Execução</option>
             <option value="paused">Pausado</option>
             <option value="completed">Concluído</option>
+            <option value="cancelled">Cancelado</option>
           </select>
         </div>
       </div>
@@ -139,7 +219,7 @@ export const ProjectsView: React.FC = () => {
           return (
             <div
               key={proj.id}
-              onClick={() => setSelectedProject(proj)}
+              onClick={() => handleOpenProject(proj)}
               className="bg-white rounded-xl border border-[#DDE3E8] hover:border-[#0F8A4B] p-4 shadow-xs hover:shadow-md transition-all cursor-pointer space-y-3 flex flex-col justify-between"
             >
               <div className="space-y-2.5">
@@ -210,74 +290,288 @@ export const ProjectsView: React.FC = () => {
       </div>
 
       {/* Project Detail Modal */}
-      {selectedProject && (
-        <div className="fixed inset-0 z-60 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full p-5 border border-[#DDE3E8] space-y-4 max-h-[85vh] overflow-y-auto">
+      {activeProject && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-2xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full p-5 border border-[#DDE3E8] space-y-4 max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
             <div className="flex items-center justify-between pb-3 border-b border-[#DDE3E8]">
               <div>
-                <h2 className="text-sm font-bold text-[#17212B]">{selectedProject.name}</h2>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-[#0F8A4B] uppercase tracking-wider">
+                    {activeProject.code}
+                  </span>
+                  <h2 className="text-sm font-bold text-[#17212B]">{activeProject.name}</h2>
+                </div>
                 <p className="text-xs text-[#5F6B76]">
-                  Cliente: {companies.find(c => c.id === selectedProject.companyId)?.tradeName || 'Interno'}
+                  Cliente: {companies.find((c) => c.id === activeProject.companyId)?.tradeName || 'Projeto Interno'}
                 </p>
               </div>
-              <button
-                onClick={() => setSelectedProject(null)}
-                className="p-1 text-[#5F6B76] hover:text-[#17212B] rounded text-base font-bold"
-              >
-                ✕
-              </button>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsEditing(!isEditing)}
+                  className="flex items-center gap-1 px-2.5 py-1 text-xs border border-[#DDE3E8] rounded-md text-[#5F6B76] hover:text-[#17212B] hover:bg-[#F7F9FA]"
+                >
+                  <Edit3 className="w-3.5 h-3.5 text-[#0F8A4B]" />
+                  <span>{isEditing ? 'Cancelar Edição' : 'Editar'}</span>
+                </button>
+                <button
+                  onClick={handleDeleteProject}
+                  className="flex items-center gap-1 px-2.5 py-1 text-xs border border-rose-200 text-rose-600 rounded-md hover:bg-rose-50"
+                  title="Excluir Projeto"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => setSelectedProjectId(null)}
+                  className="p-1 text-[#5F6B76] hover:text-[#17212B] rounded text-base font-bold"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
-            <div className="space-y-4 text-xs">
-              <div className="grid grid-cols-3 gap-3 bg-[#F7F9FA] p-3 rounded-lg border border-[#DDE3E8]">
-                <div>
-                  <span className="text-[#5F6B76] block text-[11px]">Gerente do Projeto</span>
-                  <span className="font-semibold text-[#17212B]">
-                    {users.find(u => u.id === selectedProject.managerId)?.name}
-                  </span>
+            {/* EDIT FORM */}
+            {isEditing ? (
+              <form onSubmit={handleSaveEdit} className="space-y-4 text-xs bg-[#F7F9FA] p-4 rounded-xl border border-[#DDE3E8]">
+                <h3 className="font-bold text-[#17212B]">Editar Dados do Projeto</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[#17212B] font-semibold mb-1">Nome do Projeto</label>
+                    <input
+                      type="text"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      className="w-full px-3 py-1.5 border border-[#DDE3E8] rounded bg-white outline-none focus:border-[#0F8A4B]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[#17212B] font-semibold mb-1">Gerente do Projeto</label>
+                    <select
+                      value={editManagerId}
+                      onChange={(e) => setEditManagerId(e.target.value)}
+                      className="w-full px-3 py-1.5 border border-[#DDE3E8] rounded bg-white outline-none focus:border-[#0F8A4B]"
+                    >
+                      {users.map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-[#5F6B76] block text-[11px]">Início / Término</span>
-                  <span className="font-semibold text-[#17212B]">
-                    {selectedProject.startDate} até {selectedProject.targetEndDate}
-                  </span>
+
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[#17212B] font-semibold mb-1">Status</label>
+                    <select
+                      value={editStatus}
+                      onChange={(e) => setEditStatus(e.target.value as ProjectStatus)}
+                      className="w-full px-2.5 py-1.5 border border-[#DDE3E8] rounded bg-white outline-none focus:border-[#0F8A4B]"
+                    >
+                      <option value="planning">Planejamento</option>
+                      <option value="in_progress">Em Execução</option>
+                      <option value="paused">Pausado</option>
+                      <option value="completed">Concluído</option>
+                      <option value="cancelled">Cancelado</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[#17212B] font-semibold mb-1">Saúde do Projeto</label>
+                    <select
+                      value={editHealth}
+                      onChange={(e) => setEditHealth(e.target.value as any)}
+                      className="w-full px-2.5 py-1.5 border border-[#DDE3E8] rounded bg-white outline-none focus:border-[#0F8A4B]"
+                    >
+                      <option value="on_track">No Prazo</option>
+                      <option value="at_risk">Em Risco</option>
+                      <option value="delayed">Atrasado</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[#17212B] font-semibold mb-1">Data Término Alvo</label>
+                    <input
+                      type="date"
+                      value={editTargetEndDate}
+                      onChange={(e) => setEditTargetEndDate(e.target.value)}
+                      className="w-full px-2.5 py-1.5 border border-[#DDE3E8] rounded bg-white outline-none focus:border-[#0F8A4B]"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <span className="text-[#5F6B76] block text-[11px]">Status & Saúde</span>
-                  <div className="flex items-center gap-1 mt-0.5">
-                    {getStatusBadge(selectedProject.status)}
-                    {getHealthBadge(selectedProject.health)}
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditing(false)}
+                    className="px-3 py-1.5 border border-[#DDE3E8] text-[#5F6B76] rounded font-semibold"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-1.5 bg-[#0F8A4B] text-white rounded font-semibold"
+                  >
+                    Salvar Alterações
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="space-y-4 text-xs">
+                {/* Summary Info */}
+                <div className="grid grid-cols-4 gap-3 bg-[#F7F9FA] p-3 rounded-lg border border-[#DDE3E8]">
+                  <div>
+                    <span className="text-[#5F6B76] block text-[11px]">Gerente do Projeto</span>
+                    <span className="font-semibold text-[#17212B]">
+                      {users.find((u) => u.id === activeProject.managerId)?.name || 'Não atribuído'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[#5F6B76] block text-[11px]">Início / Término</span>
+                    <span className="font-semibold text-[#17212B]">
+                      {activeProject.startDate} até {activeProject.targetEndDate}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[#5F6B76] block text-[11px]">Status & Saúde</span>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      {getStatusBadge(activeProject.status)}
+                      {getHealthBadge(activeProject.health)}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-[#5F6B76] block text-[11px]">Progresso</span>
+                    <span className="font-bold text-[#0F8A4B]">{activeProject.progressPercentage}%</span>
+                  </div>
+                </div>
+
+                {/* Milestones List */}
+                <div className="space-y-2">
+                  <h4 className="font-bold text-xs text-[#17212B] uppercase tracking-wider">
+                    Marcos Estratégicos & Entregas ({activeProject.milestones?.filter((m) => m.completed).length || 0}/{activeProject.milestones?.length || 0})
+                  </h4>
+
+                  <div className="space-y-1.5">
+                    {activeProject.milestones?.map((m) => (
+                      <div
+                        key={m.id}
+                        className="p-2.5 bg-[#F7F9FA] rounded-lg border border-[#DDE3E8] flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={m.completed}
+                            onChange={() => toggleMilestone(activeProject.id, m.id)}
+                            className="w-4 h-4 text-[#0F8A4B] rounded accent-[#0F8A4B] cursor-pointer"
+                          />
+                          <span
+                            className={`font-semibold ${
+                              m.completed ? 'line-through text-[#5F6B76]' : 'text-[#17212B]'
+                            }`}
+                          >
+                            {m.title}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-[11px] text-[#5F6B76] font-mono">{m.dueDate}</span>
+                          <button
+                            onClick={() => deleteMilestone(activeProject.id, m.id)}
+                            className="text-neutral-400 hover:text-rose-600 p-0.5 cursor-pointer"
+                            title="Remover Marco"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+
+                    <form onSubmit={handleAddMilestone} className="flex gap-2 pt-1">
+                      <input
+                        type="text"
+                        value={newMilestoneTitle}
+                        onChange={(e) => setNewMilestoneTitle(e.target.value)}
+                        placeholder="Adicionar novo marco ao projeto..."
+                        className="flex-1 px-3 py-1.5 border border-[#DDE3E8] rounded-md text-xs outline-none focus:border-[#0F8A4B]"
+                      />
+                      <input
+                        type="date"
+                        value={newMilestoneDueDate}
+                        onChange={(e) => setNewMilestoneDueDate(e.target.value)}
+                        className="w-32 px-2 py-1.5 border border-[#DDE3E8] rounded-md text-xs outline-none focus:border-[#0F8A4B]"
+                      />
+                      <button
+                        type="submit"
+                        className="px-3 py-1.5 bg-[#0F8A4B] text-white rounded-md text-xs font-bold cursor-pointer"
+                      >
+                        Adicionar
+                      </button>
+                    </form>
+                  </div>
+                </div>
+
+                {/* Linked Tasks */}
+                <div className="space-y-2 pt-2 border-t border-[#DDE3E8]">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-bold text-xs text-[#17212B] uppercase tracking-wider">
+                      Tarefas do Projeto ({tasks.filter((t) => t.projectId === activeProject.id).length})
+                    </h4>
+                    <button
+                      onClick={() => {
+                        setQuickCreateType('task');
+                      }}
+                      className="text-xs text-[#0F8A4B] font-bold hover:underline cursor-pointer flex items-center gap-1"
+                    >
+                      <Plus className="w-3 h-3" />
+                      <span>Nova Tarefa</span>
+                    </button>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    {tasks
+                      .filter((t) => t.projectId === activeProject.id)
+                      .map((t) => (
+                        <div
+                          key={t.id}
+                          onClick={() => {
+                            setSelectedTaskId(t.id);
+                            setCurrentTab('work-tasks');
+                          }}
+                          className="p-2.5 bg-white hover:bg-[#F7F9FA] rounded-lg border border-[#DDE3E8] flex items-center justify-between cursor-pointer transition-colors"
+                        >
+                          <div className="flex items-center gap-2">
+                            <CheckSquare
+                              className={`w-4 h-4 ${t.status === 'completed' ? 'text-[#0F8A4B]' : 'text-[#5F6B76]'}`}
+                            />
+                            <span
+                              className={`font-semibold ${
+                                t.status === 'completed' ? 'line-through text-neutral-400' : 'text-[#17212B]'
+                              }`}
+                            >
+                              {t.title}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[11px] text-[#5F6B76]">{t.dueDate}</span>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-neutral-100 text-[#5F6B76]">
+                              {t.status}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    {tasks.filter((t) => t.projectId === activeProject.id).length === 0 && (
+                      <p className="text-xs text-[#5F6B76] italic py-1">Nenhuma tarefa vinculada a este projeto ainda.</p>
+                    )}
                   </div>
                 </div>
               </div>
+            )}
 
-              {/* Milestones List */}
-              <div>
-                <h4 className="font-bold text-xs text-[#17212B] mb-2 uppercase tracking-wider">
-                  Marcos Estratégicos & Entregas
-                </h4>
-                <div className="space-y-1.5">
-                  {selectedProject.milestones?.map((m) => (
-                    <div key={m.id} className="p-2.5 bg-[#F7F9FA] rounded border border-[#DDE3E8] flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Flag className={`w-3.5 h-3.5 ${m.completed ? 'text-[#0F8A4B]' : 'text-[#5F6B76]'}`} />
-                        <span className={`font-semibold ${m.completed ? 'line-through text-[#5F6B76]' : 'text-[#17212B]'}`}>
-                          {m.title}
-                        </span>
-                      </div>
-                      <span className="text-[11px] text-[#5F6B76] font-mono">{m.dueDate}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
+            {/* Footer Close */}
             <div className="flex justify-end pt-3 border-t border-[#DDE3E8]">
               <button
-                onClick={() => setSelectedProject(null)}
-                className="px-4 py-1.5 bg-[#0F8A4B] text-white rounded-md font-semibold text-xs"
+                onClick={() => setSelectedProjectId(null)}
+                className="px-4 py-1.5 bg-[#0F8A4B] text-white rounded-md font-semibold text-xs cursor-pointer"
               >
-                Fechar Ficha do Projeto
+                Fechar
               </button>
             </div>
           </div>

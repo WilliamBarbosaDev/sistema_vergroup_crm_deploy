@@ -30,6 +30,62 @@ export interface Department {
   leaderId?: string;
 }
 
+export interface Team {
+  id: string;
+  businessUnitId: string;
+  departmentId: string;
+  name: string;
+  leaderId?: string;
+}
+
+export type InviteType = 'link' | 'email' | 'direct' | 'external';
+
+export type InviteStatus = 
+  | 'pending'
+  | 'accepted'
+  | 'expired'
+  | 'revoked'
+  | 'failed'
+  | 'invite_not_sent';
+
+export interface CollaboratorInvite {
+  id: string;
+  type: InviteType;
+  email?: string;
+  phone?: string;
+  name?: string;
+  token: string;
+  businessUnitId: string;
+  departmentId: string;
+  teamId?: string;
+  jobTitle: string;
+  role: UserRole;
+  managerId?: string;
+  status: InviteStatus;
+  expiresAt: string;
+  maxUses?: number;
+  usedCount: number;
+  isExternal?: boolean;
+  externalAccessDays?: number;
+  accessExpiresAt?: string;
+  allowedResourceIds?: string[];
+  invitedByUserId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface OnboardingTask {
+  id: string;
+  userId: string;
+  userName: string;
+  title: string;
+  description: string;
+  departmentId: string;
+  completed: boolean;
+  dueDate: string;
+  createdAt: string;
+}
+
 export interface User {
   id: string;
   name: string;
@@ -39,10 +95,21 @@ export interface User {
   businessUnitIds: string[]; // multi-company link
   primaryBusinessUnitId: string;
   departmentId: string;
+  secondaryDepartmentIds?: string[];
+  teamId?: string;
   jobTitle: string;
   phone: string;
+  extensionPhone?: string;
+  emergencyContact?: string;
+  birthDate?: string;
+  language?: string;
   managerId?: string;
+  supervisorId?: string;
+  subordinateIds?: string[];
   status: 'active' | 'blocked' | 'invited';
+  isExternal?: boolean;
+  accessExpiresAt?: string;
+  allowedResourceIds?: string[];
   city?: string;
   hiredAt?: string;
   createdAt: string;
@@ -277,12 +344,51 @@ export interface TaskComment {
   createdAt: string;
 }
 
+export interface TaskStatusReport {
+  id: string;
+  taskId: string;
+  authorUserId: string;
+  content: string;
+  createdAt: string;
+}
+
+export interface TaskDependencyDetail {
+  id: string;
+  predecessorTaskId: string;
+  successorTaskId: string;
+  dependencyType: 'finish_to_start' | 'start_to_start' | 'finish_to_finish';
+}
+
+export interface TaskTemplate {
+  id: string;
+  businessUnitId?: string;
+  departmentId?: string;
+  title: string;
+  description?: string;
+  defaultPriority: TaskPriority;
+  defaultSlaHours: number;
+  checklistItems: string[];
+  tags: string[];
+  createdByUserId: string;
+  createdAt: string;
+}
+
+export interface SavedFilter {
+  id: string;
+  userId: string;
+  filterName: string;
+  filterConfig: Record<string, any>;
+  createdAt: string;
+}
+
 export interface Task {
   id: string;
   businessUnitId: string;
+  departmentId?: string;
   title: string;
   description?: string;
   creatorId?: string;
+  parentTaskId?: string;
   status: TaskStatus;
   priority: TaskPriority;
   startDate?: string;
@@ -299,10 +405,18 @@ export interface Task {
   projectName?: string; // ex: '[Vads] - VerAds'
   dealId?: string;
   clientId?: string;
+  companyName?: string;
+  competenceMonth?: number; // ex: 8
+  competenceYear?: number; // ex: 2026
+  templateId?: string;
+  isStatusReportRequired?: boolean;
+  lastStatusReportAt?: string;
   checklist: ChecklistItem[];
   comments?: TaskComment[];
-  recurrence?: 'none' | 'daily' | 'weekly' | 'monthly';
+  statusReports?: TaskStatusReport[];
+  recurrence?: 'none' | 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'custom';
   dependencies?: string[];
+  dependenciesDetails?: TaskDependencyDetail[];
   tags: string[];
   createdAt: string;
   updatedAt: string;

@@ -215,40 +215,40 @@ export const DealDetailDrawer: React.FC = () => {
   });
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex justify-end animate-in fade-in duration-100">
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-2xs flex items-center justify-center p-4 animate-in fade-in duration-100">
       <div
-        className="w-full max-w-5xl bg-white h-full shadow-2xl border-l border-neutral-200 flex flex-col overflow-hidden animate-in slide-in-from-right duration-150"
+        className="w-full max-w-5xl bg-white rounded-2xl shadow-2xl border border-[#DDE3E8] flex flex-col max-h-[88vh] overflow-hidden animate-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Header Bar */}
-        <div className="p-4 border-b border-neutral-200 flex items-center justify-between bg-neutral-50/80">
+        <div className="p-4 border-b border-[#DDE3E8] flex items-center justify-between bg-gradient-to-r from-slate-50 via-white to-slate-50">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-[#0F8A4B] flex items-center justify-center border border-emerald-200/50 shadow-xs">
+            <div className="w-10 h-10 rounded-xl bg-[#ECF8F1] text-[#0F8A4B] flex items-center justify-center border border-[#0F8A4B]/20 shadow-2xs">
               <TrendingUp className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-neutral-200/60 text-neutral-800 border border-neutral-300">
+                <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200">
                   {bu.code}
                 </span>
-                <h1 className="text-base font-bold text-neutral-900 leading-tight">{deal.title}</h1>
+                <h1 className="text-base font-extrabold text-slate-900 leading-tight">{deal.title}</h1>
                 {deal.status === 'won' && (
-                  <span className="bg-emerald-50 text-[#0F8A4B] text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase border border-emerald-200">
+                  <span className="bg-emerald-50 text-[#0F8A4B] text-[11px] font-extrabold px-2.5 py-0.5 rounded-full uppercase border border-emerald-200">
                     ✓ Venda Ganha
                   </span>
                 )}
                 {deal.status === 'lost' && (
-                  <span className="bg-red-50 text-red-700 text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase border border-red-200">
+                  <span className="bg-red-50 text-red-700 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full uppercase border border-red-200">
                     ✕ Perdido
                   </span>
                 )}
               </div>
-              <p className="text-xs text-neutral-600 mt-0.5 flex items-center gap-2">
-                <span>Funil: <strong className="text-neutral-900">{pipeline?.name}</strong></span>
+              <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-2">
+                <span>Funil: <strong className="text-slate-800 font-bold">{pipeline?.name}</strong></span>
                 <span>•</span>
-                <span>Valor: <strong className="text-[#0F8A4B] font-bold">R$ {deal.value.toLocaleString('pt-BR')}</strong></span>
+                <span>Valor: <strong className="text-[#0F8A4B] font-black">R$ {deal.value.toLocaleString('pt-BR')}</strong></span>
                 <span>•</span>
-                <span>Origem: <strong className="text-neutral-800 capitalize">{deal.leadSource || 'WhatsApp'}</strong></span>
+                <span>Origem: <strong className="text-slate-700 font-semibold capitalize">{deal.leadSource || 'WhatsApp'}</strong></span>
               </p>
             </div>
           </div>
@@ -260,7 +260,7 @@ export const DealDetailDrawer: React.FC = () => {
                 <button
                   id="deal-drawer-mark-won-btn"
                   onClick={() => markDealWon(deal.id)}
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white rounded-md text-xs font-semibold shadow-xs cursor-pointer transition-colors"
+                  className="flex items-center gap-1.5 px-4 py-2 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white rounded-lg text-xs font-extrabold shadow-sm shadow-emerald-700/20 hover:shadow-md cursor-pointer transition-all"
                   title="Ganhar negócio e disparar automaticamente o Onboarding e Projeto de Execução"
                 >
                   <CheckCircle2 className="w-4 h-4" />
@@ -269,7 +269,7 @@ export const DealDetailDrawer: React.FC = () => {
                 <button
                   id="deal-drawer-mark-lost-btn"
                   onClick={() => setLossReasonModal(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 border border-neutral-300 hover:bg-red-50 hover:text-red-700 text-neutral-600 rounded-md text-xs font-semibold cursor-pointer transition-colors"
+                  className="flex items-center gap-1.5 px-3.5 py-2 border border-slate-300 hover:border-rose-300 hover:bg-rose-50 text-slate-700 hover:text-rose-700 rounded-lg text-xs font-bold cursor-pointer transition-all"
                 >
                   <XCircle className="w-4 h-4" />
                   <span>Perdido</span>
@@ -279,7 +279,7 @@ export const DealDetailDrawer: React.FC = () => {
             <button
               id="deal-drawer-close-btn"
               onClick={() => setSelectedDealId(null)}
-              className="p-1.5 text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 rounded-md transition-colors"
+              className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -287,7 +287,7 @@ export const DealDetailDrawer: React.FC = () => {
         </div>
 
         {/* Pipeline Stage Bar */}
-        <div className="px-4 py-2 bg-neutral-100/70 border-b border-neutral-200 flex items-center gap-1.5 overflow-x-auto">
+        <div className="px-4 py-2 bg-slate-50/80 border-b border-[#DDE3E8] flex items-center gap-1.5 overflow-x-auto">
           {pipeline?.stages.map((stage, idx) => {
             const isCurrent = stage.id === deal.stageId;
             const isPassed = (currentStage?.order || 1) >= stage.order;
@@ -295,15 +295,15 @@ export const DealDetailDrawer: React.FC = () => {
               <button
                 key={stage.id}
                 onClick={() => moveDealStage(deal.id, stage.id)}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium shrink-0 transition-colors flex items-center gap-1.5 border ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold shrink-0 transition-all flex items-center gap-1.5 border cursor-pointer ${
                   isCurrent
-                    ? 'bg-[#0F8A4B] text-white border-[#0F8A4B] font-bold shadow-xs'
+                    ? 'bg-[#0F8A4B] text-white border-[#0F8A4B] font-extrabold shadow-2xs'
                     : isPassed
-                    ? 'bg-emerald-50 text-[#0F8A4B] border-emerald-200 hover:bg-emerald-100'
-                    : 'bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50'
+                    ? 'bg-emerald-50 text-[#0F8A4B] border-emerald-200/80 hover:bg-emerald-100 font-semibold'
+                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                 }`}
               >
-                <span className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center text-[10px]">
+                <span className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center text-[10px] font-bold">
                   {idx + 1}
                 </span>
                 <span>{stage.name}</span>
@@ -314,11 +314,13 @@ export const DealDetailDrawer: React.FC = () => {
         </div>
 
         {/* Tabs Bar */}
-        <div className="px-4 bg-white border-b border-neutral-200 flex items-center gap-4 text-xs font-semibold text-neutral-600 overflow-x-auto">
+        <div className="px-4 py-2 bg-white border-b border-[#DDE3E8] flex items-center gap-2 text-xs font-bold text-slate-600 overflow-x-auto">
           <button
             onClick={() => setActiveTab('overview')}
-            className={`py-3 border-b-2 transition-colors flex items-center gap-1.5 ${
-              activeTab === 'overview' ? 'border-[#0F8A4B] text-[#0F8A4B]' : 'border-transparent hover:text-neutral-900'
+            className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'overview'
+                ? 'bg-[#0F8A4B] text-white font-extrabold shadow-2xs'
+                : 'text-slate-600 hover:bg-slate-100/80 font-semibold'
             }`}
           >
             <FolderKanban className="w-3.5 h-3.5" />
@@ -327,18 +329,22 @@ export const DealDetailDrawer: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('timeline')}
-            className={`py-3 border-b-2 transition-colors flex items-center gap-1.5 ${
-              activeTab === 'timeline' ? 'border-[#0F8A4B] text-[#0F8A4B]' : 'border-transparent hover:text-neutral-900'
+            className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'timeline'
+                ? 'bg-[#0F8A4B] text-white font-extrabold shadow-2xs'
+                : 'text-slate-600 hover:bg-slate-100/80 font-semibold'
             }`}
           >
             <Clock className="w-3.5 h-3.5" />
-            <span>Linha do Tempo Unificada ({relatedActivities.length})</span>
+            <span>Linha do Tempo ({relatedActivities.length})</span>
           </button>
 
           <button
             onClick={() => setActiveTab('tasks')}
-            className={`py-3 border-b-2 transition-colors flex items-center gap-1.5 ${
-              activeTab === 'tasks' ? 'border-[#0F8A4B] text-[#0F8A4B]' : 'border-transparent hover:text-neutral-900'
+            className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'tasks'
+                ? 'bg-[#0F8A4B] text-white font-extrabold shadow-2xs'
+                : 'text-slate-600 hover:bg-slate-100/80 font-semibold'
             }`}
           >
             <CheckSquare className="w-3.5 h-3.5" />
@@ -347,8 +353,10 @@ export const DealDetailDrawer: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('comms')}
-            className={`py-3 border-b-2 transition-colors flex items-center gap-1.5 ${
-              activeTab === 'comms' ? 'border-[#0F8A4B] text-[#0F8A4B]' : 'border-transparent hover:text-neutral-900'
+            className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'comms'
+                ? 'bg-[#0F8A4B] text-white font-extrabold shadow-2xs'
+                : 'text-slate-600 hover:bg-slate-100/80 font-semibold'
             }`}
           >
             <Mail className="w-3.5 h-3.5" />
@@ -357,143 +365,152 @@ export const DealDetailDrawer: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('documents')}
-            className={`py-3 border-b-2 transition-colors flex items-center gap-1.5 ${
-              activeTab === 'documents' ? 'border-[#0F8A4B] text-[#0F8A4B]' : 'border-transparent hover:text-neutral-900'
+            className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'documents'
+                ? 'bg-[#0F8A4B] text-white font-extrabold shadow-2xs'
+                : 'text-slate-600 hover:bg-slate-100/80 font-semibold'
             }`}
           >
             <FileText className="w-3.5 h-3.5" />
-            <span>Documentos & Propostas ({(deal.documents || []).length})</span>
+            <span>Documentos ({(deal.documents || []).length})</span>
           </button>
 
           <button
             onClick={() => setActiveTab('contacts')}
-            className={`py-3 border-b-2 transition-colors flex items-center gap-1.5 ${
-              activeTab === 'contacts' ? 'border-[#0F8A4B] text-[#0F8A4B]' : 'border-transparent hover:text-neutral-900'
+            className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'contacts'
+                ? 'bg-[#0F8A4B] text-white font-extrabold shadow-2xs'
+                : 'text-slate-600 hover:bg-slate-100/80 font-semibold'
             }`}
           >
             <User className="w-3.5 h-3.5" />
-            <span>Contatos Adicionais ({(deal.additionalContacts || []).length})</span>
+            <span>Contatos ({(deal.additionalContacts || []).length})</span>
           </button>
 
           {deal.status === 'won' && (
             <button
               onClick={() => setActiveTab('project')}
-              className={`py-3 border-b-2 transition-colors flex items-center gap-1.5 text-emerald-700 ${
-                activeTab === 'project' ? 'border-emerald-600 font-bold' : 'border-transparent hover:text-emerald-900'
+              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+                activeTab === 'project'
+                  ? 'bg-[#0F8A4B] text-white font-extrabold shadow-2xs'
+                  : 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100 font-bold border border-emerald-200'
               }`}
             >
-              <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+              <Sparkles className="w-3.5 h-3.5" />
               <span>Projeto de Execução</span>
             </button>
           )}
         </div>
 
         {/* Tab Body Content */}
-        <div className="flex-1 overflow-y-auto p-5 bg-neutral-50/50">
+        <div className="flex-1 overflow-y-auto p-5 bg-slate-50/60">
           {/* TAB 1: OVERVIEW / DADOS ESTRUTURADOS */}
           {activeTab === 'overview' && (
             <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
               {/* Left Column: Core Cards */}
               <div className="md:col-span-7 space-y-4">
                 {/* Financial & Contract Overview */}
-                <div className="bg-white p-4 rounded-xl border border-neutral-200 shadow-xs space-y-3">
+                <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-3.5 hover:shadow-sm transition-shadow">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-neutral-700 uppercase tracking-wider">
+                    <span className="text-xs font-black text-slate-800 uppercase tracking-wider">
                       Termos Comerciais & Financeiros
                     </span>
                     {getFinancialStatusBadge(deal.financialStatus)}
                   </div>
                   <div className="grid grid-cols-2 gap-3 pt-1">
-                    <div className="p-3 bg-neutral-50 rounded-lg border border-neutral-200/60">
-                      <span className="text-[11px] text-neutral-500 block">Valor Total do Negócio</span>
-                      <span className="text-xl font-bold text-[#0F8A4B]">R$ {deal.value.toLocaleString('pt-BR')}</span>
+                    <div className="p-3.5 bg-[#ECF8F1] rounded-xl border border-[#0F8A4B]/20">
+                      <span className="text-[11px] font-bold text-[#0F8A4B]/80 block">Valor Total do Negócio</span>
+                      <span className="text-2xl font-black text-[#0F8A4B]">R$ {deal.value.toLocaleString('pt-BR')}</span>
                     </div>
-                    <div className="p-3 bg-neutral-50 rounded-lg border border-neutral-200/60">
-                      <span className="text-[11px] text-neutral-500 block">Previsão de Fechamento</span>
-                      <span className="text-sm font-bold text-neutral-800">{deal.expectedCloseDate}</span>
+                    <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80">
+                      <span className="text-[11px] font-bold text-slate-500 block">Previsão de Fechamento</span>
+                      <span className="text-base font-extrabold text-slate-900">{deal.expectedCloseDate}</span>
                     </div>
                   </div>
-                  <div className="text-xs space-y-1.5 pt-1">
-                    <div className="flex justify-between text-neutral-600">
+                  <div className="text-xs space-y-2 pt-1">
+                    <div className="flex justify-between text-slate-600 pb-1 border-b border-slate-100">
                       <span>Plano / Categoria de Serviço:</span>
-                      <strong className="text-neutral-900">{deal.serviceCategory}</strong>
+                      <strong className="text-slate-900 font-extrabold">{deal.serviceCategory}</strong>
                     </div>
-                    <div className="flex justify-between text-neutral-600">
+                    <div className="flex justify-between text-slate-600 pb-1 border-b border-slate-100">
                       <span>Empresa do Grupo (Unidade):</span>
-                      <strong className="text-neutral-900">{bu.name}</strong>
+                      <strong className="text-slate-900 font-extrabold">{bu.name}</strong>
                     </div>
-                    <div className="flex justify-between text-neutral-600">
+                    <div className="flex justify-between text-slate-600">
                       <span>Data de Entrada no CRM:</span>
-                      <strong className="text-neutral-900">{new Date(deal.createdAt).toLocaleDateString('pt-BR')}</strong>
+                      <strong className="text-slate-900 font-extrabold">{new Date(deal.createdAt).toLocaleDateString('pt-BR')}</strong>
                     </div>
                   </div>
                 </div>
 
                 {/* Company Information */}
-                <div className="bg-white p-4 rounded-xl border border-neutral-200 shadow-xs space-y-3">
+                <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-3.5 hover:shadow-sm transition-shadow">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-neutral-700 uppercase tracking-wider flex items-center gap-1.5">
-                      <Building2 className="w-4 h-4 text-neutral-600" />
+                    <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <Building2 className="w-4 h-4 text-slate-700" />
                       <span>Empresa do Cliente</span>
                     </span>
                     {company && (
-                      <span className="text-[11px] px-2 py-0.5 bg-neutral-100 rounded text-neutral-600 font-medium">
+                      <span className="text-[11px] px-2.5 py-0.5 bg-slate-100 border border-slate-200 rounded-md text-slate-700 font-bold">
                         {company.segment}
                       </span>
                     )}
                   </div>
 
                   {company ? (
-                    <div className="space-y-2 text-xs">
+                    <div className="space-y-3 text-xs">
                       <div>
-                        <h4 className="text-sm font-bold text-neutral-900">{company.tradeName}</h4>
-                        <p className="text-neutral-500">{company.corporateName}</p>
+                        <h4 className="text-base font-black text-slate-900">{company.tradeName}</h4>
+                        <p className="text-slate-500 font-medium">{company.corporateName}</p>
                       </div>
-                      <div className="grid grid-cols-2 gap-2 text-neutral-600 pt-1">
-                        <div>
-                          <span className="text-[11px] text-neutral-400 block">CNPJ</span>
-                          <span className="font-semibold text-neutral-800">{company.cnpj}</span>
+                      <div className="grid grid-cols-2 gap-3 pt-1">
+                        <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-200/60">
+                          <span className="text-[10px] font-bold text-slate-400 block uppercase">CNPJ</span>
+                          <span className="font-extrabold text-slate-800">{company.cnpj}</span>
                         </div>
-                        <div>
-                          <span className="text-[11px] text-neutral-400 block">Health Score</span>
-                          <span className="font-semibold text-emerald-700">● {company.healthScore.toUpperCase()} ({company.npsScore || 90} NPS)</span>
+                        <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-200/60">
+                          <span className="text-[10px] font-bold text-slate-400 block uppercase">Health Score</span>
+                          <span className="font-extrabold text-emerald-700 flex items-center gap-1 mt-0.5">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <span>{company.healthScore.toUpperCase()} ({company.npsScore || 90} NPS)</span>
+                          </span>
                         </div>
-                        <div>
-                          <span className="text-[11px] text-neutral-400 block">E-mail Corporativo</span>
-                          <span className="font-semibold text-neutral-800">{company.email}</span>
+                        <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-200/60">
+                          <span className="text-[10px] font-bold text-slate-400 block uppercase">E-mail Corporativo</span>
+                          <span className="font-semibold text-slate-800 truncate block">{company.email}</span>
                         </div>
-                        <div>
-                          <span className="text-[11px] text-neutral-400 block">Telefone</span>
-                          <span className="font-semibold text-neutral-800">{company.phone}</span>
+                        <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-200/60">
+                          <span className="text-[10px] font-bold text-slate-400 block uppercase">Telefone</span>
+                          <span className="font-semibold text-slate-800">{company.phone}</span>
                         </div>
                       </div>
                     </div>
                   ) : (
-                    <p className="text-xs text-neutral-500 italic">Nenhuma empresa associada.</p>
+                    <p className="text-xs text-slate-500 italic">Nenhuma empresa associada.</p>
                   )}
                 </div>
 
                 {/* Custom Fields & Technical Parameters */}
-                <div className="bg-white p-4 rounded-xl border border-neutral-200 shadow-xs space-y-3">
-                  <span className="text-xs font-bold text-neutral-700 uppercase tracking-wider block">
+                <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-3 hover:shadow-sm transition-shadow">
+                  <span className="text-xs font-black text-slate-800 uppercase tracking-wider block">
                     Campos Personalizados & Escopo Técnico
                   </span>
-                  <div className="grid grid-cols-2 gap-2.5 text-xs">
-                    <div className="p-2.5 bg-neutral-50 rounded border border-neutral-200/60">
-                      <span className="text-[11px] text-neutral-500 block">SLA Contratado</span>
-                      <strong className="text-neutral-900">4 Horas (Crítico) / 12h Padrão</strong>
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/60">
+                      <span className="text-[11px] text-slate-500 font-bold block">SLA Contratado</span>
+                      <strong className="text-slate-900 font-extrabold">4 Horas (Crítico) / 12h Padrão</strong>
                     </div>
-                    <div className="p-2.5 bg-neutral-50 rounded border border-neutral-200/60">
-                      <span className="text-[11px] text-neutral-500 block">Tipo de Cobrança</span>
-                      <strong className="text-neutral-900">Mensal Recorrente (MRR)</strong>
+                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/60">
+                      <span className="text-[11px] text-slate-500 font-bold block">Tipo de Cobrança</span>
+                      <strong className="text-slate-900 font-extrabold">Mensal Recorrente (MRR)</strong>
                     </div>
-                    <div className="p-2.5 bg-neutral-50 rounded border border-neutral-200/60">
-                      <span className="text-[11px] text-neutral-500 block">Ambiente Operacional</span>
-                      <strong className="text-neutral-900">Nuvem Dedicada + API W-API</strong>
+                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/60">
+                      <span className="text-[11px] text-slate-500 font-bold block">Ambiente Operacional</span>
+                      <strong className="text-slate-900 font-extrabold">Nuvem Dedicada + API W-API</strong>
                     </div>
-                    <div className="p-2.5 bg-neutral-50 rounded border border-neutral-200/60">
-                      <span className="text-[11px] text-neutral-500 block">Auditoria & Compliance</span>
-                      <strong className="text-neutral-900">Rastreabilidade Total LGPD</strong>
+                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/60">
+                      <span className="text-[11px] text-slate-500 font-bold block">Auditoria & Compliance</span>
+                      <strong className="text-slate-900 font-extrabold">Rastreabilidade Total LGPD</strong>
                     </div>
                   </div>
                 </div>
@@ -502,67 +519,67 @@ export const DealDetailDrawer: React.FC = () => {
               {/* Right Column: People & Team */}
               <div className="md:col-span-5 space-y-4">
                 {/* Primary Contact Card */}
-                <div className="bg-white p-4 rounded-xl border border-neutral-200 shadow-xs space-y-3">
+                <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-3.5 hover:shadow-sm transition-shadow">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-neutral-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
                       <User className="w-4 h-4 text-blue-600" />
                       <span>Contato Principal</span>
                     </span>
                     <button
                       onClick={() => setShowEmailModal(true)}
-                      className="text-[11px] text-blue-600 font-semibold hover:underline flex items-center gap-1"
+                      className="text-xs text-blue-600 font-bold hover:underline flex items-center gap-1 cursor-pointer"
                     >
-                      <Mail className="w-3 h-3" />
+                      <Mail className="w-3.5 h-3.5" />
                       <span>Enviar E-mail</span>
                     </button>
                   </div>
 
                   {primaryContact ? (
-                    <div className="space-y-2 text-xs">
+                    <div className="space-y-3 text-xs">
                       <div>
-                        <h4 className="text-sm font-bold text-neutral-900">{primaryContact.name}</h4>
-                        <p className="text-neutral-500">{primaryContact.jobTitle || 'Contato Decisor'}</p>
+                        <h4 className="text-base font-black text-slate-900">{primaryContact.name}</h4>
+                        <p className="text-slate-500 font-medium">{primaryContact.jobTitle || 'Contato Decisor'}</p>
                       </div>
-                      <div className="space-y-1 pt-1 text-neutral-700">
-                        <div className="flex items-center gap-2">
-                          <Phone className="w-3.5 h-3.5 text-neutral-400" />
-                          <span className="font-medium text-[#0F8A4B]">{primaryContact.phone}</span>
+                      <div className="space-y-2 pt-1 text-slate-700">
+                        <div className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg border border-slate-200/60">
+                          <Phone className="w-4 h-4 text-[#0F8A4B]" />
+                          <span className="font-bold text-[#0F8A4B]">{primaryContact.phone}</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Mail className="w-3.5 h-3.5 text-neutral-400" />
-                          <span>{primaryContact.email}</span>
+                        <div className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg border border-slate-200/60">
+                          <Mail className="w-4 h-4 text-slate-500" />
+                          <span className="font-semibold text-slate-800 truncate">{primaryContact.email}</span>
                         </div>
                       </div>
                     </div>
                   ) : (
-                    <p className="text-xs text-neutral-500 italic">Nenhum contato principal associado.</p>
+                    <p className="text-xs text-slate-500 italic">Nenhum contato principal associado.</p>
                   )}
                 </div>
 
                 {/* Internal Responsible Team */}
-                <div className="bg-white p-4 rounded-xl border border-neutral-200 shadow-xs space-y-3">
-                  <span className="text-xs font-bold text-neutral-700 uppercase tracking-wider block">
+                <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-3.5 hover:shadow-sm transition-shadow">
+                  <span className="text-xs font-black text-slate-800 uppercase tracking-wider block">
                     Equipe Interna Responsável
                   </span>
-                  <div className="space-y-2.5 text-xs">
-                    <div className="flex items-center justify-between p-2 rounded-lg bg-neutral-50 border border-neutral-200/60">
+                  <div className="space-y-3 text-xs">
+                    <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200/60">
                       <div>
-                        <span className="text-[10px] text-neutral-500 block uppercase font-bold">Responsável Comercial</span>
-                        <strong className="text-neutral-900">{commercialLead?.name}</strong>
-                        <p className="text-[11px] text-neutral-500">{commercialLead?.jobTitle}</p>
+                        <span className="text-[10px] text-slate-500 block uppercase font-bold">Responsável Comercial</span>
+                        <strong className="text-slate-900 font-extrabold text-sm">{commercialLead?.name}</strong>
+                        <p className="text-[11px] text-slate-500 font-medium">{commercialLead?.jobTitle}</p>
                       </div>
-                      <span className="text-[10px] px-2 py-0.5 bg-blue-50 text-blue-700 font-bold rounded border border-blue-200">
+                      <span className="text-[10px] px-2.5 py-1 bg-blue-50 text-blue-700 font-extrabold rounded-md border border-blue-200">
                         Vendas
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between p-2 rounded-lg bg-neutral-50 border border-neutral-200/60">
+                    <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200/60">
                       <div>
-                        <span className="text-[10px] text-neutral-500 block uppercase font-bold">Líder Operacional / Implantação</span>
-                        <strong className="text-neutral-900">{operationalLead?.name}</strong>
-                        <p className="text-[11px] text-neutral-500">{operationalLead?.jobTitle}</p>
+                        <span className="text-[10px] text-slate-500 block uppercase font-bold">Líder Operacional / Implantação</span>
+                        <strong className="text-slate-900 font-extrabold text-sm">{operationalLead?.name}</strong>
+                        <p className="text-[11px] text-slate-500 font-medium">{operationalLead?.jobTitle}</p>
                       </div>
-                      <span className="text-[10px] px-2 py-0.5 bg-purple-50 text-purple-700 font-bold rounded border border-purple-200">
+                      <span className="text-[10px] px-2.5 py-1 bg-purple-50 text-purple-700 font-extrabold rounded-md border border-purple-200">
                         Operações
                       </span>
                     </div>
@@ -570,14 +587,14 @@ export const DealDetailDrawer: React.FC = () => {
                 </div>
 
                 {/* Tags */}
-                <div className="bg-white p-4 rounded-xl border border-neutral-200 shadow-xs space-y-2">
-                  <span className="text-xs font-bold text-neutral-700 uppercase tracking-wider block">
+                <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-2.5 hover:shadow-sm transition-shadow">
+                  <span className="text-xs font-black text-slate-800 uppercase tracking-wider block">
                     Tags do Negócio
                   </span>
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="flex flex-wrap gap-2">
                     {deal.tags.map((t) => (
-                      <span key={t} className="bg-neutral-100 text-neutral-800 border border-neutral-200 text-xs px-2.5 py-1 rounded-md flex items-center gap-1">
-                        <Tag className="w-3 h-3 text-neutral-500" />
+                      <span key={t} className="bg-slate-100 text-slate-800 border border-slate-200 text-xs px-3 py-1 rounded-lg font-bold flex items-center gap-1.5 shadow-2xs">
+                        <Tag className="w-3.5 h-3.5 text-slate-500" />
                         <span>{t}</span>
                       </span>
                     ))}

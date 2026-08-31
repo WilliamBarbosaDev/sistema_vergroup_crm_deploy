@@ -24,11 +24,17 @@ import {
   AutomationRule,
   AuditLog,
   TaskStatus,
+  Team,
+  CollaboratorInvite,
+  OnboardingTask,
 } from '../types';
 import {
   INITIAL_BUSINESS_UNITS,
   INITIAL_DEPARTMENTS,
+  INITIAL_TEAMS,
   INITIAL_USERS,
+  INITIAL_INVITES,
+  INITIAL_ONBOARDING_TASKS,
   INITIAL_LEADS,
   INITIAL_CONTACTS,
   INITIAL_COMPANIES,
@@ -91,8 +97,8 @@ interface AppContextType {
   // Search & Quick Create Drawer
   isSearchOpen: boolean;
   setIsSearchOpen: (open: boolean) => void;
-  quickCreateType: 'lead' | 'contact' | 'company' | 'deal' | 'task' | 'event' | null;
-  setQuickCreateType: (type: 'lead' | 'contact' | 'company' | 'deal' | 'task' | 'event' | null) => void;
+  quickCreateType: 'lead' | 'contact' | 'company' | 'deal' | 'task' | 'event' | 'project' | null;
+  setQuickCreateType: (type: 'lead' | 'contact' | 'company' | 'deal' | 'task' | 'event' | 'project' | null) => void;
 
   // Selected details drawers
   selectedDealId: string | null;
@@ -107,7 +113,10 @@ interface AppContextType {
   // Entity Lists (Filtered & Unfiltered)
   businessUnits: BusinessUnit[];
   departments: Department[];
+  teams: Team[];
   users: User[];
+  invites: CollaboratorInvite[];
+  onboardingTasks: OnboardingTask[];
   leads: Lead[];
   contacts: Contact[];
   companies: Company[];
@@ -120,6 +129,8 @@ interface AppContextType {
   calendarEvents: CalendarEvent[];
   chatChannels: ChatChannel[];
   chatMessages: ChatMessage[];
+  activeChatChannelId: string;
+  setActiveChatChannelId: (id: string) => void;
   emails: EmailMessage[];
   whatsApps: WhatsAppConversation[];
   automations: AutomationRule[];
@@ -128,6 +139,15 @@ interface AppContextType {
 
   // Multi-company filtering helpers
   filterByBU: <T extends { businessUnitId?: string }>(items: T[]) => T[];
+
+  // Collaborator & Invite Management
+  createInvite: (data: Partial<CollaboratorInvite>) => CollaboratorInvite;
+  revokeInvite: (inviteId: string) => void;
+  resendInvite: (inviteId: string) => void;
+  acceptInvite: (token: string, name?: string, password?: string) => void;
+  createUserDirectly: (userData: Partial<User>, sendInviteImmediately: boolean) => User;
+  addDepartment: (data: { name: string; businessUnitId: string; leaderId?: string }) => Department;
+  addTeam: (data: { name: string; departmentId: string; businessUnitId: string; leaderId?: string }) => Team;
 
   // Mutations
   addLead: (lead: Omit<Lead, 'id' | 'createdAt' | 'updatedAt'>) => void;
@@ -157,6 +177,7 @@ interface AppContextType {
 
   addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateTask: (id: string, updates: Partial<Task>) => void;
+  deleteTask: (id: string) => void;
   toggleTaskStatus: (taskId: string, status?: TaskStatus) => void;
   toggleChecklistItem: (taskId: string, itemId: string) => void;
   toggleTaskTimer: (taskId: string) => void;
@@ -165,7 +186,10 @@ interface AppContextType {
 
   addProject: (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateProject: (id: string, updates: Partial<Project>) => void;
+  deleteProject: (id: string) => void;
   toggleMilestone: (projectId: string, milestoneId: string) => void;
+  addMilestone: (projectId: string, title: string, dueDate: string) => void;
+  deleteMilestone: (projectId: string, milestoneId: string) => void;
 
   addCalendarEvent: (event: Omit<CalendarEvent, 'id'>) => void;
 
@@ -205,7 +229,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   
   // Drawers & Modals
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
-  const [quickCreateType, setQuickCreateType] = useState<'lead' | 'contact' | 'company' | 'deal' | 'task' | 'event' | null>(null);
+  const [quickCreateType, setQuickCreateType] = useState<'lead' | 'contact' | 'company' | 'deal' | 'task' | 'event' | 'project' | null>(null);
   
   const [selectedDealId, setSelectedDealId] = useState<string | null>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
@@ -214,7 +238,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Core Data Collections with LocalStorage hydration
   const [businessUnits] = useState<BusinessUnit[]>(INITIAL_BUSINESS_UNITS);
-  const [departments] = useState<Department[]>(INITIAL_DEPARTMENTS);
+  const [departments, setDepartments] = useState<Department[]>(() => {
+    const saved = localStorage.getItem(`${STORAGE_KEY}_departments`);
+    return saved ? JSON.parse(saved) : INITIAL_DEPARTMENTS;
+  });
+  const [teams, setTeams] = useState<Team[]>(() => {
+    const saved = localStorage.getItem(`${STORAGE_KEY}_teams`);
+    return saved ? JSON.parse(saved) : INITIAL_TEAMS;
+  });
+  const [invites, setInvites] = useState<CollaboratorInvite[]>(() => {
+    const saved = localStorage.getItem(`${STORAGE_KEY}_invites`);
+    return saved ? JSON.parse(saved) : INITIAL_INVITES;
+  });
+  const [onboardingTasks, setOnboardingTasks] = useState<OnboardingTask[]>(() => {
+    const saved = localStorage.getItem(`${STORAGE_KEY}_onboardingTasks`);
+    return saved ? JSON.parse(saved) : INITIAL_ONBOARDING_TASKS;
+  });
   const [users, setUsers] = useState<User[]>(() => {
     const saved = localStorage.getItem(`${STORAGE_KEY}_users`);
     return saved ? JSON.parse(saved) : INITIAL_USERS;
@@ -267,6 +306,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const saved = localStorage.getItem(`${STORAGE_KEY}_chatMessages`);
     return saved ? JSON.parse(saved) : INITIAL_CHAT_MESSAGES;
   });
+  const [activeChatChannelId, setActiveChatChannelId] = useState<string>('chan-silvestre');
   const [emails, setEmails] = useState<EmailMessage[]>(() => {
     const saved = localStorage.getItem(`${STORAGE_KEY}_emails`);
     return saved ? JSON.parse(saved) : INITIAL_EMAILS;
@@ -343,6 +383,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Sync to localStorage
   useEffect(() => {
+    localStorage.setItem(`${STORAGE_KEY}_users`, JSON.stringify(users));
+    localStorage.setItem(`${STORAGE_KEY}_departments`, JSON.stringify(departments));
+    localStorage.setItem(`${STORAGE_KEY}_teams`, JSON.stringify(teams));
+    localStorage.setItem(`${STORAGE_KEY}_invites`, JSON.stringify(invites));
+    localStorage.setItem(`${STORAGE_KEY}_onboardingTasks`, JSON.stringify(onboardingTasks));
     localStorage.setItem(`${STORAGE_KEY}_leads`, JSON.stringify(leads));
     localStorage.setItem(`${STORAGE_KEY}_contacts`, JSON.stringify(contacts));
     localStorage.setItem(`${STORAGE_KEY}_companies`, JSON.stringify(companies));
@@ -353,9 +398,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem(`${STORAGE_KEY}_activities`, JSON.stringify(activities));
     localStorage.setItem(`${STORAGE_KEY}_auditLogs`, JSON.stringify(auditLogs));
     localStorage.setItem(`${STORAGE_KEY}_emails`, JSON.stringify(emails));
-    localStorage.setItem(`${STORAGE_KEY}_whatsapps`, JSON.stringify(whatsApps));
+    localStorage.setItem(`${STORAGE_KEY}_whatsApps`, JSON.stringify(whatsApps));
     localStorage.setItem(`${STORAGE_KEY}_chatMessages`, JSON.stringify(chatMessages));
-  }, [leads, contacts, companies, deals, tasks, projects, clientAccounts, activities, auditLogs, emails, whatsApps, chatMessages]);
+  }, [users, departments, teams, invites, onboardingTasks, leads, contacts, companies, deals, tasks, projects, clientAccounts, activities, auditLogs, emails, whatsApps, chatMessages]);
 
   // Keyboard shortcut Cmd+K / Ctrl+K for Global Search
   useEffect(() => {
@@ -948,6 +993,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addAuditLog('update', 'task', id, `Tarefa atualizada`);
   };
 
+  const deleteTask = (id: string) => {
+    const task = tasks.find((t) => t.id === id);
+    setTasks((prev) => prev.filter((t) => t.id !== id));
+    if (selectedTaskId === id) setSelectedTaskId(null);
+    if (task) {
+      addAuditLog('delete', 'task', id, `Tarefa "${task.title}" removida`);
+    }
+  };
+
   const toggleTaskStatus = (taskId: string, targetStatus?: TaskStatus) => {
     setTasks((prev) =>
       prev.map((t) => {
@@ -1075,9 +1129,41 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setProjects((prev) =>
       prev.map((p) => {
         if (p.id !== projectId) return p;
-        const updatedMilestones = p.milestones.map((m) =>
+        const updatedMilestones = (p.milestones || []).map((m) =>
           m.id === milestoneId ? { ...m, completed: !m.completed } : m
         );
+        const completedCount = updatedMilestones.filter((m) => m.completed).length;
+        const autoProgress = updatedMilestones.length > 0 ? Math.round((completedCount / updatedMilestones.length) * 100) : 0;
+
+        return {
+          ...p,
+          milestones: updatedMilestones,
+          progressPercentage: autoProgress,
+          updatedAt: new Date().toISOString(),
+        };
+      })
+    );
+  };
+
+  const deleteProject = (id: string) => {
+    const project = projects.find((p) => p.id === id);
+    setProjects((prev) => prev.filter((p) => p.id !== id));
+    if (project) {
+      addAuditLog('delete', 'project', id, `Projeto "${project.name}" removido`);
+    }
+  };
+
+  const addMilestone = (projectId: string, title: string, dueDate: string) => {
+    setProjects((prev) =>
+      prev.map((p) => {
+        if (p.id !== projectId) return p;
+        const newMilestone = {
+          id: `m-${Date.now()}`,
+          title,
+          dueDate,
+          completed: false,
+        };
+        const updatedMilestones = [...(p.milestones || []), newMilestone];
         const completedCount = updatedMilestones.filter((m) => m.completed).length;
         const autoProgress = Math.round((completedCount / updatedMilestones.length) * 100);
 
@@ -1089,6 +1175,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         };
       })
     );
+    addAuditLog('update', 'project', projectId, `Novo marco "${title}" adicionado ao projeto`);
+  };
+
+  const deleteMilestone = (projectId: string, milestoneId: string) => {
+    setProjects((prev) =>
+      prev.map((p) => {
+        if (p.id !== projectId) return p;
+        const updatedMilestones = (p.milestones || []).filter((m) => m.id !== milestoneId);
+        const completedCount = updatedMilestones.filter((m) => m.completed).length;
+        const autoProgress = updatedMilestones.length > 0 ? Math.round((completedCount / updatedMilestones.length) * 100) : 0;
+
+        return {
+          ...p,
+          milestones: updatedMilestones,
+          progressPercentage: autoProgress,
+          updatedAt: new Date().toISOString(),
+        };
+      })
+    );
+    addAuditLog('update', 'project', projectId, `Marco removido do projeto`);
   };
 
   // Calendar
@@ -1285,105 +1391,327 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   };
 
+  // Collaborator & Invite Management Mutations
+  const createInvite = (data: Partial<CollaboratorInvite>): CollaboratorInvite => {
+    const token = `inv_${data.type || 'sec'}_${Math.random().toString(36).substring(2, 10)}${Date.now().toString(36)}`;
+    const newInvite: CollaboratorInvite = {
+      id: `inv-${Date.now()}`,
+      type: data.type || 'link',
+      email: data.email,
+      phone: data.phone,
+      name: data.name,
+      token,
+      businessUnitId: data.businessUnitId || selectedBusinessUnitId || 'bu-tech',
+      departmentId: data.departmentId || 'dep-product',
+      teamId: data.teamId,
+      jobTitle: data.jobTitle || 'Colaborador',
+      role: data.role || 'collaborator',
+      managerId: data.managerId || currentUser.id,
+      status: data.status || 'pending',
+      expiresAt: data.expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      maxUses: data.maxUses || 1,
+      usedCount: 0,
+      isExternal: data.isExternal || false,
+      externalAccessDays: data.externalAccessDays,
+      accessExpiresAt: data.accessExpiresAt,
+      allowedResourceIds: data.allowedResourceIds,
+      invitedByUserId: currentUser.id,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    setInvites((prev) => [newInvite, ...prev]);
+    addAuditLog('create', 'CollaboratorInvite', newInvite.id, `actor_type: human_user | action: user.invited | type: ${newInvite.type} | email: ${newInvite.email || 'link'}`);
+    return newInvite;
+  };
+
+  const revokeInvite = (inviteId: string) => {
+    setInvites((prev) =>
+      prev.map((inv) =>
+        inv.id === inviteId ? { ...inv, status: 'revoked', updatedAt: new Date().toISOString() } : inv
+      )
+    );
+    addAuditLog('update', 'CollaboratorInvite', inviteId, `actor_type: human_user | action: user.invite.revoked`);
+  };
+
+  const resendInvite = (inviteId: string) => {
+    setInvites((prev) =>
+      prev.map((inv) =>
+        inv.id === inviteId
+          ? {
+              ...inv,
+              status: 'pending',
+              expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+              updatedAt: new Date().toISOString(),
+            }
+          : inv
+      )
+    );
+    addAuditLog('update', 'CollaboratorInvite', inviteId, `actor_type: human_user | action: user.invited | resend: true`);
+  };
+
+  const acceptInvite = (token: string, name?: string, _password?: string) => {
+    const invite = invites.find((inv) => inv.token === token);
+    if (!invite) return;
+
+    setInvites((prev) =>
+      prev.map((inv) =>
+        inv.id === invite.id
+          ? {
+              ...inv,
+              usedCount: inv.usedCount + 1,
+              status: inv.usedCount + 1 >= (inv.maxUses || 1) ? 'accepted' : 'pending',
+              updatedAt: new Date().toISOString(),
+            }
+          : inv
+      )
+    );
+
+    const existingUser = users.find((u) => u.email.toLowerCase() === (invite.email || '').toLowerCase());
+    if (!existingUser) {
+      const newUser: User = {
+        id: `usr-${Date.now()}`,
+        name: name || invite.name || 'Novo Colaborador',
+        email: invite.email || `colaborador_${Date.now()}@vergroup.com.br`,
+        avatar: `https://images.unsplash.com/photo-${1534528741775 + Math.floor(Math.random() * 1000)}?w=150&auto=format&fit=crop&q=80`,
+        role: invite.role,
+        businessUnitIds: [invite.businessUnitId],
+        primaryBusinessUnitId: invite.businessUnitId,
+        departmentId: invite.departmentId,
+        teamId: invite.teamId,
+        jobTitle: invite.jobTitle,
+        phone: invite.phone || '+55 92 99000-0000',
+        managerId: invite.managerId,
+        status: 'active',
+        isExternal: invite.isExternal,
+        accessExpiresAt: invite.accessExpiresAt,
+        createdAt: new Date().toISOString(),
+      };
+
+      setUsers((prev) => [newUser, ...prev]);
+
+      const dept = departments.find((d) => d.id === invite.departmentId);
+      const defaultTasks: OnboardingTask[] = [
+        {
+          id: `onb-${Date.now()}-1`,
+          userId: newUser.id,
+          userName: newUser.name,
+          title: 'Configurar Perfil & Credenciais no VERGROUP',
+          description: 'Completar foto de perfil, dados de contato e preferências no cockpit.',
+          departmentId: newUser.departmentId,
+          completed: false,
+          dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+          createdAt: new Date().toISOString(),
+        },
+        {
+          id: `onb-${Date.now()}-2`,
+          userId: newUser.id,
+          userName: newUser.name,
+          title: `Entrar nos canais de comunicação de ${dept?.name || 'Departamento'}`,
+          description: 'Acessar canais internos do WhatsApp e Chat do departamento.',
+          departmentId: newUser.departmentId,
+          completed: false,
+          dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+          createdAt: new Date().toISOString(),
+        },
+        {
+          id: `onb-${Date.now()}-3`,
+          userId: newUser.id,
+          userName: newUser.name,
+          title: 'Leitura de Procedimentos & SLA Interno',
+          description: 'Revisar manual de conduta, diretrizes e regras da unidade.',
+          departmentId: newUser.departmentId,
+          completed: false,
+          dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+          createdAt: new Date().toISOString(),
+        },
+      ];
+
+      setOnboardingTasks((prev) => [...defaultTasks, ...prev]);
+      addAuditLog('create', 'User', newUser.id, `actor_type: human_user | action: user.invite.accepted | bu: ${invite.businessUnitId} | dept: ${invite.departmentId}`);
+    }
+  };
+
+  const createUserDirectly = (userData: Partial<User>, sendInviteImmediately: boolean): User => {
+    const newUser: User = {
+      id: `usr-${Date.now()}`,
+      name: userData.name || 'Novo Colaborador',
+      email: userData.email || '',
+      avatar: `https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80`,
+      role: userData.role || 'collaborator',
+      businessUnitIds: userData.businessUnitIds || [userData.primaryBusinessUnitId || selectedBusinessUnitId || 'bu-tech'],
+      primaryBusinessUnitId: userData.primaryBusinessUnitId || selectedBusinessUnitId || 'bu-tech',
+      departmentId: userData.departmentId || 'dep-product',
+      teamId: userData.teamId,
+      jobTitle: userData.jobTitle || 'Analista',
+      phone: userData.phone || '+55 92 99000-0000',
+      managerId: userData.managerId || currentUser.id,
+      status: sendInviteImmediately ? 'active' : 'invited',
+      createdAt: new Date().toISOString(),
+    };
+
+    setUsers((prev) => [newUser, ...prev]);
+
+    if (!sendInviteImmediately) {
+      createInvite({
+        type: 'direct',
+        email: newUser.email,
+        name: newUser.name,
+        businessUnitId: newUser.primaryBusinessUnitId,
+        departmentId: newUser.departmentId,
+        teamId: newUser.teamId,
+        jobTitle: newUser.jobTitle,
+        role: newUser.role,
+        managerId: newUser.managerId,
+        status: 'invite_not_sent',
+      });
+    } else {
+      addAuditLog('create', 'User', newUser.id, `actor_type: human_user | action: user.created | direct: true`);
+    }
+
+    return newUser;
+  };
+
+  const addDepartment = (data: { name: string; businessUnitId: string; leaderId?: string }): Department => {
+    const newDept: Department = {
+      id: `dep-${Date.now()}`,
+      name: data.name,
+      businessUnitId: data.businessUnitId,
+      leaderId: data.leaderId || currentUser.id,
+    };
+    setDepartments((prev) => [...prev, newDept]);
+    addAuditLog('create', 'Department', newDept.id, `actor_type: human_user | action: user.department.assigned | name: ${newDept.name}`);
+    return newDept;
+  };
+
+  const addTeam = (data: { name: string; departmentId: string; businessUnitId: string; leaderId?: string }): Team => {
+    const newTeam: Team = {
+      id: `team-${Date.now()}`,
+      name: data.name,
+      departmentId: data.departmentId,
+      businessUnitId: data.businessUnitId,
+      leaderId: data.leaderId || currentUser.id,
+    };
+    setTeams((prev) => [...prev, newTeam]);
+    addAuditLog('create', 'Team', newTeam.id, `actor_type: human_user | action: user.team.assigned | name: ${newTeam.name}`);
+    return newTeam;
+  };
+
   const resetAllData = () => {
     localStorage.clear();
     window.location.reload();
   };
 
+  const value: AppContextType = {
+    currentTab,
+    setCurrentTab,
+    selectedBusinessUnitId,
+    setSelectedBusinessUnitId,
+    currentBU,
+    currentUser,
+    setCurrentUser,
+    userRole: currentUser.role,
+    switchUserRole,
+    isSearchOpen,
+    setIsSearchOpen,
+    quickCreateType,
+    setQuickCreateType,
+    selectedDealId,
+    setSelectedDealId,
+    selectedTaskId,
+    setSelectedTaskId,
+    selectedContactId,
+    setSelectedContactId,
+    selectedClientId,
+    setSelectedClientId,
+    businessUnits,
+    departments,
+    teams,
+    users,
+    invites,
+    onboardingTasks,
+    leads,
+    contacts,
+    companies,
+    pipelines,
+    deals,
+    activities,
+    clientAccounts,
+    tasks,
+    projects,
+    calendarEvents,
+    chatChannels,
+    chatMessages,
+    emails,
+    whatsApps,
+    automations,
+    auditLogs,
+    notifications,
+    filterByBU,
+    createInvite,
+    revokeInvite,
+    resendInvite,
+    acceptInvite,
+    createUserDirectly,
+    addDepartment,
+    addTeam,
+    addLead,
+    updateLead,
+    deleteLead,
+    convertLeadToDeal,
+    addContact,
+    updateContact,
+    deleteContact,
+    checkDuplicate,
+    addCompany,
+    updateCompany,
+    addDeal,
+    updateDeal,
+    moveDealStage,
+    markDealWon,
+    markDealLost,
+    addDealDocument,
+    linkContactToDeal,
+    unlinkContactFromDeal,
+    addClientAccount,
+    updateClientAccount,
+    addTask,
+    updateTask,
+    deleteTask,
+    toggleTaskStatus,
+    toggleChecklistItem,
+    toggleTaskTimer,
+    addTimeSpent,
+    addTaskComment,
+    addProject,
+    updateProject,
+    deleteProject,
+    toggleMilestone,
+    addMilestone,
+    deleteMilestone,
+    addCalendarEvent,
+    activeChatChannelId,
+    setActiveChatChannelId,
+    sendChatMessage,
+    addChatReaction,
+    emailAccountConfig,
+    saveEmailAccountConfig,
+    sendEmail,
+    markEmailRead,
+    toggleEmailStar,
+    sendWhatsAppMessage,
+    changeWhatsAppStatus,
+    triggerAutomationSimulation,
+    toggleAutomationRule,
+    addActivity,
+    addAuditLog,
+    markNotificationRead,
+    markAllNotificationsRead,
+    resetAllData,
+  };
+
   return (
-    <AppContext.Provider
-      value={{
-        currentTab,
-        setCurrentTab,
-        selectedBusinessUnitId,
-        setSelectedBusinessUnitId,
-        currentBU,
-        currentUser,
-        setCurrentUser,
-        userRole: currentUser.role,
-        switchUserRole,
-        isSearchOpen,
-        setIsSearchOpen,
-        quickCreateType,
-        setQuickCreateType,
-        selectedDealId,
-        setSelectedDealId,
-        selectedTaskId,
-        setSelectedTaskId,
-        selectedContactId,
-        setSelectedContactId,
-        selectedClientId,
-        setSelectedClientId,
-        businessUnits,
-        departments,
-        users,
-        leads,
-        contacts,
-        companies,
-        pipelines,
-        deals,
-        activities,
-        clientAccounts,
-        tasks,
-        projects,
-        calendarEvents,
-        chatChannels,
-        chatMessages,
-        emails,
-        whatsApps,
-        automations,
-        auditLogs,
-        notifications,
-        filterByBU,
-        addLead,
-        updateLead,
-        deleteLead,
-        convertLeadToDeal,
-        addContact,
-        updateContact,
-        deleteContact,
-        checkDuplicate,
-        addCompany,
-        updateCompany,
-        addDeal,
-        updateDeal,
-        moveDealStage,
-        markDealWon,
-        markDealLost,
-        addDealDocument,
-        linkContactToDeal,
-        unlinkContactFromDeal,
-        addClientAccount,
-        updateClientAccount,
-        addTask,
-        updateTask,
-        toggleTaskStatus,
-        toggleChecklistItem,
-        toggleTaskTimer,
-        addTimeSpent,
-        addTaskComment,
-        addProject,
-        updateProject,
-        toggleMilestone,
-        addCalendarEvent,
-        sendChatMessage,
-        addChatReaction,
-        emailAccountConfig,
-        saveEmailAccountConfig,
-        sendEmail,
-        markEmailRead,
-        toggleEmailStar,
-        sendWhatsAppMessage,
-        changeWhatsAppStatus,
-        triggerAutomationSimulation,
-        toggleAutomationRule,
-        addActivity,
-        addAuditLog,
-        markNotificationRead,
-        markAllNotificationsRead,
-        resetAllData,
-      }}
-    >
+    <AppContext.Provider value={value}>
       {children}
     </AppContext.Provider>
   );

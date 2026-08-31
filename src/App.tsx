@@ -5,6 +5,7 @@ import { Header } from './components/common/Header';
 import { GlobalSearchModal } from './components/common/GlobalSearchModal';
 import { QuickCreateDrawer } from './components/common/QuickCreateDrawer';
 import { DealDetailDrawer } from './components/crm/DealDetailDrawer';
+import { RightChatWidgetRail } from './components/common/RightChatWidgetRail';
 
 // Views
 import { CockpitView } from './components/dashboard/CockpitView';
@@ -47,18 +48,25 @@ const MainLayout: React.FC = () => {
         return <ProjectsView />;
       case 'work-calendar':
         return <CalendarView />;
+      case 'comms-chat':
       case 'comm-chat':
         return <InternalChatView />;
+      case 'comms-email':
       case 'comm-email':
         return <EmailInboxView />;
+      case 'comms-whatsapp':
       case 'comm-whatsapp':
         return <WhatsAppSupportView />;
+      case 'mgmt-analytics':
       case 'manage-analytics':
         return <AnalyticsView />;
+      case 'mgmt-automations':
       case 'manage-automations':
         return <AutomationsView />;
+      case 'mgmt-audit':
       case 'manage-audit':
         return <AuditView />;
+      case 'admin-org':
       case 'admin-units':
       case 'admin-users':
       case 'admin-security':
@@ -73,8 +81,8 @@ const MainLayout: React.FC = () => {
       {/* Dynamic Sidebar */}
       <Sidebar />
 
-      {/* Main Container */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      {/* Main Container with pr-16 to preserve space for RightChatWidgetRail */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden pr-16">
         {/* Top Header */}
         <Header />
 
@@ -84,10 +92,11 @@ const MainLayout: React.FC = () => {
         </main>
       </div>
 
-      {/* Modals and Side Drawers */}
+      {/* Modals, Floating Right Rail and Side Drawers */}
       <GlobalSearchModal />
       <QuickCreateDrawer />
       <DealDetailDrawer />
+      <RightChatWidgetRail />
     </div>
   );
 };

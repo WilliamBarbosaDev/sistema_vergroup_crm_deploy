@@ -8,6 +8,7 @@ import {
   Clock,
   AlertTriangle,
   Check,
+  FolderKanban,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { TaskPriority } from '../../types';
@@ -28,6 +29,7 @@ export const QuickCreateDrawer: React.FC = () => {
     addContact,
     addCompany,
     addTask,
+    addProject,
     addCalendarEvent,
     checkDuplicate,
   } = useApp();
@@ -86,6 +88,16 @@ export const QuickCreateDrawer: React.FC = () => {
   const [evtStartTime, setEvtStartTime] = useState('14:00');
   const [evtEndTime, setEvtEndTime] = useState('15:00');
   const [evtLocation, setEvtLocation] = useState('Google Meet');
+
+  // 7. Project
+  const [projName, setProjName] = useState('');
+  const [projCode, setProjCode] = useState(`PRJ-${Math.floor(1000 + Math.random() * 9000)}`);
+  const [projCompanyId, setProjCompanyId] = useState(companies[0]?.id || '');
+  const [projService, setProjService] = useState('Implantação de Software');
+  const [projManagerId, setProjManagerId] = useState(users[0]?.id || '');
+  const [projStartDate, setProjStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [projEndDate, setProjEndDate] = useState(new Date(Date.now() + 86400000 * 45).toISOString().split('T')[0]);
+  const [projBudget, setProjBudget] = useState('50000');
 
   if (!quickCreateType) return null;
 
@@ -190,6 +202,27 @@ export const QuickCreateDrawer: React.FC = () => {
         organizerId: users[0]?.id || 'usr-william',
         attendeeIds: [users[0]?.id || 'usr-william'],
       });
+    } else if (quickCreateType === 'project') {
+      if (!projName.trim()) return;
+      addProject({
+        businessUnitId: activeBUId,
+        name: projName,
+        code: projCode || `PRJ-${Math.floor(1000 + Math.random() * 9000)}`,
+        companyId: projCompanyId || undefined,
+        serviceCategory: projService,
+        managerId: projManagerId || users[0]?.id || 'usr-william',
+        memberIds: [projManagerId || users[0]?.id || 'usr-william'],
+        startDate: projStartDate,
+        targetEndDate: projEndDate,
+        status: 'in_progress',
+        health: 'on_track',
+        progressPercentage: 0,
+        budget: Number(projBudget) || 0,
+        milestones: [
+          { id: `m-${Date.now()}-1`, title: 'Kickoff Inicial e Escopo', dueDate: projStartDate, completed: false },
+          { id: `m-${Date.now()}-2`, title: 'Entrega Final e Homologação', dueDate: projEndDate, completed: false },
+        ],
+      });
     }
 
     setQuickCreateType(null);
@@ -203,6 +236,7 @@ export const QuickCreateDrawer: React.FC = () => {
       case 'company': return { icon: Building2, text: 'Nova Empresa' };
       case 'task': return { icon: CheckCircle2, text: 'Nova Tarefa' };
       case 'event': return { icon: Clock, text: 'Novo Evento na Agenda' };
+      case 'project': return { icon: FolderKanban, text: 'Novo Projeto Operacional' };
       default: return { icon: Sparkles, text: 'Criar Registro' };
     }
   };
@@ -210,32 +244,32 @@ export const QuickCreateDrawer: React.FC = () => {
   const { icon: HeaderIcon, text: headerText } = getTitle();
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex justify-end animate-in fade-in duration-100">
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-2xs flex items-center justify-center p-4 animate-in fade-in duration-100">
       <div
-        className="w-full max-w-lg bg-white h-full shadow-2xl border-l border-[#DDE3E8] flex flex-col overflow-hidden animate-in slide-in-from-right duration-150"
+        className="w-full max-w-xl bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col max-h-[88vh] overflow-hidden animate-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="p-4 border-b border-[#DDE3E8] flex items-center justify-between bg-[#F7F9FA]">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-[#ECF8F1] text-[#0F8A4B] rounded-md">
-              <HeaderIcon className="w-4 h-4" />
+        <div className="p-4.5 border-b border-slate-200 flex items-center justify-between bg-gradient-to-r from-slate-50 via-white to-slate-50">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-[#ECF8F1] text-[#0F8A4B] rounded-xl border border-[#0F8A4B]/20 shadow-2xs">
+              <HeaderIcon className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-[#17212B]">{headerText}</h2>
-              <p className="text-[11px] text-[#5F6B76]">Unidade: {businessUnits.find(b => b.id === activeBUId)?.name}</p>
+              <h2 className="text-base font-extrabold text-slate-900">{headerText}</h2>
+              <p className="text-xs text-slate-500 font-semibold">Unidade: {businessUnits.find(b => b.id === activeBUId)?.name}</p>
             </div>
           </div>
           <button
             onClick={() => setQuickCreateType(null)}
-            className="p-1.5 text-[#5F6B76] hover:text-[#17212B] hover:bg-white rounded-md border border-transparent hover:border-[#DDE3E8]"
+            className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleCreate} className="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
+        <form onSubmit={handleCreate} className="flex-1 overflow-y-auto p-5 space-y-4 text-xs">
           {/* DEAL FORM */}
           {quickCreateType === 'deal' && (
             <>
@@ -722,6 +756,109 @@ export const QuickCreateDrawer: React.FC = () => {
                   placeholder="Google Meet / Sede VERGROUP Faria Lima"
                   className="w-full px-3 py-2 border border-[#DDE3E8] rounded-md focus:border-[#0F8A4B] outline-none"
                 />
+              </div>
+            </>
+          )}
+
+          {/* PROJECT FORM */}
+          {quickCreateType === 'project' && (
+            <>
+              <div>
+                <label className="block text-[#17212B] font-semibold mb-1">Nome do Projeto *</label>
+                <input
+                  type="text"
+                  required
+                  value={projName}
+                  onChange={(e) => setProjName(e.target.value)}
+                  placeholder="Ex: Implantação CRM Holding 2026"
+                  className="w-full px-3 py-2 border border-[#DDE3E8] rounded-md focus:border-[#0F8A4B] outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[#17212B] font-semibold mb-1">Código do Projeto</label>
+                  <input
+                    type="text"
+                    value={projCode}
+                    onChange={(e) => setProjCode(e.target.value)}
+                    placeholder="PRJ-1020"
+                    className="w-full px-3 py-2 border border-[#DDE3E8] rounded-md focus:border-[#0F8A4B] outline-none font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[#17212B] font-semibold mb-1">Cliente / Empresa</label>
+                  <select
+                    value={projCompanyId}
+                    onChange={(e) => setProjCompanyId(e.target.value)}
+                    className="w-full px-3 py-2 border border-[#DDE3E8] rounded-md bg-white focus:border-[#0F8A4B] outline-none"
+                  >
+                    <option value="">Projeto Interno (Sem Cliente)</option>
+                    {companies.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.tradeName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[#17212B] font-semibold mb-1">Gerente do Projeto</label>
+                  <select
+                    value={projManagerId}
+                    onChange={(e) => setProjManagerId(e.target.value)}
+                    className="w-full px-3 py-2 border border-[#DDE3E8] rounded-md bg-white focus:border-[#0F8A4B] outline-none"
+                  >
+                    {users.map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.name} ({u.jobTitle})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[#17212B] font-semibold mb-1">Categoria de Serviço</label>
+                  <input
+                    type="text"
+                    value={projService}
+                    onChange={(e) => setProjService(e.target.value)}
+                    placeholder="Ex: Consultoria / SaaS"
+                    className="w-full px-3 py-2 border border-[#DDE3E8] rounded-md focus:border-[#0F8A4B] outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="block text-[#17212B] font-semibold mb-1">Data Início</label>
+                  <input
+                    type="date"
+                    value={projStartDate}
+                    onChange={(e) => setProjStartDate(e.target.value)}
+                    className="w-full px-2.5 py-2 border border-[#DDE3E8] rounded-md focus:border-[#0F8A4B] outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[#17212B] font-semibold mb-1">Data Término</label>
+                  <input
+                    type="date"
+                    value={projEndDate}
+                    onChange={(e) => setProjEndDate(e.target.value)}
+                    className="w-full px-2.5 py-2 border border-[#DDE3E8] rounded-md focus:border-[#0F8A4B] outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[#17212B] font-semibold mb-1">Orçamento (R$)</label>
+                  <input
+                    type="number"
+                    value={projBudget}
+                    onChange={(e) => setProjBudget(e.target.value)}
+                    placeholder="50000"
+                    className="w-full px-2.5 py-2 border border-[#DDE3E8] rounded-md focus:border-[#0F8A4B] outline-none"
+                  />
+                </div>
               </div>
             </>
           )}

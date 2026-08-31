@@ -49,8 +49,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
   const efficiencyPercentage = 81;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-2xs flex justify-end animate-fade-in">
-      <div className="w-full max-w-3xl bg-[#F7F9FA] h-full shadow-2xl flex flex-col overflow-hidden border-l border-[#DDE3E8] animate-slide-in">
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-2xs flex items-center justify-center p-4 animate-fade-in">
+      <div className="w-full max-w-3xl bg-[#F7F9FA] rounded-xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden border border-[#DDE3E8] animate-in zoom-in-95 duration-150">
         {/* Top Header */}
         <div className="bg-[#17212B] text-white p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
