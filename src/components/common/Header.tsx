@@ -30,6 +30,7 @@ import { useApp } from '../../context/AppContext';
 import { UserRole } from '../../types';
 import { UserProfileModal } from './UserProfileModal';
 import { VerGroupLogo } from './VerGroupLogo';
+import greenLogoAsset from '../../assets/vergroup-logo-green.png';
 import { AIAgentCenterModal } from '../ai/AIAgentCenterModal';
 
 export const Header: React.FC = () => {
@@ -132,7 +133,7 @@ export const Header: React.FC = () => {
       {/* Left: Brand & Company Switcher */}
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
-          <VerGroupLogo variant="green" size="md" />
+          <img src={greenLogoAsset} alt="VERGROUP Logo" className="h-9 w-auto object-contain shrink-0" />
         </div>
 
         <div className="h-6 w-px bg-[#DDE3E8] hidden md:block" />

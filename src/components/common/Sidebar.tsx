@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { useApp, NavigationTab } from '../../context/AppContext';
 import { VerGroupLogo } from './VerGroupLogo';
+import greenLogoAsset from '../../assets/vergroup-logo-green.png';
 
 interface NavItem {
   id: NavigationTab;
@@ -121,7 +122,7 @@ export const Sidebar: React.FC = () => {
       {/* Top Logo Banner */}
       <div className="p-3 border-b border-[#E2E6EA] flex items-center justify-between bg-white">
         {!isCollapsed ? (
-          <VerGroupLogo variant="green" size="md" showSubtitle={false} />
+          <img src={greenLogoAsset} alt="VERGROUP Logo" className="h-8 w-auto object-contain shrink-0" />
         ) : (
           <div className="w-8 h-8 rounded-lg bg-[#0F8A4B] text-white flex items-center justify-center font-bold text-sm font-display">
             V
