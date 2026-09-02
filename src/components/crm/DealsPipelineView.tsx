@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { Deal } from '../../types';
+import { DealLossReasonModal } from './DealLossReasonModal';
 
 export const DealsPipelineView: React.FC = () => {
   const {
@@ -31,6 +32,8 @@ export const DealsPipelineView: React.FC = () => {
     users,
     filterByBU,
     moveDealStage,
+    markDealWon,
+    markDealLost,
     setSelectedDealId,
     setQuickCreateType,
   } = useApp();
@@ -41,6 +44,10 @@ export const DealsPipelineView: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUserId, setSelectedUserId] = useState<string>('all');
   const [draggedDealId, setDraggedDealId] = useState<string | null>(null);
+
+  // Loss Reason Modal State
+  const [losingDeal, setLosingDeal] = useState<Deal | null>(null);
+  const [targetLostStageId, setTargetLostStageId] = useState<string | null>(null);
 
   const activePipeline = pipelines.find((p) => p.id === selectedPipelineId) || pipelines[0];
 
@@ -75,10 +82,33 @@ export const DealsPipelineView: React.FC = () => {
   const handleDrop = (e: React.DragEvent, stageId: string) => {
     e.preventDefault();
     const dealId = e.dataTransfer.getData('text/plain') || draggedDealId;
-    if (dealId) {
+    if (!dealId) return;
+
+    const targetStage = activePipeline?.stages.find((s) => s.id === stageId);
+    const targetDeal = deals.find((d) => d.id === dealId);
+
+    if (targetStage?.stageType === 'lost') {
+      if (targetDeal) {
+        setLosingDeal(targetDeal);
+        setTargetLostStageId(stageId);
+      }
+    } else if (targetStage?.stageType === 'won') {
+      markDealWon(dealId);
+    } else {
       moveDealStage(dealId, stageId);
     }
     setDraggedDealId(null);
+  };
+
+  const handleConfirmLoss = (lossData: { reason: string; notes?: string; competitor?: string; followUpDate?: string }) => {
+    if (losingDeal) {
+      if (targetLostStageId) {
+        moveDealStage(losingDeal.id, targetLostStageId);
+      }
+      markDealLost(losingDeal.id, lossData.reason);
+    }
+    setLosingDeal(null);
+    setTargetLostStageId(null);
   };
 
   const renderBadge = (badge?: string) => {
@@ -124,7 +154,7 @@ export const DealsPipelineView: React.FC = () => {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-base font-black text-slate-900 tracking-tight">Pipeline de Negócios & Clientes (CRM)</h1>
+              <h1 className="text-base font-black text-slate-900 tracking-tight">Pipeline de Negócios & Clientes (CRM 2.0)</h1>
               <span className="text-xs font-black px-2 py-0.5 bg-[#ECF8F1] border border-[#0F8A4B]/20 text-[#0B6B3A] rounded-full">
                 {filteredPipelineDeals.length} negócios
               </span>
@@ -195,7 +225,7 @@ export const DealsPipelineView: React.FC = () => {
             className="flex items-center gap-1.5 px-4 py-2 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white rounded-xl text-xs font-black shadow-md cursor-pointer transition-colors"
           >
             <Plus className="w-4 h-4" />
-            <span>+ Novo Negócio</span>
+            <span>+ Novo Cliente / Oportunidade</span>
           </button>
         </div>
       </div>
@@ -208,7 +238,7 @@ export const DealsPipelineView: React.FC = () => {
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Buscar por título, empresa, contato..."
+            placeholder="Buscar por título, empresa, contato, CNPJ..."
             className="bg-transparent text-xs text-slate-900 focus:outline-none w-full font-semibold placeholder:text-slate-400"
           />
         </div>
@@ -284,8 +314,8 @@ export const DealsPipelineView: React.FC = () => {
                           </div>
 
                           {company && (
-                            <p className="text-[11px] text-slate-600 font-semibold flex items-center gap-1.5">
-                              <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                            <p className="text-[11px] text-slate-700 font-bold flex items-center gap-1.5">
+                              <Building2 className="w-3.5 h-3.5 text-[#0F8A4B] shrink-0" />
                               <span className="truncate">{company.tradeName}</span>
                             </p>
                           )}
@@ -295,6 +325,14 @@ export const DealsPipelineView: React.FC = () => {
                               <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                               <span className="truncate">{contact.name} ({contact.phone})</span>
                             </p>
+                          )}
+
+                          {deal.serviceCategory && (
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[10px] font-black px-2 py-0.5 bg-slate-100 text-slate-700 rounded border border-slate-200">
+                                {deal.serviceCategory}
+                              </span>
+                            </div>
                           )}
 
                           <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
@@ -376,6 +414,18 @@ export const DealsPipelineView: React.FC = () => {
             </table>
           </div>
         </div>
+      )}
+
+      {/* DEAL LOSS REASON MODAL */}
+      {losingDeal && (
+        <DealLossReasonModal
+          deal={losingDeal}
+          onConfirm={handleConfirmLoss}
+          onCancel={() => {
+            setLosingDeal(null);
+            setTargetLostStageId(null);
+          }}
+        />
       )}
     </div>
   );

@@ -271,6 +271,19 @@ export interface Company {
   healthScore: 'green' | 'yellow' | 'red';
   npsScore?: number;
   tags: string[];
+
+  // Ficha Cadastral Ampliada CRM 2.0
+  stateRegistration?: string; // Inscrição Estadual
+  municipalRegistration?: string; // Inscrição Municipal
+  openingDate?: string; // Data de Abertura
+  legalNature?: string; // Natureza Jurídica
+  cnaePrimary?: string; // CNAE Principal
+  cnaeSecondary?: string[]; // CNAEs Secundários
+  approximateRevenue?: number; // Faturamento aproximado
+  acquisitionChannel?: string; // Canal de aquisição
+  leadSource?: string; // Origem do cliente
+  commercialNotes?: string; // Observações comerciais
+
   createdAt: string;
   updatedAt: string;
 }
@@ -390,6 +403,9 @@ export interface Deal {
   expectedCloseDate: string;
   status: DealStatus;
   lossReason?: string;
+  lossNotes?: string;
+  lossFollowUpDate?: string;
+  lossCompetitor?: string;
   serviceCategory: string;
   serviceTemplateId?: string;
   customFields?: Record<string, string | number | boolean>;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   X,
   Sparkles,
@@ -6,7 +6,6 @@ import {
   Building2,
   CheckCircle2,
   Clock,
-  AlertTriangle,
   Check,
   FolderKanban,
   User,
@@ -14,6 +13,9 @@ import {
   Plus,
   FileCheck,
   AlertCircle,
+  MapPin,
+  PhoneCall,
+  DollarSign,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { TaskPriority } from '../../types';
@@ -62,7 +64,6 @@ export const QuickCreateDrawer: React.FC = () => {
   // Autocomplete Searches for Contact & Company
   const [contactSearchQuery, setContactSearchQuery] = useState('');
   const [companySearchQuery, setCompanySearchQuery] = useState('');
-  const [cnpjDupWarning, setCnpjDupWarning] = useState<string | null>(null);
 
   // 2. Lead
   const [leadTitle, setLeadTitle] = useState('');
@@ -83,13 +84,25 @@ export const QuickCreateDrawer: React.FC = () => {
   const [contactTags, setContactTags] = useState('Decisor');
   const [contactDupWarning, setContactDupWarning] = useState<string | null>(null);
 
-  // 4. Company
+  // 4. Company (Ficha Cadastral Ampliada CRM 2.0)
   const [compTradeName, setCompTradeName] = useState('');
   const [compCorpName, setCompCorpName] = useState('');
   const [compCnpj, setCompCnpj] = useState('');
+  const [compStateReg, setCompStateReg] = useState('');
+  const [compMuniReg, setCompMuniReg] = useState('');
+  const [compCnae, setCompCnae] = useState('');
   const [compSegment, setCompSegment] = useState('Tecnologia e Serviços');
+  const [compSize, setCompSize] = useState<'micro' | 'small' | 'medium' | 'large' | 'enterprise'>('medium');
   const [compEmail, setCompEmail] = useState('');
   const [compPhone, setCompPhone] = useState('');
+  const [compWebsite, setCompWebsite] = useState('');
+  const [compRevenue, setCompRevenue] = useState('150000');
+  const [compChannel, setCompChannel] = useState('Outbound / Comercial');
+  const [compNotes, setCompNotes] = useState('');
+  const [compStreet, setCompStreet] = useState('');
+  const [compCity, setCompCity] = useState('');
+  const [compState, setCompState] = useState('');
+  const [compZip, setCompZip] = useState('');
 
   // 5. Task
   const [taskTitle, setTaskTitle] = useState('');
@@ -99,29 +112,6 @@ export const QuickCreateDrawer: React.FC = () => {
   const [taskOwnerId, setTaskOwnerId] = useState(users[0]?.id || 'usr-william');
   const [taskAssigneeId, setTaskAssigneeId] = useState(users[0]?.id || 'usr-william');
   const [taskContactId, setTaskContactId] = useState('');
-  const [taskProjectId, setTaskProjectId] = useState('');
-  const [taskChecklist1, setTaskChecklist1] = useState('');
-  const [taskChecklist2, setTaskChecklist2] = useState('');
-  const [showCrmAiModal, setShowCrmAiModal] = useState(false);
-  const [detectedKeyword, setDetectedKeyword] = useState('');
-  const [aiCrmCandidates, setAiCrmCandidates] = useState<any[]>([]);
-
-  // 6. Event
-  const [evtTitle, setEvtTitle] = useState('');
-  const [evtDate, setEvtDate] = useState(new Date().toISOString().split('T')[0]);
-  const [evtStartTime, setEvtStartTime] = useState('14:00');
-  const [evtEndTime, setEvtEndTime] = useState('15:00');
-  const [evtLocation, setEvtLocation] = useState('Google Meet');
-
-  // 7. Project
-  const [projName, setProjName] = useState('');
-  const [projCode, setProjCode] = useState('');
-  const [projCompanyId, setProjCompanyId] = useState('');
-  const [projService, setProjService] = useState('Implantação de Software');
-  const [projManagerId, setProjManagerId] = useState(users[0]?.id || 'usr-william');
-  const [projStartDate, setProjStartDate] = useState(new Date().toISOString().split('T')[0]);
-  const [projEndDate, setProjEndDate] = useState(new Date(Date.now() + 86400000 * 60).toISOString().split('T')[0]);
-  const [projBudget, setProjBudget] = useState('50000');
 
   const activePipeline = pipelines.find((p) => p.id === dealPipelineId) || pipelines[0];
 
@@ -181,20 +171,6 @@ export const QuickCreateDrawer: React.FC = () => {
       });
 
       alert(`🎉 Negócio "${dealTitle}" criado com sucesso e vinculado ao Contato oficial!`);
-    } else if (quickCreateType === 'lead') {
-      if (!leadTitle.trim() || !leadName.trim()) return;
-      addLead({
-        businessUnitId: activeBUId,
-        title: leadTitle,
-        name: leadName,
-        email: leadEmail || `${leadName.toLowerCase().replace(/\s+/g, '')}@empresa.com.br`,
-        phone: leadPhone || '+55 11 98888-0000',
-        companyName: leadCompany || undefined,
-        source: leadSource,
-        status: 'new',
-        estimatedValue: Number(leadEstValue) || 0,
-        assignedUserId: users[0]?.id,
-      });
     } else if (quickCreateType === 'contact') {
       if (!contactName.trim()) return;
       const res = addContact({
@@ -220,87 +196,31 @@ export const QuickCreateDrawer: React.FC = () => {
         corporateName: compCorpName || `${compTradeName} S.A.`,
         cnpj: compCnpj || '00.000.000/0001-00',
         segment: compSegment,
-        size: 'medium',
+        size: compSize,
         email: compEmail || `contato@${compTradeName.toLowerCase().replace(/\s+/g, '')}.com.br`,
         phone: compPhone || '+55 11 3000-0000',
+        website: compWebsite || undefined,
+        stateRegistration: compStateReg || undefined,
+        municipalRegistration: compMuniReg || undefined,
+        cnaePrimary: compCnae || undefined,
+        approximateRevenue: Number(compRevenue) || undefined,
+        acquisitionChannel: compChannel || undefined,
+        commercialNotes: compNotes || undefined,
+        address: compStreet ? {
+          street: compStreet,
+          number: '100',
+          city: compCity || 'Manaus',
+          state: compState || 'AM',
+          zipCode: compZip || '69000-000',
+        } : undefined,
         assignedUserId: users[0]?.id || 'usr-william',
         status: 'active',
         healthScore: 'green',
-        tags: ['Novo Cliente'],
+        tags: ['Novo Cliente CRM 2.0'],
       });
-    } else if (quickCreateType === 'task') {
-      if (!taskTitle.trim()) return;
-      confirmCreateTask(false);
-      return;
-    } else if (quickCreateType === 'event') {
-      if (!evtTitle.trim()) return;
-      addCalendarEvent({
-        businessUnitId: activeBUId,
-        title: evtTitle,
-        start: `${evtDate}T${evtStartTime}:00Z`,
-        end: `${evtDate}T${evtEndTime}:00Z`,
-        type: 'meeting',
-        location: evtLocation,
-        organizerId: users[0]?.id || 'usr-william',
-        attendeeIds: [users[0]?.id || 'usr-william'],
-      });
-    } else if (quickCreateType === 'project') {
-      if (!projName.trim()) return;
-      addProject({
-        businessUnitId: activeBUId,
-        name: projName,
-        code: projCode || `PRJ-${Math.floor(1000 + Math.random() * 9000)}`,
-        companyId: projCompanyId || undefined,
-        serviceCategory: projService,
-        managerId: projManagerId || users[0]?.id || 'usr-william',
-        memberIds: [projManagerId || users[0]?.id || 'usr-william'],
-        startDate: projStartDate,
-        targetEndDate: projEndDate,
-        status: 'in_progress',
-        health: 'on_track',
-        progressPercentage: 0,
-        budget: Number(projBudget) || 0,
-        milestones: [
-          { id: `m-${Date.now()}-1`, title: 'Kickoff Inicial e Escopo', dueDate: projStartDate, completed: false },
-          { id: `m-${Date.now()}-2`, title: 'Entrega Final e Homologação', dueDate: projEndDate, completed: false },
-        ],
-      });
+      alert(`🏢 Empresa "${compTradeName}" cadastrada com sucesso no CRM Core!`);
     }
 
-    setQuickCreateType(null);
-  };
-
-  const confirmCreateTask = (asInternal: boolean) => {
-    const checklist = [];
-    if (taskChecklist1.trim()) checklist.push({ id: `chk-${Date.now()}-1`, text: taskChecklist1.trim(), completed: false });
-    if (taskChecklist2.trim()) checklist.push({ id: `chk-${Date.now()}-2`, text: taskChecklist2.trim(), completed: false });
-
-    const selectedContact = contacts.find((c) => c.id === taskContactId);
-
-    addTask({
-      businessUnitId: activeBUId,
-      title: taskTitle,
-      description: taskDesc || undefined,
-      status: 'pending',
-      priority: taskPriority,
-      dueDate: taskDueDate,
-      estimatedHours: 4,
-      spentHours: 0,
-      creatorId: currentUser.id,
-      ownerUserId: taskOwnerId || currentUser.id,
-      assignedUserId: taskAssigneeId || users[0]?.id || 'usr-william',
-      contactId: taskContactId || undefined,
-      clientId: selectedContact?.companyId || undefined,
-      taskContext: taskContactId ? 'client' : 'internal',
-      confirmedInternal: asInternal,
-      participantIds: [],
-      observerIds: [],
-      projectId: taskProjectId || undefined,
-      checklist,
-      tags: ['Operação'],
-    });
-
-    setShowCrmAiModal(false);
     setQuickCreateType(null);
   };
 
@@ -330,9 +250,9 @@ export const QuickCreateDrawer: React.FC = () => {
   const selectedCompany = companies.find((c) => c.id === dealCompanyId);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-2xs flex items-center justify-center p-4 animate-in fade-in duration-100 font-sans">
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-2xs flex items-center justify-center p-4 animate-in fade-in duration-100 font-sans select-none">
       <div
-        className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col max-h-[92vh] overflow-hidden animate-in zoom-in-95 duration-150"
+        className="w-full max-w-3xl bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col max-h-[92vh] overflow-hidden animate-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -343,7 +263,8 @@ export const QuickCreateDrawer: React.FC = () => {
             </div>
             <div>
               <h2 className="text-base font-black text-slate-900">
-                {quickCreateType === 'deal' ? 'Novo Negócio no CRM (Formulário Amplo)' : 'Criar Registro'}
+                {quickCreateType === 'deal' ? 'Novo Cliente / Nova Oportunidade (CRM 2.0)' :
+                 quickCreateType === 'company' ? 'Cadastro Completo de Empresa (CRM 2.0)' : 'Criar Registro'}
               </h2>
               <p className="text-xs text-slate-600 font-semibold">Unidade: {businessUnits.find(b => b.id === activeBUId)?.tradeName || activeBUId}</p>
             </div>
@@ -366,11 +287,11 @@ export const QuickCreateDrawer: React.FC = () => {
               <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
                 <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-[#0F8A4B]" />
-                  Bloco 1 — Dados Básicos do Negócio
+                  Bloco 1 — Dados Básicos da Oportunidade
                 </h3>
 
                 <div>
-                  <label className="block text-slate-800 font-bold mb-1">Título do Negócio *</label>
+                  <label className="block text-slate-800 font-bold mb-1">Título do Negócio / Contrato *</label>
                   <input
                     type="text"
                     required
@@ -383,7 +304,7 @@ export const QuickCreateDrawer: React.FC = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-slate-800 font-bold mb-1">Pipeline / Funil *</label>
+                    <label className="block text-slate-800 font-bold mb-1">Pipeline / Jornada *</label>
                     <select
                       value={dealPipelineId}
                       onChange={(e) => {
@@ -424,7 +345,18 @@ export const QuickCreateDrawer: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-slate-800 font-bold mb-1">Plano / Serviço Negociado *</label>
+                    <input
+                      type="text"
+                      value={dealService}
+                      onChange={(e) => setDealService(e.target.value)}
+                      placeholder="Ex: SaaS / BPO Financeiro / Consultoria"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold text-xs"
+                    />
+                  </div>
+
                   <div>
                     <label className="block text-slate-800 font-bold mb-1">Responsável Comercial *</label>
                     <select
@@ -469,7 +401,7 @@ export const QuickCreateDrawer: React.FC = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-slate-800 font-bold mb-1">Buscar Contato Existente (`public.contacts`) *</label>
+                  <label className="block text-slate-800 font-bold mb-1">Buscar Contato (`public.contacts`) *</label>
                   <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200">
                     <Search className="w-4 h-4 text-slate-400 shrink-0" />
                     <input
@@ -504,7 +436,7 @@ export const QuickCreateDrawer: React.FC = () => {
                       <p className="text-slate-500 text-[11px]">Cargo: {selectedContact.jobTitle || 'N/A'}</p>
                     </div>
                     <span className="text-[10px] font-black text-[#0B6B3A] bg-[#ECF8F1] px-2 py-0.5 rounded border border-[#0F8A4B]/20 uppercase">
-                      Contato Ativo
+                      Contato Selecionado
                     </span>
                   </div>
                 )}
@@ -593,7 +525,117 @@ export const QuickCreateDrawer: React.FC = () => {
             </>
           )}
 
-          {/* OTHER FORMS UNTOUCHED */}
+          {/* FORMULARIO AMPLO DE EMPRESA CRM 2.0 */}
+          {quickCreateType === 'company' && (
+            <div className="space-y-4">
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
+                <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                  <Building2 className="w-4 h-4 text-[#0F8A4B]" />
+                  Seção 1 — Identificação Empresarial
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-slate-800 mb-1">Nome Fantasia *</label>
+                    <input
+                      type="text"
+                      required
+                      value={compTradeName}
+                      onChange={(e) => setCompTradeName(e.target.value)}
+                      placeholder="Ex: Alfa Comércio Ltda"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-800 mb-1">Razão Social</label>
+                    <input
+                      type="text"
+                      value={compCorpName}
+                      onChange={(e) => setCompCorpName(e.target.value)}
+                      placeholder="Ex: Alfa Comércio de Alimentos S.A."
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block font-bold text-slate-800 mb-1">CNPJ *</label>
+                    <input
+                      type="text"
+                      required
+                      value={compCnpj}
+                      onChange={(e) => setCompCnpj(e.target.value)}
+                      placeholder="00.000.000/0001-00"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-800 mb-1">Inscrição Estadual</label>
+                    <input
+                      type="text"
+                      value={compStateReg}
+                      onChange={(e) => setCompStateReg(e.target.value)}
+                      placeholder="Ex: 123.456.789.000"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-800 mb-1">Inscrição Municipal</label>
+                    <input
+                      type="text"
+                      value={compMuniReg}
+                      onChange={(e) => setCompMuniReg(e.target.value)}
+                      placeholder="Ex: 987654-0"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
+                <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                  <PhoneCall className="w-4 h-4 text-[#0F8A4B]" />
+                  Seção 2 — Contato Corporativo & Endereço
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block font-bold text-slate-800 mb-1">Telefone Principal *</label>
+                    <input
+                      type="text"
+                      required
+                      value={compPhone}
+                      onChange={(e) => setCompPhone(e.target.value)}
+                      placeholder="+55 11 3000-0000"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-800 mb-1">E-mail Principal *</label>
+                    <input
+                      type="email"
+                      required
+                      value={compEmail}
+                      onChange={(e) => setCompEmail(e.target.value)}
+                      placeholder="contato@empresa.com.br"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-800 mb-1">Website</label>
+                    <input
+                      type="text"
+                      value={compWebsite}
+                      onChange={(e) => setCompWebsite(e.target.value)}
+                      placeholder="https://empresa.com.br"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* CONTACT FORM */}
           {quickCreateType === 'contact' && (
             <div className="space-y-3">
               <div>
@@ -604,57 +646,32 @@ export const QuickCreateDrawer: React.FC = () => {
                   value={contactName}
                   onChange={(e) => setContactName(e.target.value)}
                   placeholder="Ex: João Silva"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold"
                 />
               </div>
-              <div>
-                <label className="block font-bold text-slate-800 mb-1">E-mail Principal *</label>
-                <input
-                  type="email"
-                  required
-                  value={contactEmail}
-                  onChange={(e) => setContactEmail(e.target.value)}
-                  placeholder="joao@empresa.com.br"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none"
-                />
-              </div>
-              <div>
-                <label className="block font-bold text-slate-800 mb-1">Telefone / WhatsApp *</label>
-                <input
-                  type="text"
-                  required
-                  value={contactPhone}
-                  onChange={(e) => setContactPhone(e.target.value)}
-                  placeholder="+55 11 99999-8888"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none"
-                />
-              </div>
-            </div>
-          )}
-
-          {quickCreateType === 'company' && (
-            <div className="space-y-3">
-              <div>
-                <label className="block font-bold text-slate-800 mb-1">Nome Fantasia *</label>
-                <input
-                  type="text"
-                  required
-                  value={compTradeName}
-                  onChange={(e) => setCompTradeName(e.target.value)}
-                  placeholder="Ex: Alfa Comércio Ltda"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none"
-                />
-              </div>
-              <div>
-                <label className="block font-bold text-slate-800 mb-1">CNPJ *</label>
-                <input
-                  type="text"
-                  required
-                  value={compCnpj}
-                  onChange={(e) => setCompCnpj(e.target.value)}
-                  placeholder="00.000.000/0001-00"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-800 mb-1">E-mail Principal *</label>
+                  <input
+                    type="email"
+                    required
+                    value={contactEmail}
+                    onChange={(e) => setContactEmail(e.target.value)}
+                    placeholder="joao@empresa.com.br"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-800 mb-1">Telefone / WhatsApp *</label>
+                  <input
+                    type="text"
+                    required
+                    value={contactPhone}
+                    onChange={(e) => setContactPhone(e.target.value)}
+                    placeholder="+55 11 99999-8888"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold"
+                  />
+                </div>
               </div>
             </div>
           )}
@@ -674,7 +691,7 @@ export const QuickCreateDrawer: React.FC = () => {
             onClick={handleCreate}
             className="px-5 py-2 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white rounded-xl text-xs font-black shadow-md cursor-pointer transition-colors"
           >
-            Salvar Registro
+            Salvar Registro CRM 2.0
           </button>
         </div>
       </div>

@@ -11,6 +11,7 @@
 # LEADS PIPELINE CORE = STABLE
 # HUMAN GOVERNANCE CORE = STABLE
 # VERGROUP DESIGN SYSTEM = STABLE
+# CLIENT BU ISOLATION = STABLE
 ==============================================================================
 ```
 
