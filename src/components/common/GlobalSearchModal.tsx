@@ -51,7 +51,7 @@ export const GlobalSearchModal: React.FC = () => {
   const matchedLeads = q ? leads.filter((l) => l.title.toLowerCase().includes(q) || l.name.toLowerCase().includes(q) || l.email.toLowerCase().includes(q)) : [];
   const matchedContacts = q ? contacts.filter((c) => c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q) || c.phone.includes(q)) : [];
   const matchedCompanies = q ? companies.filter((c) => c.tradeName.toLowerCase().includes(q) || c.corporateName.toLowerCase().includes(q) || c.cnpj.includes(q)) : [];
-  const matchedTasks = q ? tasks.filter((t) => t.title.toLowerCase().includes(q) || t.description?.toLowerCase().includes(q)) : [];
+  const matchedTasks = q ? tasks.filter((t) => t.title.toLowerCase().includes(q) || (t.protocolNumber && t.protocolNumber.toLowerCase().includes(q)) || t.description?.toLowerCase().includes(q)) : [];
   const matchedProjects = q ? projects.filter((p) => p.name.toLowerCase().includes(q) || p.code.toLowerCase().includes(q)) : [];
   const matchedEmails = q ? emails.filter((e) => e.subject.toLowerCase().includes(q) || e.body.toLowerCase().includes(q)) : [];
   const matchedWhatsApp = q ? whatsApps.filter((w) => w.contactName.toLowerCase().includes(q) || w.lastMessage.toLowerCase().includes(q)) : [];
@@ -258,7 +258,14 @@ export const GlobalSearchModal: React.FC = () => {
                         className="p-2.5 rounded-lg hover:bg-[#F7F9FA] cursor-pointer flex items-center justify-between border border-transparent hover:border-[#DDE3E8] transition-colors"
                       >
                         <div>
-                          <p className="text-xs font-semibold text-[#17212B]">{task.title}</p>
+                          <div className="flex items-center gap-1.5">
+                            {task.protocolNumber && (
+                              <span className="font-mono text-[10px] font-black text-[#0F8A4B] bg-[#ECF8F1] px-1.5 py-0.2 rounded border border-[#0F8A4B]/20">
+                                {task.protocolNumber}
+                              </span>
+                            )}
+                            <p className="text-xs font-semibold text-[#17212B]">{task.title}</p>
+                          </div>
                           <p className="text-[11px] text-[#5F6B76]">
                             Prazo: {task.dueDate} • Prioridade: {task.priority}
                           </p>

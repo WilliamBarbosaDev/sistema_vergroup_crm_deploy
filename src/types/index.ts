@@ -21,6 +21,11 @@ export interface BusinessUnit {
   color: string;
   isHolding?: boolean;
   segment?: string;
+  tradeName?: string;
+  address?: string;
+  phone?: string;
+  status?: string;
+  createdAt?: string;
 }
 
 export interface Department {
@@ -84,6 +89,20 @@ export interface OnboardingTask {
   completed: boolean;
   dueDate: string;
   createdAt: string;
+}
+
+export interface JobExecutionLog {
+  id: string;
+  jobName: string;
+  startedAt: string;
+  completedAt?: string;
+  tasksScanned: number;
+  tasksFlagged: number;
+  suggestionsCreated: number;
+  notificationsCreated: number;
+  status: 'running' | 'success' | 'failed';
+  errorMessage?: string;
+  durationMs?: number;
 }
 
 export interface User {
@@ -486,6 +505,17 @@ export interface TaskStatusReport {
   createdAt: string;
 }
 
+export interface TimeEntry {
+  id: string;
+  userId: string;
+  taskId: string;
+  startedAt: string;
+  endedAt?: string;
+  durationSeconds: number;
+  status: 'running' | 'paused' | 'completed';
+  createdAt: string;
+}
+
 export interface TaskDependencyDetail {
   id: string;
   predecessorTaskId: string;
@@ -515,13 +545,28 @@ export interface SavedFilter {
   createdAt: string;
 }
 
+export interface TaskAttachment {
+  id: string;
+  taskId: string;
+  fileName: string;
+  storagePath?: string;
+  url?: string;
+  mimeType: string;
+  sizeBytes: number;
+  uploadedByUserId: string;
+  uploadedAt: string;
+}
+
 export interface Task {
   id: string;
+  protocolNumber?: string; // ex: 'VRG-2026-000001' (Unique Immutable Task Protocol)
   businessUnitId: string;
   departmentId?: string;
   title: string;
   description?: string;
   creatorId?: string;
+  ownerUserId?: string; // Proprietário da Tarefa (coordena a demanda)
+  assignedUserId: string; // Responsável pela Execução
   parentTaskId?: string;
   status: TaskStatus;
   priority: TaskPriority;
@@ -532,13 +577,35 @@ export interface Task {
   isTimerRunning?: boolean;
   estimatedHours?: number;
   spentHours?: number;
-  assignedUserId: string;
   participantIds: string[];
   observerIds: string[];
   projectId?: string;
   projectName?: string; // ex: '[Vads] - VerAds'
   dealId?: string;
-  clientId?: string;
+  clientId?: string; // Empresa / Cliente ID
+  contactId?: string; // Contato ID
+  taskContext?: 'client' | 'internal'; // Contexto oficial (Cliente vs Interna)
+  confirmedInternal?: boolean; // Usuário confirmou explicitamente que é tarefa interna
+  crmAuditStatus?: 'pending' | 'reviewed_internal' | 'crm_suggested' | 'linked'; // Status do Backend Audit Worker
+  crmSuggestionEntityType?: 'company' | 'contact' | 'deal';
+  crmSuggestionEntityId?: string;
+  crmSuggestionEntityName?: string;
+  crmSuggestionConfidence?: number;
+  crmSuggestionReason?: string;
+  lastCrmAuditAt?: string;
+  slaState?: 'normal' | 'attention' | 'risk' | 'critical' | 'breached'; // Estado oficial do SLA Supervisor
+  slaPercentageConsumed?: number; // 0-100+%
+  lastSlaCheckAt?: string;
+  lastSlaNotificationAt?: string;
+  lastEscalationLevel?: 'none' | 'assignee' | 'supervisor' | 'manager' | 'director';
+  nextEscalationAt?: string;
+  pendingReasonCategory?: 'executing' | 'waiting_client' | 'waiting_third_party' | 'internal_dependency' | 'technical_issue' | 'needs_help';
+  pendingReasonText?: string;
+  statusRequestedAt?: string;
+  requireCompletionSummary?: boolean; // Requer resumo obrigatorio para fechar tarefa
+  completionSummary?: string; // Resumo final de conclusao
+  completionSummaryAuthorId?: string;
+  completionSummaryAt?: string;
   companyName?: string;
   competenceMonth?: number; // ex: 8
   competenceYear?: number; // ex: 2026
@@ -548,8 +615,22 @@ export interface Task {
   checklist: ChecklistItem[];
   comments?: TaskComment[];
   statusReports?: TaskStatusReport[];
+  attachments?: {
+    id: string;
+    name: string;
+    sizeBytes: number;
+    fileUrl: string;
+    uploadedByUserId: string;
+    uploadedAt: string;
+  }[];
   recurrence?: 'none' | 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'custom';
-  dependencies?: string[];
+  dependencies?: {
+    id: string;
+    targetTaskId: string;
+    targetTaskProtocol?: string;
+    targetTaskTitle: string;
+    type: 'blocked_by' | 'blocks';
+  }[];
   dependenciesDetails?: TaskDependencyDetail[];
   tags: string[];
   createdAt: string;
@@ -570,7 +651,9 @@ export interface Project {
   businessUnitId: string;
   name: string;
   code: string;
+  description?: string;
   clientId?: string;
+  companyId?: string;
   dealId?: string;
   serviceCategory: string;
   managerId: string;
@@ -581,6 +664,12 @@ export interface Project {
   health: 'on_track' | 'at_risk' | 'delayed';
   progressPercentage: number;
   milestones: ProjectMilestone[];
+  attachments?: {
+    id: string;
+    name: string;
+    fileUrl: string;
+    uploadedAt: string;
+  }[];
   budget?: number;
   budgetedHours?: number;
   spentHours?: number;

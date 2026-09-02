@@ -104,7 +104,7 @@ export const DealDetailDrawer: React.FC = () => {
   const commercialLead = users.find((u) => u.id === deal.assignedUserId);
   const operationalLead = users.find((u) => u.id === (deal.operationalUserId || 'usr-rodrigo'));
   
-  const relatedTasks = tasks.filter((t) => t.dealId === deal.id);
+  const relatedTasks = tasks.filter((t) => t.dealId === deal.id || (deal.companyId && t.clientId === deal.companyId));
   const relatedActivities = activities.filter((a) => a.entityId === deal.id);
   const relatedEmails = emails.filter((e) => e.relatedDealId === deal.id);
   const relatedWhatsApp = whatsApps.find((w) => w.dealId === deal.id || (primaryContact && w.contactName.includes(primaryContact.name.split(' ')[0])));
@@ -838,9 +838,16 @@ export const DealDetailDrawer: React.FC = () => {
                               className="w-4 h-4 rounded text-[#0F8A4B] focus:ring-[#0F8A4B] mt-0.5 cursor-pointer"
                             />
                             <div>
-                              <h4 className={`text-xs font-bold ${t.status === 'completed' ? 'line-through text-neutral-400' : 'text-neutral-900'}`}>
-                                {t.title}
-                              </h4>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                {t.protocolNumber && (
+                                  <span className="font-mono text-[10px] font-black text-[#0F8A4B] bg-[#ECF8F1] px-1.5 py-0.2 rounded border border-[#0F8A4B]/20">
+                                    📋 {t.protocolNumber}
+                                  </span>
+                                )}
+                                <h4 className={`text-xs font-bold ${t.status === 'completed' ? 'line-through text-neutral-400' : 'text-neutral-900'}`}>
+                                  {t.title}
+                                </h4>
+                              </div>
                               {t.description && <p className="text-xs text-neutral-500 mt-0.5">{t.description}</p>}
                             </div>
                           </div>

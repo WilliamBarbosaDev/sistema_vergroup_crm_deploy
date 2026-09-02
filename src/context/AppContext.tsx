@@ -16,6 +16,7 @@ import {
   DealDocument,
   Activity,
   ClientAccount,
+  ClientAccountStage,
   Task,
   Project,
   CalendarEvent,
@@ -30,6 +31,7 @@ import {
   Team,
   CollaboratorInvite,
   OnboardingTask,
+  JobExecutionLog,
 } from '../types';
 import {
   INITIAL_BUSINESS_UNITS,
@@ -72,7 +74,11 @@ export type NavigationTab =
   | 'mgmt-analytics'
   | 'mgmt-automations'
   | 'mgmt-audit'
-  | 'admin-org';
+  | 'admin-org'
+  | 'mod-fiscal'
+  | 'mod-finance'
+  | 'mod-hr'
+  | (string & {});
 
 export interface NotificationItem {
   id: string;
@@ -197,7 +203,13 @@ interface AppContextType {
 
   addClientAccount: (client: Omit<ClientAccount, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateClientAccount: (id: string, updates: Partial<ClientAccount>) => void;
+  updateClientAccountStage: (id: string, stage: ClientAccountStage) => void;
 
+  generateTaskProtocol: (businessUnitId?: string) => string;
+  runCrmQualityAudit: () => { totalUnlinked: number; likelyInternal: number; needsReview: number; unlinkedTasks: Task[] };
+  jobExecutionLogs: JobExecutionLog[];
+  runSlaSupervisorAudit: () => { scanned: number; flagged: number; notificationsSent: number };
+  runSlaTeamRisksAudit: () => { attentionCount: number; riskCount: number; criticalCount: number; breachedCount: number; unlinkedCount: number };
   addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateTask: (id: string, updates: Partial<Task>) => void;
   deleteTask: (id: string) => void;
@@ -213,6 +225,10 @@ interface AppContextType {
   toggleMilestone: (projectId: string, milestoneId: string) => void;
   addMilestone: (projectId: string, title: string, dueDate: string) => void;
   deleteMilestone: (projectId: string, milestoneId: string) => void;
+
+  addBusinessUnit: (unit: Omit<BusinessUnit, 'id' | 'createdAt'>) => void;
+  updateUserStatus: (userId: string, newStatus: 'active' | 'suspended' | 'inactive') => void;
+  reassignUserTasks: (fromUserId: string, toUserId: string) => { reassignedCount: number };
 
   addCalendarEvent: (event: Omit<CalendarEvent, 'id'>) => void;
 
@@ -240,7 +256,7 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | null>(null);
 
-const STORAGE_KEY = 'vergroup_sig_v3_state';
+const STORAGE_KEY = 'vergroup_crm_v4_clean';
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Auth State
@@ -296,7 +312,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
 
   // Core Data Collections with LocalStorage hydration
-  const [businessUnits] = useState<BusinessUnit[]>(INITIAL_BUSINESS_UNITS);
+  const [businessUnits, setBusinessUnits] = useState<BusinessUnit[]>(INITIAL_BUSINESS_UNITS);
   const [departments, setDepartments] = useState<Department[]>(() => {
     const saved = localStorage.getItem(`${STORAGE_KEY}_departments`);
     return saved ? JSON.parse(saved) : INITIAL_DEPARTMENTS;
@@ -365,7 +381,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const saved = localStorage.getItem(`${STORAGE_KEY}_chatMessages`);
     return saved ? JSON.parse(saved) : INITIAL_CHAT_MESSAGES;
   });
-  const [activeChatChannelId, setActiveChatChannelId] = useState<string>('chan-silvestre');
+  const [activeChatChannelId, setActiveChatChannelId] = useState<string>('chan-geral');
   const [emails, setEmails] = useState<EmailMessage[]>(() => {
     const saved = localStorage.getItem(`${STORAGE_KEY}_emails`);
     return saved ? JSON.parse(saved) : INITIAL_EMAILS;
@@ -460,6 +476,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem(`${STORAGE_KEY}_whatsApps`, JSON.stringify(whatsApps));
     localStorage.setItem(`${STORAGE_KEY}_chatMessages`, JSON.stringify(chatMessages));
   }, [users, departments, teams, invites, onboardingTasks, leads, contacts, companies, deals, tasks, projects, clientAccounts, activities, auditLogs, emails, whatsApps, chatMessages]);
+
+  // Real-time 1-second Stopwatch Timer Ticker for Active Task Timers
+  useEffect(() => {
+    const hasRunningTimer = tasks.some((t) => t.isTimerRunning);
+    if (!hasRunningTimer) return;
+
+    const timerInterval = setInterval(() => {
+      setTasks((prevTasks) =>
+        prevTasks.map((t) => {
+          if (!t.isTimerRunning) return t;
+          const currentSeconds = (t.timerSeconds || 0) + 1;
+          const currentSpentHours = Number((currentSeconds / 3600).toFixed(2));
+          return {
+            ...t,
+            timerSeconds: currentSeconds,
+            spentHours: currentSpentHours,
+          };
+        })
+      );
+    }, 1000);
+
+    return () => clearInterval(timerInterval);
+  }, [tasks]);
 
   // Keyboard shortcut Cmd+K / Ctrl+K for Global Search
   useEffect(() => {
@@ -1267,16 +1306,171 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addAuditLog('update', 'client', id, `Conta de cliente atualizada`);
   };
 
-  // Tasks & Operations
+  const updateClientAccountStage = (id: string, stage: ClientAccountStage) => {
+    setClientAccounts((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, stage, updatedAt: new Date().toISOString() } : c))
+    );
+    const client = clientAccounts.find((c) => c.id === id);
+    const comp = companies.find((cp) => cp.id === client?.companyId);
+    const name = comp?.tradeName || id;
+    addAuditLog('stage_change', 'client_account', id, `Cliente "${name}" movido para o estágio "${stage}" no Pipeline de Clientes`);
+  };
+
+  // Tasks & Operations Protocol Generator (VRG-YYYY-NNNNNN)
+  const generateTaskProtocol = (businessUnitId?: string): string => {
+    const currentYear = new Date().getFullYear();
+    const yearTasksCount = tasks.filter((t) => t.createdAt?.startsWith(String(currentYear))).length + 1;
+    const seqStr = String(yearTasksCount).padStart(6, '0');
+    let prefix = 'VRG';
+    if (businessUnitId) {
+      const bu = businessUnits.find((b) => b.id === businessUnitId);
+      if (bu && bu.code && bu.code !== 'ALL') {
+        prefix = bu.code;
+      }
+    }
+    return `${prefix}-${currentYear}-${seqStr}`;
+  };
+
+  const [jobExecutionLogs, setJobExecutionLogs] = useState<JobExecutionLog[]>([
+    {
+      id: 'job-log-1',
+      jobName: 'task_crm_context_audit_job',
+      startedAt: new Date(Date.now() - 900000).toISOString(),
+      completedAt: new Date(Date.now() - 899800).toISOString(),
+      tasksScanned: 14,
+      tasksFlagged: 3,
+      suggestionsCreated: 3,
+      notificationsCreated: 3,
+      status: 'success',
+      durationMs: 200,
+    },
+    {
+      id: 'job-log-2',
+      jobName: 'task_sla_supervisor_job',
+      startedAt: new Date(Date.now() - 450000).toISOString(),
+      completedAt: new Date(Date.now() - 449750).toISOString(),
+      tasksScanned: 18,
+      tasksFlagged: 4,
+      suggestionsCreated: 0,
+      notificationsCreated: 2,
+      status: 'success',
+      durationMs: 250,
+    },
+  ]);
+
+  const runCrmQualityAudit = () => {
+    const unlinked = tasks.filter(
+      (t) => t.status !== 'completed' && !t.clientId && !t.contactId && !t.dealId && !t.confirmedInternal
+    );
+    const needsReview = unlinked.filter((t) => t.crmAuditStatus === 'crm_suggested' || (t.title + ' ' + (t.description || '')).toLowerCase().includes('cliente') || (t.title + ' ' + (t.description || '')).toLowerCase().includes('empresa') || (t.title + ' ' + (t.description || '')).toLowerCase().includes('alfa'));
+    const likelyInternal = unlinked.filter((t) => !needsReview.includes(t));
+
+    return {
+      totalUnlinked: unlinked.length,
+      likelyInternal: likelyInternal.length,
+      needsReview: needsReview.length,
+      unlinkedTasks: unlinked,
+    };
+  };
+
+  const runSlaSupervisorAudit = () => {
+    let flaggedCount = 0;
+    let notifCount = 0;
+
+    tasks.forEach((t) => {
+      if (t.status === 'completed' || t.status === 'cancelled') return;
+      const isOverdue = new Date(t.dueDate) < new Date();
+      const hoursLeft = (new Date(t.dueDate).getTime() - Date.now()) / (1000 * 60 * 60);
+
+      if (isOverdue || hoursLeft < 12) {
+        flaggedCount++;
+        notifCount++;
+      }
+    });
+
+    return {
+      scanned: tasks.filter((t) => t.status !== 'completed').length,
+      flagged: flaggedCount,
+      notificationsSent: notifCount,
+    };
+  };
+
+  const runSlaTeamRisksAudit = () => {
+    let attentionCount = 0;
+    let riskCount = 0;
+    let criticalCount = 0;
+    let breachedCount = 0;
+    let unlinkedCount = 0;
+
+    tasks.forEach((t) => {
+      if (t.status === 'completed' || t.status === 'cancelled') return;
+      const isOverdue = new Date(t.dueDate) < new Date();
+      const hoursLeft = (new Date(t.dueDate).getTime() - Date.now()) / (1000 * 60 * 60);
+
+      if (!t.clientId && !t.contactId && !t.dealId && !t.confirmedInternal) {
+        unlinkedCount++;
+      }
+
+      if (isOverdue) {
+        breachedCount++;
+      } else if (hoursLeft < 4) {
+        criticalCount++;
+      } else if (hoursLeft < 12) {
+        riskCount++;
+      } else if (hoursLeft < 24) {
+        attentionCount++;
+      }
+    });
+
+    return {
+      attentionCount,
+      riskCount,
+      criticalCount,
+      breachedCount,
+      unlinkedCount,
+    };
+  };
+
   const addTask = (taskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
+    const protocolNumber = taskData.protocolNumber || generateTaskProtocol(taskData.businessUnitId);
+    const hasCrmLink = Boolean(taskData.clientId || taskData.contactId || taskData.dealId);
+    const taskContext = taskData.taskContext || (hasCrmLink ? 'client' : 'internal');
+
+    // Simulate backend PL/pgSQL trigger `trg_tasks_crm_audit_event` execution
+    const clientTerms = ['cliente', 'empresa', 'cnpj', 'cpf', 'notas', 'faturamento', 'contrato', 'cobrança', 'documentos', 'atendimento', 'alfa'];
+    const fullText = (taskData.title + ' ' + (taskData.description || '')).toLowerCase();
+    const isClientContextMatched = !hasCrmLink && !taskData.confirmedInternal && clientTerms.some((term) => fullText.includes(term));
+
+    const matchedCompany = isClientContextMatched
+      ? companies.find((c) => fullText.includes(c.name.toLowerCase())) || companies[0]
+      : undefined;
+
     const newTask: Task = {
       ...taskData,
+      protocolNumber,
+      taskContext,
+      creatorId: taskData.creatorId || currentUser.id,
+      ownerUserId: taskData.ownerUserId || taskData.creatorId || currentUser.id,
+      crmAuditStatus: isClientContextMatched ? 'crm_suggested' : 'pending',
+      crmSuggestionEntityType: matchedCompany ? 'company' : undefined,
+      crmSuggestionEntityId: matchedCompany?.id,
+      crmSuggestionEntityName: matchedCompany?.name,
+      crmSuggestionConfidence: isClientContextMatched ? 92 : undefined,
+      crmSuggestionReason: isClientContextMatched ? `Identificado pelo Backend Event Trigger [trg_tasks_crm_audit_event]` : undefined,
+      lastCrmAuditAt: isClientContextMatched ? new Date().toISOString() : undefined,
       id: `tsk-${Date.now()}`,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
+
     setTasks((prev) => [newTask, ...prev]);
-    addAuditLog('create', 'task', newTask.id, `Tarefa "${newTask.title}" criada`);
+
+    // Persistent Audit Log with ActorContext = 'ai_agent'
+    if (isClientContextMatched) {
+      addAuditLog('create', 'task', newTask.id, `actor_type: ai_agent | actor_id: ver-ai-proactive-agent | action: task.crm_relation.suggested | details: Backend Trigger sugeriu vínculo com "${matchedCompany?.name || 'Cliente'}"`);
+    } else {
+      addAuditLog('create', 'task', newTask.id, `Tarefa "${newTask.title}" criada sob o protocolo [${protocolNumber}] (${taskContext === 'client' ? 'CRM Cliente' : 'Interna'})`);
+    }
   };
 
   const updateTask = (id: string, updates: Partial<Task>) => {
@@ -1294,14 +1488,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const toggleTaskStatus = (taskId: string, targetStatus?: TaskStatus) => {
+    const target = tasks.find((t) => t.id === taskId);
+    if (!target) return;
+
+    const newStatus: TaskStatus = targetStatus || (target.status === 'completed' ? 'pending' : 'completed');
+
+    // Trava de Conclusão Obrigatória
+    if (newStatus === 'completed' && target.requireCompletionSummary && !target.completionSummary) {
+      alert(`⚠️ TRAVA DE GOVERNANÇA: A tarefa [${target.protocolNumber || target.id}] exige o Resumo Final de Conclusão antes de ser encerrada.`);
+      return;
+    }
+
     setTasks((prev) =>
       prev.map((t) => {
         if (t.id !== taskId) return t;
-        const newStatus: TaskStatus = targetStatus || (t.status === 'completed' ? 'pending' : 'completed');
-        addAuditLog('update', 'task', taskId, `Status da tarefa "${t.title}" alterado para ${newStatus}`);
+        addAuditLog('update', 'task', taskId, `actor_type: human_user | action: task.status.changed | details: Status alterado para ${newStatus}`);
         return {
           ...t,
           status: newStatus,
+          isTimerRunning: newStatus === 'completed' ? false : t.isTimerRunning,
           updatedAt: new Date().toISOString(),
         };
       })
@@ -1340,22 +1545,41 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const toggleTaskTimer = (taskId: string) => {
-    setTasks((prev) =>
-      prev.map((t) => {
+    const targetTask = tasks.find((t) => t.id === taskId);
+    if (!targetTask) return;
+
+    const isStarting = !targetTask.isTimerRunning;
+
+    setTasks((prev) => {
+      const runningTask = prev.find((t) => t.id !== taskId && t.isTimerRunning);
+      if (isStarting && runningTask) {
+        addAuditLog(
+          'update',
+          'task_timer',
+          runningTask.id,
+          `actor_type: human_user | action: task.timer.auto_paused | details: Cronômetro da tarefa [${runningTask.protocolNumber || runningTask.id}] pausado automaticamente no banco ao iniciar [${targetTask.protocolNumber || targetTask.id}]`
+        );
+      }
+
+      return prev.map((t) => {
         if (t.id !== taskId) {
-          // If starting another task timer, pause other timers
+          // Pause any other running task timer (guaranteed max 1 running timer per user in PostgreSQL)
           return { ...t, isTimerRunning: false };
         }
-        const nextRunning = !t.isTimerRunning;
-        addAuditLog('update', 'task_timer', taskId, nextRunning ? `Cronômetro iniciado para a tarefa "${t.title}"` : `Cronômetro pausado`);
+        addAuditLog(
+          'update',
+          'task_timer',
+          taskId,
+          `actor_type: human_user | action: ${isStarting ? 'task.timer.started' : 'task.timer.paused'} | details: Cronômetro ${isStarting ? 'iniciado' : 'pausado'} para a tarefa [${t.protocolNumber || t.id}]`
+        );
         return {
           ...t,
-          isTimerRunning: nextRunning,
-          status: nextRunning && t.status === 'pending' ? 'in_progress' : t.status,
+          isTimerRunning: isStarting,
+          status: isStarting && (t.status === 'pending' || t.status === 'active') ? 'in_progress' : t.status,
           updatedAt: new Date().toISOString(),
         };
-      })
-    );
+      });
+    });
   };
 
   // Timer interval ticker for active running tasks
@@ -1888,6 +2112,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return newTeam;
   };
 
+  const addBusinessUnit = (unit: Omit<BusinessUnit, 'id' | 'createdAt'>) => {
+    const newBu: BusinessUnit = {
+      ...unit,
+      id: `bu-${Date.now()}`,
+      color: unit.color || '#0F8A4B',
+      tradeName: unit.tradeName || unit.name,
+      createdAt: new Date().toISOString().split('T')[0],
+    };
+    setBusinessUnits((prev) => [...prev, newBu]);
+    addAuditLog('create', 'BusinessUnit', newBu.id, `Empresa do grupo criada: ${newBu.tradeName || newBu.name} (${newBu.cnpj}) por ${currentUser.name}`);
+  };
+
+  const updateUserStatus = (userId: string, newStatus: 'active' | 'suspended' | 'inactive') => {
+    setUsers((prev) =>
+      prev.map((u) => (u.id === userId ? { ...u, status: newStatus } : u))
+    );
+    addAuditLog('update', 'user_status', userId, `Status do usuário alterado para ${newStatus} por ${currentUser.name}`);
+  };
+
+  const reassignUserTasks = (fromUserId: string, toUserId: string): { reassignedCount: number } => {
+    let count = 0;
+    setTasks((prev) =>
+      prev.map((t) => {
+        if (t.assignedUserId === fromUserId && t.status !== 'completed') {
+          count++;
+          return { ...t, assignedUserId: toUserId };
+        }
+        return t;
+      })
+    );
+    addAuditLog('update', 'tasks_reassign', fromUserId, `Transferência em lote de ${count} tarefas de ${fromUserId} para ${toUserId}`);
+    return { reassignedCount: count };
+  };
+
   const resetAllData = () => {
     localStorage.clear();
     window.location.reload();
@@ -1948,6 +2206,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     resendInvite,
     acceptInvite,
     createUserDirectly,
+    addBusinessUnit,
+    updateUserStatus,
+    reassignUserTasks,
     addDepartment,
     addTeam,
     addLead,
@@ -1982,6 +2243,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     deletePipelineCustomField,
     addClientAccount,
     updateClientAccount,
+    updateClientAccountStage,
+    generateTaskProtocol,
+    runCrmQualityAudit,
+    jobExecutionLogs,
+    runSlaSupervisorAudit,
+    runSlaTeamRisksAudit,
     addTask,
     updateTask,
     deleteTask,

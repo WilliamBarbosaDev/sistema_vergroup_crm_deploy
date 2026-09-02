@@ -19,6 +19,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Sparkles,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { useApp, NavigationTab } from '../../context/AppContext';
 import { VerGroupLogo } from './VerGroupLogo';
@@ -94,6 +95,12 @@ export const Sidebar: React.FC = () => {
         { id: 'comms-chat', label: 'Chat Interno', icon: MessageSquare },
         { id: 'comms-email', label: 'E-mail Integrado', icon: Mail, badge: unreadEmailCount > 0 ? unreadEmailCount : undefined, badgeColor: 'bg-indigo-600' },
         { id: 'comms-whatsapp', label: 'WhatsApp (W-API)', icon: PhoneCall, badge: unreadWppCount > 0 ? unreadWppCount : undefined, badgeColor: 'bg-[#0F8A4B]' },
+      ],
+    },
+    {
+      title: 'Módulos de Extensão',
+      items: [
+        { id: 'mod-fiscal' as any, label: 'Gestão Fiscal & Tributária', icon: FileSpreadsheet, badge: 1, badgeColor: 'bg-indigo-600' },
       ],
     },
     {

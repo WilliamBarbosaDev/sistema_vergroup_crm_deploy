@@ -130,14 +130,8 @@ export const Header: React.FC = () => {
 
   return (
     <header id="vergroup-topbar" className="h-14 bg-white border-b border-[#E2E6EA] px-4 md:px-6 flex items-center justify-between sticky top-0 z-30 font-sans select-none">
-      {/* Left: Brand & Company Switcher */}
+      {/* Left: Company Switcher */}
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2">
-          <img src={greenLogoAsset} alt="VERGROUP Logo" className="h-9 w-auto object-contain shrink-0" />
-        </div>
-
-        <div className="h-6 w-px bg-[#DDE3E8] hidden md:block" />
-
         {/* Multi-Company Dropdown */}
         <div className="relative" ref={buDropdownRef}>
           <button

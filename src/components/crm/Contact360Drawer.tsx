@@ -595,7 +595,14 @@ export const Contact360Drawer: React.FC<Contact360DrawerProps> = ({
                     className="p-3 bg-white rounded-xl border border-[#E2E6EA] hover:border-[#0F8A4B] transition-colors cursor-pointer flex items-center justify-between gap-4"
                   >
                     <div>
-                      <strong className="text-slate-900 font-semibold block">{t.title}</strong>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {t.protocolNumber && (
+                          <span className="font-mono text-[10px] font-black text-[#0F8A4B] bg-[#ECF8F1] px-1.5 py-0.2 rounded border border-[#0F8A4B]/20">
+                            📋 {t.protocolNumber}
+                          </span>
+                        )}
+                        <strong className="text-slate-900 font-semibold text-xs">{t.title}</strong>
+                      </div>
                       <span className="text-[11px] text-slate-500 font-normal">
                         Prazo: {t.dueDate}
                       </span>

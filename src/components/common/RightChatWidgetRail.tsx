@@ -180,7 +180,7 @@ export const RightChatWidgetRail: React.FC = () => {
       {/* BITRIX24 FLOATING RIGHT RAIL WIDGET (VERGROUP BRAND GREEN PALETTE) */}
       <aside
         id="bitrix-right-chat-rail"
-        className="fixed right-0 top-16 bottom-0 w-16 bg-[#0A3429] text-emerald-100 flex flex-col items-center py-3 space-y-3 z-40 border-l border-[#13604C]/60 shadow-2xl font-sans overflow-y-auto custom-scrollbar select-none"
+        className="fixed right-0 top-0 bottom-0 w-16 bg-[#0A3429] text-emerald-100 flex flex-col items-center py-3 space-y-3 z-40 border-l border-[#13604C]/60 shadow-2xl font-sans overflow-y-auto custom-scrollbar select-none"
       >
         {/* Top Clock */}
         <div className="flex flex-col items-center space-y-1 bg-[#0F493A] p-1.5 rounded-2xl border border-[#197960]/40 shadow-2xs">
@@ -245,7 +245,7 @@ export const RightChatWidgetRail: React.FC = () => {
 
       {/* FLOATING DRAWER WHEN A CONVERSATION AVATAR IS CLICKED */}
       {activeChatChannelId && activeChannel && (
-        <div className="fixed right-16 top-16 bottom-0 w-96 bg-white shadow-2xl border-l border-[#DDE3E8] z-40 flex flex-col animate-in slide-in-from-right duration-200">
+        <div className="fixed right-16 top-0 bottom-0 w-96 bg-white shadow-2xl border-l border-[#DDE3E8] z-40 flex flex-col animate-in slide-in-from-right duration-200">
           
           {/* Drawer Header */}
           <div className="p-4 bg-[#0F493A] text-white flex items-center justify-between shadow-xs">

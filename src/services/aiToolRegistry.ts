@@ -13,6 +13,9 @@ export interface ToolContext {
   collaborator: User;
   tasks: Task[];
   onboardingTasks: OnboardingTask[];
+  companies?: any[];
+  contacts?: any[];
+  deals?: any[];
 }
 
 export const REGISTERED_AI_TOOLS: Record<string, ToolDefinition> = {
@@ -22,6 +25,13 @@ export const REGISTERED_AI_TOOLS: Record<string, ToolDefinition> = {
     capabilityRequired: 'tasks.list_my_tasks',
     inputSchema: { collaboratorId: 'string' },
     outputSchema: { prioritizedTasks: 'array', summary: 'string' },
+  },
+  'tasks.suggest_crm_relation': {
+    name: 'tasks.suggest_crm_relation',
+    description: 'Busca relacional no CRM (empresas, contatos e negócios) para sugerir a entidade correspondente à tarefa com score de confiança e tratamento de ambiguidade.',
+    capabilityRequired: 'tasks.crm.suggest',
+    inputSchema: { title: 'string', description: 'string', businessUnitId: 'string' },
+    outputSchema: { candidates: 'array', suggestedEntity: 'object', hasAmbiguity: 'boolean' },
   },
   'tasks.get_sla_risks': {
     name: 'tasks.get_sla_risks',
@@ -103,6 +113,68 @@ export class AiToolRegistryService {
           data: {
             prioritizedTasks: pending.slice(0, 5),
             summary: `Mapeadas ${pending.length} tarefas pendentes para ${collaborator.name}.`,
+          },
+        };
+      }
+
+      case 'tasks.suggest_crm_relation': {
+        const fullText = `${input.title || ''} ${input.description || ''}`.toLowerCase();
+        const candidates: Array<{
+          entityType: 'company' | 'contact' | 'deal';
+          entityId: string;
+          entityName: string;
+          confidence: number;
+          reason: string;
+        }> = [];
+
+        // 1. Search companies
+        (context.companies || []).forEach((comp: any) => {
+          const nameMatch = comp.tradeName && fullText.includes(comp.tradeName.toLowerCase());
+          const corpMatch = comp.corporateName && fullText.includes(comp.corporateName.toLowerCase());
+          if (nameMatch || corpMatch) {
+            candidates.push({
+              entityType: 'company',
+              entityId: comp.id,
+              entityName: comp.tradeName || comp.corporateName,
+              confidence: 92,
+              reason: `Nome da empresa "${comp.tradeName || comp.corporateName}" identificado no título/descrição.`,
+            });
+          }
+        });
+
+        // 2. Search contacts
+        (context.contacts || []).forEach((c: any) => {
+          if (c.name && fullText.includes(c.name.toLowerCase())) {
+            candidates.push({
+              entityType: 'contact',
+              entityId: c.id,
+              entityName: c.name,
+              confidence: 88,
+              reason: `Nome do contato "${c.name}" identificado no título/descrição.`,
+            });
+          }
+        });
+
+        // 3. Search deals
+        (context.deals || []).forEach((d: any) => {
+          if (d.title && fullText.includes(d.title.toLowerCase())) {
+            candidates.push({
+              entityType: 'deal',
+              entityId: d.id,
+              entityName: d.title,
+              confidence: 85,
+              reason: `Título do negócio "${d.title}" identificado no texto.`,
+            });
+          }
+        });
+
+        const hasAmbiguity = candidates.length > 1;
+        return {
+          success: true,
+          data: {
+            candidates,
+            suggestedEntity: candidates[0] || null,
+            hasAmbiguity,
           },
         };
       }
