@@ -144,11 +144,27 @@ export interface Lead {
   name: string;
   email: string;
   phone: string;
+  whatsapp?: string;
+  document?: string; // CPF ou CNPJ
+  jobTitle?: string;
+  city?: string;
+  state?: string;
   companyName?: string;
-  source: 'website' | 'whatsapp' | 'email' | 'referral' | 'outbound' | 'campaign';
+  contactId?: string;
+  companyId?: string;
+  pipelineId?: string;
+  stageId?: string;
+  source: 'website' | 'whatsapp' | 'email' | 'referral' | 'outbound' | 'campaign' | 'instagram' | 'facebook' | 'event' | 'partner' | 'phone_call' | 'other';
   campaign?: string;
+  serviceCategory?: string; // Serviço de interesse
+  clientPlan?: string; // Plano de interesse
+  mainNeed?: string; // Dor ou problema relatado
   status: LeadStatus;
   estimatedValue?: number;
+  approximateRevenue?: number;
+  employeeCount?: number;
+  priority?: 'low' | 'medium' | 'high';
+  expectedCloseDate?: string;
   assignedUserId?: string;
   disqualificationReason?: string;
   notes?: string;
@@ -667,13 +683,19 @@ export interface Project {
   businessUnitId: string;
   name: string;
   code: string;
+  objective?: string; // Objetivo específico do projeto
   description?: string;
   clientId?: string;
   companyId?: string;
   dealId?: string;
   serviceCategory: string;
-  managerId: string;
-  memberIds: string[];
+  managerId: string; // Proprietário Principal (Governança)
+  moderatorIds?: string[]; // Moderadores que auxiliam na gestão
+  memberIds: string[]; // Membros operacionais participantes
+  privacy?: 'public' | 'private'; // Visibilidade do projeto e de suas tarefas
+  toolsConfig?: Record<string, boolean>; // Ferramentas disponíveis (tarefas, arquivos, etc)
+  defaultTab?: string;
+  notificationsConfig?: Record<string, boolean>;
   startDate: string;
   targetEndDate: string;
   status: ProjectStatus;
@@ -731,6 +753,7 @@ export interface ChatChannel {
   description?: string;
   isPrivate?: boolean;
   memberIds: string[];
+  unreadCount?: number;
   lastMessage?: string;
   lastMessageAt?: string;
   contextEntityType?: 'deal' | 'task' | 'project';

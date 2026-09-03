@@ -234,6 +234,9 @@ interface AppContextType {
 
   sendChatMessage: (channelId: string, text: string, attachments?: { name: string; size: string; url: string }[]) => void;
   addChatReaction: (messageId: string, emoji: string) => void;
+  getOrCreateDirectChannel: (targetUserId: string) => string;
+  previousTab: string;
+  setPreviousTab: (tab: string) => void;
 
   emailAccountConfig: EmailAccountConfig;
   saveEmailAccountConfig: (config: EmailAccountConfig) => void;
@@ -1764,6 +1767,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   };
 
+  const [previousTab, setPreviousTab] = useState<string>('cockpit');
+
+  const getOrCreateDirectChannel = (targetUserId: string): string => {
+    const existing = chatChannels.find(
+      (c) => c.type === 'direct' && c.memberIds.includes(currentUser.id) && c.memberIds.includes(targetUserId)
+    );
+    if (existing) {
+      return existing.id;
+    }
+    const targetUser = users.find((u) => u.id === targetUserId);
+    const newChan: ChatChannel = {
+      id: `chan-direct-${currentUser.id}-${targetUserId}`,
+      name: targetUser?.name || 'Chat Direto',
+      type: 'direct',
+      memberIds: [currentUser.id, targetUserId],
+      businessUnitId: targetUser?.businessUnitId || selectedBusinessUnitId,
+      unreadCount: 0,
+      lastMessage: 'Conversa iniciada',
+      lastMessageAt: new Date().toISOString(),
+    };
+    setChatChannels((prev) => [newChan, ...prev]);
+    return newChan.id;
+  };
+
   // Communication: Email
   const sendEmail = (toEmail: string, subject: string, body: string, relatedDealId?: string, relatedProjectId?: string, relatedTaskId?: string) => {
     const newEmail: EmailMessage = {
@@ -2268,6 +2295,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setActiveChatChannelId,
     sendChatMessage,
     addChatReaction,
+    getOrCreateDirectChannel,
+    previousTab,
+    setPreviousTab,
     emailAccountConfig,
     saveEmailAccountConfig,
     sendEmail,

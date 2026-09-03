@@ -5,7 +5,7 @@ import { Header } from './components/common/Header';
 import { GlobalSearchModal } from './components/common/GlobalSearchModal';
 import { QuickCreateDrawer } from './components/common/QuickCreateDrawer';
 import { DealDetailDrawer } from './components/crm/DealDetailDrawer';
-import { RightChatWidgetRail } from './components/common/RightChatWidgetRail';
+import { CollaboratorsSidebar } from './components/common/CollaboratorsSidebar';
 import { LoginView } from './components/auth/LoginView';
 
 // Views
@@ -44,7 +44,6 @@ const MainLayout: React.FC = () => {
         return <DealsPipelineView />;
       case 'crm-leads':
         return <LeadsView />;
-      case 'crm-[#17212B]':
       case 'crm-contacts':
         return <ContactsView />;
       case 'crm-companies':
@@ -72,7 +71,6 @@ const MainLayout: React.FC = () => {
       case 'mgmt-automations':
       case 'manage-automations':
         return <AutomationsView />;
-      case 'mgmt-[#17212B]':
       case 'mgmt-audit':
       case 'manage-audit':
         return <AuditView />;
@@ -88,11 +86,11 @@ const MainLayout: React.FC = () => {
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-[#F7F9FA] text-[#17212B] font-sans antialiased">
-      {/* Dynamic Sidebar */}
+      {/* Dynamic Navigation Sidebar (Left) */}
       <Sidebar />
 
-      {/* Main Container with pr-16 to preserve space for RightChatWidgetRail */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden pr-16">
+      {/* Main Container */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top Header */}
         <Header />
 
@@ -102,11 +100,13 @@ const MainLayout: React.FC = () => {
         </main>
       </div>
 
-      {/* Modals, Floating Right Rail and Side Drawers */}
+      {/* Collaborators & Team Presence Rail (Right, 52px width) */}
+      <CollaboratorsSidebar />
+
+      {/* Modals & Drawers */}
       <GlobalSearchModal />
       <QuickCreateDrawer />
       <DealDetailDrawer />
-      <RightChatWidgetRail />
     </div>
   );
 };

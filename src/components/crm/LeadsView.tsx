@@ -14,6 +14,11 @@ import {
   XCircle,
   Clock,
   Building2,
+  User,
+  DollarSign,
+  Layers,
+  Calendar,
+  AlertTriangle,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { Lead, LeadStatus } from '../../types';
@@ -22,6 +27,7 @@ export const LeadsView: React.FC = () => {
   const {
     leads,
     pipelines,
+    businessUnits,
     users,
     filterByBU,
     setQuickCreateType,
@@ -34,6 +40,9 @@ export const LeadsView: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [selectedSource, setSelectedSource] = useState<string>('all');
+  const [selectedBuFilter, setSelectedBuFilter] = useState<string>('all');
+  const [selectedAssigneeFilter, setSelectedAssigneeFilter] = useState<string>('all');
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 
   // Convert Lead Modal State
   const [convertingLead, setConvertingLead] = useState<Lead | null>(null);
@@ -47,8 +56,10 @@ export const LeadsView: React.FC = () => {
   const [discardReason, setDiscardReason] = useState('');
 
   const displayedLeads = filteredLeads.filter((l) => {
+    if (selectedBuFilter !== 'all' && l.businessUnitId !== selectedBuFilter) return false;
     if (selectedStatus !== 'all' && l.status !== selectedStatus) return false;
     if (selectedSource !== 'all' && l.source !== selectedSource) return false;
+    if (selectedAssigneeFilter !== 'all' && l.assignedUserId !== selectedAssigneeFilter) return false;
     if (searchTerm.trim()) {
       const q = searchTerm.toLowerCase();
       return (
@@ -65,31 +76,31 @@ export const LeadsView: React.FC = () => {
     switch (source) {
       case 'whatsapp':
         return (
-          <span className="flex items-center gap-1 bg-[#ECF8F1] text-[#0F8A4B] px-2 py-0.5 rounded text-[10px] font-semibold border border-[#0F8A4B]/20">
-            <PhoneCall className="w-3 h-3" /> WhatsApp
+          <span className="flex items-center gap-1 bg-[#ECF8F1] text-[#0B6B3A] px-2 py-0.5 rounded text-[10px] font-bold border border-[#0F8A4B]/20">
+            <PhoneCall className="w-3 h-3 text-[#0F8A4B]" /> WhatsApp
           </span>
         );
       case 'website':
         return (
-          <span className="flex items-center gap-1 bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[10px] font-semibold border border-blue-200">
-            <Globe className="w-3 h-3" /> Site / Formulário
+          <span className="flex items-center gap-1 bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold border border-blue-200">
+            <Globe className="w-3 h-3" /> Site / Web
           </span>
         );
       case 'email':
         return (
-          <span className="flex items-center gap-1 bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded text-[10px] font-semibold border border-indigo-200">
+          <span className="flex items-center gap-1 bg-purple-50 text-purple-700 px-2 py-0.5 rounded text-[10px] font-bold border border-purple-200">
             <Mail className="w-3 h-3" /> E-mail
           </span>
         );
       case 'referral':
         return (
-          <span className="flex items-center gap-1 bg-purple-50 text-purple-700 px-2 py-0.5 rounded text-[10px] font-semibold border border-purple-200">
+          <span className="flex items-center gap-1 bg-amber-50 text-amber-800 px-2 py-0.5 rounded text-[10px] font-bold border border-amber-200">
             <Share2 className="w-3 h-3" /> Indicação
           </span>
         );
       default:
         return (
-          <span className="bg-neutral-100 text-neutral-700 px-2 py-0.5 rounded text-[10px] font-semibold">
+          <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[10px] font-bold border border-slate-200">
             {source}
           </span>
         );
@@ -99,15 +110,15 @@ export const LeadsView: React.FC = () => {
   const getStatusBadge = (status: LeadStatus) => {
     switch (status) {
       case 'new':
-        return <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold">Novo</span>;
+        return <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full text-[10px] font-black border border-blue-200">Novo</span>;
       case 'qualifying':
-        return <span className="bg-amber-50 text-amber-700 px-2 py-0.5 rounded text-[10px] font-bold">Em Qualificação</span>;
+        return <span className="bg-amber-50 text-amber-800 px-2 py-0.5 rounded-full text-[10px] font-black border border-amber-200">Em Qualificação</span>;
       case 'contacted':
-        return <span className="bg-purple-50 text-purple-700 px-2 py-0.5 rounded text-[10px] font-bold">Contatado</span>;
+        return <span className="bg-purple-50 text-purple-700 px-2 py-0.5 rounded-full text-[10px] font-black border border-purple-200">Contatado</span>;
       case 'qualified':
-        return <span className="bg-[#ECF8F1] text-[#0F8A4B] px-2 py-0.5 rounded text-[10px] font-bold">Convertido em Negócio</span>;
+        return <span className="bg-[#ECF8F1] text-[#0B6B3A] px-2 py-0.5 rounded-full text-[10px] font-black border border-[#0F8A4B]/20">Convertido</span>;
       case 'disqualified':
-        return <span className="bg-red-50 text-red-700 px-2 py-0.5 rounded text-[10px] font-bold">Descartado</span>;
+        return <span className="bg-rose-50 text-rose-700 px-2 py-0.5 rounded-full text-[10px] font-black border border-rose-200">Descartado</span>;
     }
   };
 
@@ -141,279 +152,367 @@ export const LeadsView: React.FC = () => {
   };
 
   return (
-    <div id="leads-view" className="p-4 md:p-6 max-w-full space-y-4">
+    <div id="leads-view" className="p-4 md:p-6 max-w-full space-y-4 font-sans select-none">
       {/* Header */}
-      <div className="bg-white rounded-xl border border-[#DDE3E8] p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-            <UserPlus className="w-5 h-5" />
+          <div className="p-2.5 bg-[#ECF8F1] text-[#0F8A4B] rounded-xl border border-[#0F8A4B]/20 shadow-2xs">
+            <UserPlus className="w-5 h-5 text-[#0F8A4B]" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-base font-bold text-[#17212B]">Gestão de Leads & Prospecção</h1>
-              <span className="text-xs font-semibold px-2 py-0.5 bg-[#F7F9FA] border border-[#DDE3E8] rounded text-[#5F6B76]">
+              <h1 className="text-base font-black text-slate-900 tracking-tight">Gestão de Leads & Prospecção (CRM 2.0)</h1>
+              <span className="text-xs font-black px-2.5 py-0.5 bg-[#ECF8F1] border border-[#0F8A4B]/20 text-[#0B6B3A] rounded-full">
                 {displayedLeads.length} registros
               </span>
             </div>
-            <p className="text-xs text-[#5F6B76] mt-0.5">
-              Captação multicanal integrada (WhatsApp, Formulários e Inbound)
+            <p className="text-xs text-slate-500 font-semibold mt-0.5">
+              Captação multicanal completa (WhatsApp, Formulários, Instagram, Site e Inbound) com qualificação guiada
             </p>
           </div>
         </div>
 
         <button
           onClick={() => setQuickCreateType('lead')}
-          className="flex items-center gap-1.5 px-3 py-2 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white rounded-md text-xs font-semibold shadow-xs cursor-pointer"
+          className="flex items-center gap-1.5 px-4 py-2 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white rounded-xl text-xs font-black shadow-md cursor-pointer transition-colors"
         >
-          <Plus className="w-3.5 h-3.5" />
-          <span>Novo Lead</span>
+          <Plus className="w-4 h-4" />
+          <span>+ Novo Lead</span>
         </button>
       </div>
 
       {/* Filters Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3 rounded-lg border border-[#DDE3E8] text-xs">
-        <div className="flex items-center gap-2 flex-1 max-w-sm">
-          <Search className="w-4 h-4 text-[#5F6B76]" />
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200 text-xs shadow-2xs">
+        <div className="flex items-center gap-2 flex-1 max-w-md bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
+          <Search className="w-4 h-4 text-slate-400 shrink-0" />
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Buscar por nome, empresa, e-mail..."
-            className="w-full bg-transparent outline-none text-[#17212B] placeholder:text-[#5F6B76]"
+            placeholder="Buscar por nome, empresa, e-mail, telefone..."
+            className="w-full bg-transparent outline-none text-slate-900 font-semibold placeholder:text-slate-400"
           />
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-1.5">
-            <Filter className="w-3.5 h-3.5 text-[#5F6B76]" />
-            <span className="text-[#5F6B76] font-medium">Status:</span>
+            <Layers className="w-3.5 h-3.5 text-[#0F8A4B]" />
+            <span className="text-slate-600 font-bold">Empresa do Grupo:</span>
+            <select
+              value={selectedBuFilter}
+              onChange={(e) => setSelectedBuFilter(e.target.value)}
+              className="px-3 py-1.5 border border-slate-200 rounded-xl bg-slate-50 text-slate-900 font-bold outline-none cursor-pointer"
+            >
+              <option value="all">Todas as BUs da Holding</option>
+              {businessUnits.map((bu) => (
+                <option key={bu.id} value={bu.id}>🏢 {bu.tradeName || bu.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <Filter className="w-3.5 h-3.5 text-slate-500" />
+            <span className="text-slate-600 font-bold">Status:</span>
             <select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
-              className="px-2 py-1 border border-[#DDE3E8] rounded bg-white outline-none cursor-pointer"
+              className="px-3 py-1.5 border border-slate-200 rounded-xl bg-slate-50 text-slate-900 font-bold outline-none cursor-pointer"
             >
               <option value="all">Todos os Status</option>
-              <option value="new">Novo</option>
+              <option value="new">Novo Lead</option>
               <option value="qualifying">Em Qualificação</option>
               <option value="contacted">Contatado</option>
-              <option value="qualified">Convertido</option>
+              <option value="qualified">Convertido em Negócio</option>
               <option value="disqualified">Descartado</option>
             </select>
           </div>
 
           <div className="flex items-center gap-1.5">
-            <span className="text-[#5F6B76] font-medium">Origem:</span>
+            <span className="text-slate-600 font-bold">Origem:</span>
             <select
               value={selectedSource}
               onChange={(e) => setSelectedSource(e.target.value)}
-              className="px-2 py-1 border border-[#DDE3E8] rounded bg-white outline-none cursor-pointer"
+              className="px-3 py-1.5 border border-slate-200 rounded-xl bg-slate-50 text-slate-900 font-bold outline-none cursor-pointer"
             >
               <option value="all">Todas as Origens</option>
-              <option value="whatsapp">WhatsApp (W-API)</option>
-              <option value="website">Site</option>
+              <option value="whatsapp">WhatsApp Direct</option>
+              <option value="website">Site / Web</option>
               <option value="email">E-mail</option>
               <option value="referral">Indicação</option>
+              <option value="outbound">Outbound / Prospecção</option>
             </select>
           </div>
         </div>
       </div>
 
-      {/* Leads Table */}
-      <div className="bg-white rounded-xl border border-[#DDE3E8] overflow-hidden shadow-xs">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead className="bg-[#F7F9FA] border-b border-[#DDE3E8] text-[#5F6B76] font-semibold">
-              <tr>
-                <th className="p-3">Lead / Interesse</th>
-                <th className="p-3">Contato & Empresa</th>
-                <th className="p-3">Canal de Origem</th>
-                <th className="p-3">Valor Estimado</th>
-                <th className="p-3">Status</th>
-                <th className="p-3">Responsável</th>
-                <th className="p-3 text-right">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#F0F4F7]">
-              {displayedLeads.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="p-8 text-center text-xs text-[#5F6B76]">
-                    Nenhum lead encontrado com os filtros selecionados.
-                  </td>
-                </tr>
-              ) : (
-                displayedLeads.map((lead) => {
-                  const assignee = users.find((u) => u.id === lead.assignedUserId);
-                  const isConverted = lead.status === 'qualified';
+      {/* Leads Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {displayedLeads.map((lead) => {
+          const assignee = users.find((u) => u.id === lead.assignedUserId);
+          const ownerBu = businessUnits.find((b) => b.id === lead.businessUnitId);
 
-                  return (
-                    <tr key={lead.id} className="hover:bg-[#F7F9FA] transition-colors">
-                      <td className="p-3">
-                        <p className="font-bold text-[#17212B]">{lead.title}</p>
-                        {lead.campaign && (
-                          <span className="text-[10px] text-[#5F6B76] block mt-0.5">
-                            Campanha: {lead.campaign}
-                          </span>
-                        )}
-                      </td>
-                      <td className="p-3">
-                        <p className="font-semibold text-[#17212B]">{lead.name}</p>
-                        <p className="text-[11px] text-[#5F6B76]">
-                          {lead.companyName ? `${lead.companyName} • ` : ''}
-                          {lead.phone}
-                        </p>
-                      </td>
-                      <td className="p-3">{getSourceBadge(lead.source)}</td>
-                      <td className="p-3 font-bold text-[#0F8A4B]">
-                        {lead.estimatedValue ? `R$ ${lead.estimatedValue.toLocaleString('pt-BR')}` : '—'}
-                      </td>
-                      <td className="p-3">{getStatusBadge(lead.status)}</td>
-                      <td className="p-3 text-[#17212B]">{assignee?.name.split(' ')[0] || 'Fila Geral'}</td>
-                      <td className="p-3 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {!isConverted && lead.status !== 'disqualified' && (
-                            <>
-                              <button
-                                onClick={() => openConvertModal(lead)}
-                                className="px-2.5 py-1 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white font-semibold rounded text-[11px] flex items-center gap-1 shadow-2xs cursor-pointer"
-                                title="Converter Lead em Contato, Empresa e Negócio (1-click)"
-                              >
-                                <Sparkles className="w-3 h-3" />
-                                <span>Qualificar & Converter</span>
-                              </button>
-                              <button
-                                onClick={() => setDiscardingLead(lead)}
-                                className="px-2 py-1 text-red-600 hover:bg-red-50 border border-transparent hover:border-red-200 font-semibold rounded text-[11px] cursor-pointer"
-                                title="Descartar Lead com motivo"
-                              >
-                                Descartar
-                              </button>
-                            </>
-                          )}
-                          {isConverted && (
-                            <span className="text-[11px] text-[#0F8A4B] font-semibold flex items-center gap-1">
-                              <CheckCircle2 className="w-3.5 h-3.5" /> Convertido
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+          return (
+            <div
+              key={lead.id}
+              onClick={() => setSelectedLead(lead)}
+              className="bg-white rounded-2xl border border-slate-200 hover:border-[#0F8A4B] p-4.5 shadow-2xs hover:shadow-md transition-all cursor-pointer space-y-3 flex flex-col justify-between"
+            >
+              <div className="space-y-2.5">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <h3 className="font-extrabold text-xs text-slate-900 leading-snug">{lead.title}</h3>
+                    <p className="text-[11px] text-slate-500 font-semibold mt-0.5">{lead.name}</p>
+                  </div>
+                  {getStatusBadge(lead.status)}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-black px-2 py-0.5 rounded bg-[#ECF8F1] text-[#0B6B3A] border border-[#0F8A4B]/20">
+                    🏢 {ownerBu?.tradeName || ownerBu?.name || lead.businessUnitId}
+                  </span>
+                  {getSourceBadge(lead.source)}
+                </div>
+
+                <div className="text-[11px] text-slate-600 space-y-1 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                  {lead.companyName && (
+                    <p className="font-bold text-slate-900 flex items-center gap-1.5">
+                      <Building2 className="w-3.5 h-3.5 text-[#0F8A4B] shrink-0" />
+                      <span className="truncate">{lead.companyName}</span>
+                    </p>
+                  )}
+                  <p className="truncate font-medium">E-mail: <strong className="text-slate-900">{lead.email}</strong></p>
+                  <p className="font-medium">Telefone: <strong className="text-[#0F8A4B] font-bold">{lead.phone}</strong></p>
+                  {lead.serviceCategory && (
+                    <p className="font-medium">Interesse: <strong className="text-slate-900">{lead.serviceCategory}</strong></p>
+                  )}
+                </div>
+              </div>
+
+              <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-xs font-black text-[#0F8A4B]">
+                    R$ {(lead.estimatedValue || 0).toLocaleString('pt-BR')}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {lead.status !== 'qualified' && lead.status !== 'disqualified' && (
+                    <>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openConvertModal(lead);
+                        }}
+                        className="px-2.5 py-1 bg-[#ECF8F1] hover:bg-emerald-100 text-[#0B6B3A] font-bold text-[10px] rounded-lg border border-[#0F8A4B]/20 cursor-pointer"
+                      >
+                        Converter
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDiscardingLead(lead);
+                        }}
+                        className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-[10px] rounded-lg border border-rose-200 cursor-pointer"
+                      >
+                        Descartar
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+
+        {displayedLeads.length === 0 && (
+          <div className="col-span-full p-8 text-center bg-white rounded-2xl border border-slate-200 text-slate-400 italic text-xs">
+            Nenhum lead encontrado para os filtros aplicados.
+          </div>
+        )}
       </div>
 
-      {/* Convert Modal */}
-      {convertingLead && (
-        <div className="fixed inset-0 z-60 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full p-5 border border-[#DDE3E8] space-y-4 animate-in fade-in">
-            <div className="flex items-center gap-2 text-[#0F8A4B] font-bold text-sm">
-              <Sparkles className="w-5 h-5" />
-              <span>Qualificar e Converter Lead (PRD LEAD-04)</span>
-            </div>
-
-            <p className="text-xs text-[#5F6B76]">
-              Esta ação criará simultaneamente o <strong>Contato</strong> ({convertingLead.name}), a <strong>Empresa</strong> ({convertingLead.companyName || 'Nova Empresa'}) e abrirá um <strong>Negócio</strong> no pipeline comercial selecionado.
-            </p>
-
-            <div className="space-y-3 text-xs">
-              <div>
-                <label className="block text-[#17212B] font-semibold mb-1">Título do Negócio *</label>
-                <input
-                  type="text"
-                  required
-                  value={convertTitle}
-                  onChange={(e) => setConvertTitle(e.target.value)}
-                  className="w-full px-3 py-2 border border-[#DDE3E8] rounded-md outline-none focus:border-[#0F8A4B]"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[#17212B] font-semibold mb-1">Pipeline de Destino</label>
-                  <select
-                    value={convertPipelineId}
-                    onChange={(e) => {
-                      setConvertPipelineId(e.target.value);
-                      const p = pipelines.find((pipe) => pipe.id === e.target.value);
-                      if (p && p.stages.length > 0) setConvertStageId(p.stages[0].id);
-                    }}
-                    className="w-full px-3 py-2 border border-[#DDE3E8] rounded-md bg-white outline-none focus:border-[#0F8A4B]"
-                  >
-                    {pipelines.map((pipe) => (
-                      <option key={pipe.id} value={pipe.id}>
-                        {pipe.name}
-                      </option>
-                    ))}
-                  </select>
+      {/* LEAD DETAIL 360 MODAL / HUB */}
+      {selectedLead && (
+        <div className="fixed inset-0 z-60 bg-black/50 backdrop-blur-2xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-5 border border-slate-200 space-y-4 max-h-[88vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#ECF8F1] text-[#0F8A4B] font-black text-base flex items-center justify-center border border-[#0F8A4B]/20 shadow-2xs">
+                  <User className="w-5 h-5 text-[#0F8A4B]" />
                 </div>
                 <div>
-                  <label className="block text-[#17212B] font-semibold mb-1">Valor do Negócio (R$)</label>
-                  <input
-                    type="number"
-                    value={convertValue}
-                    onChange={(e) => setConvertValue(Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-[#DDE3E8] rounded-md outline-none focus:border-[#0F8A4B]"
-                  />
+                  <h2 className="text-sm font-black text-slate-900">{selectedLead.name}</h2>
+                  <p className="text-xs text-slate-500 font-semibold">{selectedLead.title}</p>
                 </div>
               </div>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-3 border-t border-[#DDE3E8]">
               <button
-                type="button"
-                onClick={() => setConvertingLead(null)}
-                className="px-3 py-1.5 border border-[#DDE3E8] text-xs font-medium rounded-md hover:bg-[#F7F9FA]"
+                onClick={() => setSelectedLead(null)}
+                className="p-1 text-slate-400 hover:text-slate-900 rounded text-base font-bold"
               >
-                Cancelar
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div>
+                  <span className="text-slate-500 block text-[11px] font-medium">E-mail</span>
+                  <span className="font-semibold text-slate-900">{selectedLead.email}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block text-[11px] font-medium">Telefone / WhatsApp</span>
+                  <span className="font-bold text-[#0F8A4B]">{selectedLead.phone}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block text-[11px] font-medium">Empresa</span>
+                  <span className="font-bold text-slate-900">{selectedLead.companyName || 'Pessoa Física'}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block text-[11px] font-medium">Valor Estimado</span>
+                  <span className="font-mono font-black text-[#0F8A4B]">R$ {(selectedLead.estimatedValue || 0).toLocaleString('pt-BR')}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block text-[11px] font-medium">Origem</span>
+                  {getSourceBadge(selectedLead.source)}
+                </div>
+                <div>
+                  <span className="text-slate-500 block text-[11px] font-medium">Status</span>
+                  {getStatusBadge(selectedLead.status)}
+                </div>
+              </div>
+
+              {selectedLead.mainNeed && (
+                <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-slate-800 text-xs">
+                  <strong className="text-amber-900 font-bold block mb-1">Dor / Necessidade Relatada:</strong>
+                  <p className="font-medium text-slate-700 leading-relaxed">{selectedLead.mainNeed}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-between items-center pt-3 border-t border-slate-200">
+              <button
+                onClick={() => {
+                  openConvertModal(selectedLead);
+                  setSelectedLead(null);
+                }}
+                className="px-4 py-2 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white rounded-xl font-bold text-xs cursor-pointer transition-colors"
+              >
+                🚀 Converter Lead em Cliente
               </button>
               <button
-                type="button"
-                onClick={handleConfirmConvert}
-                className="px-4 py-1.5 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white text-xs font-semibold rounded-md shadow-xs flex items-center gap-1.5"
+                onClick={() => setSelectedLead(null)}
+                className="px-4 py-2 border border-slate-200 text-slate-700 rounded-xl font-bold text-xs cursor-pointer hover:bg-slate-50"
               >
-                <CheckCircle2 className="w-4 h-4" />
-                <span>Confirmar Conversão</span>
+                Fechar Ficha
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Discard Modal */}
-      {discardingLead && (
-        <div className="fixed inset-0 z-60 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-4 border border-[#DDE3E8] space-y-3">
-            <div className="flex items-center gap-2 text-red-600 font-bold text-sm">
-              <XCircle className="w-5 h-5" />
-              <span>Descartar Lead (Motivo Obrigatório - PRD LEAD-05)</span>
+      {/* CONVERT LEAD MODAL */}
+      {convertingLead && (
+        <div className="fixed inset-0 z-60 bg-black/60 backdrop-blur-2xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-5 border border-slate-200 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-[#ECF8F1] text-[#0F8A4B] rounded-xl border border-[#0F8A4B]/20">
+                  <Sparkles className="w-5 h-5 text-[#0F8A4B]" />
+                </div>
+                <div>
+                  <h2 className="text-base font-black text-slate-900">Conversão de Lead em Cliente</h2>
+                  <p className="text-xs text-slate-500 font-semibold">Preserva a mesma Company & Contact no Pipeline de Clientes</p>
+                </div>
+              </div>
+              <button onClick={() => setConvertingLead(null)} className="text-slate-400 hover:text-slate-900 font-bold">
+                ✕
+              </button>
             </div>
-            <p className="text-xs text-[#5F6B76]">
-              Informe a razão da desqualificação do lead <strong>"{discardingLead.name}"</strong> para auditoria:
-            </p>
-            <textarea
-              rows={3}
-              required
-              value={discardReason}
-              onChange={(e) => setDiscardReason(e.target.value)}
-              placeholder="Ex: Fora do perfil de cliente ideal / Telefone inexistente / Não tem orçamento"
-              className="w-full p-2.5 border border-[#DDE3E8] rounded-md text-xs outline-none focus:border-red-600"
-            />
-            <div className="flex justify-end gap-2 pt-2">
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block text-slate-800 font-bold mb-1">Título do Negócio / Contrato *</label>
+                <input
+                  type="text"
+                  value={convertTitle}
+                  onChange={(e) => setConvertTitle(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl font-bold outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-800 font-bold mb-1">Pipeline de Clientes *</label>
+                  <select
+                    value={convertPipelineId}
+                    onChange={(e) => setConvertPipelineId(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white font-bold outline-none"
+                  >
+                    {pipelines.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-slate-800 font-bold mb-1">Valor do Fechamento (R$) *</label>
+                  <input
+                    type="number"
+                    value={convertValue}
+                    onChange={(e) => setConvertValue(Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl font-black text-[#0F8A4B] outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-3 border-t border-slate-200">
               <button
-                type="button"
-                onClick={() => setDiscardingLead(null)}
-                className="px-3 py-1.5 border border-[#DDE3E8] text-xs font-medium rounded-md hover:bg-[#F7F9FA]"
+                onClick={() => setConvertingLead(null)}
+                className="px-4 py-2 border border-slate-200 text-slate-700 rounded-xl font-bold"
               >
                 Cancelar
               </button>
               <button
-                type="button"
-                disabled={!discardReason.trim()}
+                onClick={handleConfirmConvert}
+                className="px-5 py-2 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white rounded-xl font-black shadow-md cursor-pointer transition-colors"
+              >
+                Confirmar Conversão
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DISCARD LEAD MODAL */}
+      {discardingLead && (
+        <div className="fixed inset-0 z-60 bg-black/60 backdrop-blur-2xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-5 border border-slate-200 space-y-4">
+            <div className="flex items-center gap-3 border-b border-rose-100 pb-3 bg-rose-50 -m-5 p-5 rounded-t-2xl">
+              <AlertTriangle className="w-5 h-5 text-rose-600" />
+              <div>
+                <h2 className="text-sm font-black text-slate-900">Descartar Lead</h2>
+                <p className="text-xs text-rose-700 font-semibold">Registro do motivo de descarte comercial</p>
+              </div>
+            </div>
+
+            <div className="space-y-2 text-xs pt-2">
+              <label className="block text-slate-800 font-bold">Motivo do Descarte *</label>
+              <textarea
+                rows={3}
+                value={discardReason}
+                onChange={(e) => setDiscardReason(e.target.value)}
+                placeholder="Informe o motivo pelo qual o lead foi desqualificado..."
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl font-semibold outline-none resize-none"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-3 border-t border-slate-200">
+              <button onClick={() => setDiscardingLead(null)} className="px-4 py-2 border border-slate-200 rounded-xl font-bold">
+                Cancelar
+              </button>
+              <button
                 onClick={handleConfirmDiscard}
-                className="px-3 py-1.5 bg-red-600 disabled:opacity-50 text-white text-xs font-semibold rounded-md shadow-xs"
+                className="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-black cursor-pointer"
               >
                 Confirmar Descarte
               </button>

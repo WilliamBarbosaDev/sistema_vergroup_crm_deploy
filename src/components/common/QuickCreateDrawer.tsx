@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
   Sparkles,
@@ -16,6 +16,14 @@ import {
   MapPin,
   PhoneCall,
   DollarSign,
+  Share2,
+  Globe,
+  Mail,
+  HelpCircle,
+  Lock,
+  Eye,
+  ShieldCheck,
+  Target,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { TaskPriority } from '../../types';
@@ -35,12 +43,12 @@ export const QuickCreateDrawer: React.FC = () => {
     projects,
     tasks,
     deals,
+    leads,
     addDeal,
     addLead,
     addContact,
     addCompany,
     addTask,
-    generateTaskProtocol,
     addProject,
     addCalendarEvent,
     checkDuplicate,
@@ -65,16 +73,50 @@ export const QuickCreateDrawer: React.FC = () => {
   const [contactSearchQuery, setContactSearchQuery] = useState('');
   const [companySearchQuery, setCompanySearchQuery] = useState('');
 
-  // 2. Lead
+  // 2. Lead (7 BLOCOS ESTRUTURADOS CRM 2.0)
   const [leadTitle, setLeadTitle] = useState('');
   const [leadName, setLeadName] = useState('');
   const [leadEmail, setLeadEmail] = useState('');
   const [leadPhone, setLeadPhone] = useState('');
+  const [leadWhatsapp, setLeadWhatsapp] = useState('');
+  const [leadDoc, setLeadDoc] = useState('');
   const [leadCompany, setLeadCompany] = useState('');
-  const [leadSource, setLeadSource] = useState<'website' | 'whatsapp' | 'email' | 'referral'>('whatsapp');
+  const [leadJob, setLeadJob] = useState('');
+  const [leadCity, setLeadCity] = useState('');
+  const [leadState, setLeadState] = useState('');
+  const [leadSource, setLeadSource] = useState<any>('whatsapp');
+  const [leadService, setLeadService] = useState('BPO Financeiro / SaaS');
+  const [leadPlan, setLeadPlan] = useState('Padrão');
+  const [leadMainNeed, setLeadMainNeed] = useState('');
   const [leadEstValue, setLeadEstValue] = useState('30000');
+  const [leadRevenue, setLeadRevenue] = useState('100000');
+  const [leadEmployees, setLeadEmployees] = useState('15');
+  const [leadPriority, setLeadPriority] = useState<'low' | 'medium' | 'high'>('medium');
+  const [leadCloseDate, setLeadCloseDate] = useState(new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0]);
+  const [leadAssigneeId, setLeadAssigneeId] = useState(users[0]?.id || 'usr-william');
+  const [leadBUId, setLeadBUId] = useState(activeBUId);
+  const [leadPipelineId, setLeadPipelineId] = useState(pipelines[0]?.id || 'pipe-ver-clientes');
+  const [leadStageId, setLeadStageId] = useState('');
+  const [leadNotes, setLeadNotes] = useState('');
+  const [leadDupWarning, setLeadDupWarning] = useState<string | null>(null);
 
-  // 3. Contact
+  // 3. PROJECT FORM (5 BLOCOS ESTRUTURADOS DE PROJETO)
+  const [projName, setProjName] = useState('');
+  const [projObjective, setProjObjective] = useState('');
+  const [projDesc, setProjDesc] = useState('');
+  const [projBUId, setProjBUId] = useState(activeBUId);
+  const [projCode, setProjCode] = useState(`PRJ-${new Date().getFullYear()}-${String(projects.length + 1).padStart(4, '0')}`);
+  const [projOwnerId, setProjOwnerId] = useState(currentUser.id);
+  const [projModeratorIds, setProjModeratorIds] = useState<string[]>([]);
+  const [projMemberIds, setProjMemberIds] = useState<string[]>([currentUser.id]);
+  const [projPrivacy, setProjPrivacy] = useState<'public' | 'private'>('private');
+  const [projCompanyId, setProjCompanyId] = useState('');
+  const [projServiceCat, setProjServiceCat] = useState('Operacional / Implantação');
+  const [projStartDate, setProjStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [projEndDate, setProjEndDate] = useState(new Date(Date.now() + 60 * 86400000).toISOString().split('T')[0]);
+  const [projBudget, setProjBudget] = useState('100000');
+
+  // 4. Contact
   const [contactName, setContactName] = useState('');
   const [contactEmail, setContactEmail] = useState('');
   const [contactPhone, setContactPhone] = useState('');
@@ -82,40 +124,25 @@ export const QuickCreateDrawer: React.FC = () => {
   const [contactCompanyId, setContactCompanyId] = useState('');
   const [contactJob, setContactJob] = useState('');
   const [contactTags, setContactTags] = useState('Decisor');
-  const [contactDupWarning, setContactDupWarning] = useState<string | null>(null);
 
-  // 4. Company (Ficha Cadastral Ampliada CRM 2.0)
+  // 5. Company
   const [compTradeName, setCompTradeName] = useState('');
   const [compCorpName, setCompCorpName] = useState('');
   const [compCnpj, setCompCnpj] = useState('');
-  const [compStateReg, setCompStateReg] = useState('');
-  const [compMuniReg, setCompMuniReg] = useState('');
-  const [compCnae, setCompCnae] = useState('');
   const [compSegment, setCompSegment] = useState('Tecnologia e Serviços');
   const [compSize, setCompSize] = useState<'micro' | 'small' | 'medium' | 'large' | 'enterprise'>('medium');
   const [compEmail, setCompEmail] = useState('');
   const [compPhone, setCompPhone] = useState('');
   const [compWebsite, setCompWebsite] = useState('');
+  const [compStateReg, setCompStateReg] = useState('');
+  const [compMuniReg, setCompMuniReg] = useState('');
+  const [compCnae, setCompCnae] = useState('');
   const [compRevenue, setCompRevenue] = useState('150000');
   const [compChannel, setCompChannel] = useState('Outbound / Comercial');
   const [compNotes, setCompNotes] = useState('');
-  const [compStreet, setCompStreet] = useState('');
-  const [compCity, setCompCity] = useState('');
-  const [compState, setCompState] = useState('');
-  const [compZip, setCompZip] = useState('');
 
-  // 5. Task
-  const [taskTitle, setTaskTitle] = useState('');
-  const [taskDesc, setTaskDesc] = useState('');
-  const [taskPriority, setTaskPriority] = useState<TaskPriority>('medium');
-  const [taskDueDate, setTaskDueDate] = useState(new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0]);
-  const [taskOwnerId, setTaskOwnerId] = useState(users[0]?.id || 'usr-william');
-  const [taskAssigneeId, setTaskAssigneeId] = useState(users[0]?.id || 'usr-william');
-  const [taskContactId, setTaskContactId] = useState('');
+  const activePipeline = pipelines.find((p) => p.id === (quickCreateType === 'lead' ? leadPipelineId : dealPipelineId)) || pipelines[0];
 
-  const activePipeline = pipelines.find((p) => p.id === dealPipelineId) || pipelines[0];
-
-  // Auto-select linked company when contact is selected
   const handleSelectContact = (contactId: string) => {
     setDealContactId(contactId);
     const selectedContact = contacts.find((c) => c.id === contactId);
@@ -123,6 +150,21 @@ export const QuickCreateDrawer: React.FC = () => {
       setDealCompanyId(selectedContact.companyId);
     }
   };
+
+  useEffect(() => {
+    if (quickCreateType === 'lead' && (leadEmail || leadPhone)) {
+      const existingContact = contacts.find(
+        (c) =>
+          (leadEmail && c.email.toLowerCase() === leadEmail.toLowerCase()) ||
+          (leadPhone && c.phone.replace(/\D/g, '') === leadPhone.replace(/\D/g, ''))
+      );
+      if (existingContact) {
+        setLeadDupWarning(`⚠️ Contato existente encontrado: "${existingContact.name}" (${existingContact.email}). O lead será vinculado a este contato oficial.`);
+      } else {
+        setLeadDupWarning(null);
+      }
+    }
+  }, [leadEmail, leadPhone, quickCreateType, contacts]);
 
   if (!quickCreateType) return null;
 
@@ -134,8 +176,6 @@ export const QuickCreateDrawer: React.FC = () => {
         alert('⚠️ Preencha o título do negócio.');
         return;
       }
-
-      // MANDATORY CONTACT REQUIREMENT: Deal MUST have a contact_id selected
       if (!dealContactId) {
         alert('⚠️ Selecione um contato responsável já cadastrado no CRM antes de salvar o negócio.');
         return;
@@ -143,16 +183,6 @@ export const QuickCreateDrawer: React.FC = () => {
 
       const targetPipeline = pipelines.find((p) => p.id === dealPipelineId) || pipelines[0];
       const targetStage = dealStageId || targetPipeline.stages[0]?.id || 'stg-1';
-
-      // Check required custom fields
-      if (targetPipeline.customFields) {
-        for (const cf of targetPipeline.customFields) {
-          if (cf.isRequired && !dealCustomFieldValues[cf.id]) {
-            alert(`⚠️ O campo personalizado "${cf.name}" é obrigatório para este pipeline.`);
-            return;
-          }
-        }
-      }
 
       addDeal({
         businessUnitId: activeBUId,
@@ -171,9 +201,90 @@ export const QuickCreateDrawer: React.FC = () => {
       });
 
       alert(`🎉 Negócio "${dealTitle}" criado com sucesso e vinculado ao Contato oficial!`);
+    } else if (quickCreateType === 'project') {
+      if (!projName.trim()) {
+        alert('⚠️ Preencha o nome do projeto.');
+        return;
+      }
+
+      addProject({
+        businessUnitId: projBUId || activeBUId,
+        name: projName,
+        code: projCode || `PRJ-${Date.now().toString().slice(-4)}`,
+        objective: projObjective || undefined,
+        description: projDesc || undefined,
+        managerId: projOwnerId || currentUser.id,
+        moderatorIds: projModeratorIds,
+        memberIds: projMemberIds.length > 0 ? projMemberIds : [currentUser.id],
+        privacy: projPrivacy,
+        companyId: projCompanyId || undefined,
+        serviceCategory: projServiceCat,
+        startDate: projStartDate,
+        targetEndDate: projEndDate,
+        status: 'in_progress',
+        health: 'on_track',
+        progressPercentage: 0,
+        budget: Number(projBudget) || 0,
+        milestones: [
+          { id: `m1-${Date.now()}`, title: 'Kickoff e Definição do Escopo', dueDate: projStartDate, completed: false },
+          { id: `m2-${Date.now()}`, title: 'Homologação e Validação Final', dueDate: projEndDate, completed: false },
+        ],
+      });
+
+      alert(`🎉 Projeto "${projName}" criado com sucesso na unidade ${projBUId}!`);
+    } else if (quickCreateType === 'lead') {
+      if (!leadName.trim()) {
+        alert('⚠️ Preencha o nome do Lead.');
+        return;
+      }
+
+      const targetPipeline = pipelines.find((p) => p.id === leadPipelineId) || pipelines[0];
+      const targetStage = leadStageId || targetPipeline.stages[0]?.id || 'stg-1';
+
+      let linkedContactId = contacts.find(
+        (c) =>
+          (leadEmail && c.email.toLowerCase() === leadEmail.toLowerCase()) ||
+          (leadPhone && c.phone.replace(/\D/g, '') === leadPhone.replace(/\D/g, ''))
+      )?.id;
+
+      let linkedCompanyId = companies.find(
+        (comp) => leadCompany && comp.tradeName.toLowerCase() === leadCompany.toLowerCase()
+      )?.id;
+
+      addLead({
+        businessUnitId: leadBUId || activeBUId,
+        title: leadTitle || `Oportunidade Comercial — ${leadName}`,
+        name: leadName,
+        email: leadEmail || `${leadName.toLowerCase().replace(/\s+/g, '')}@lead.com.br`,
+        phone: leadPhone || '+55 11 98888-0000',
+        whatsapp: leadWhatsapp || leadPhone,
+        document: leadDoc || undefined,
+        jobTitle: leadJob || undefined,
+        city: leadCity || undefined,
+        state: leadState || undefined,
+        companyName: leadCompany || undefined,
+        contactId: linkedContactId,
+        companyId: linkedCompanyId,
+        pipelineId: leadPipelineId,
+        stageId: targetStage,
+        source: leadSource,
+        serviceCategory: leadService,
+        clientPlan: leadPlan,
+        mainNeed: leadMainNeed || undefined,
+        status: 'new',
+        estimatedValue: Number(leadEstValue) || 0,
+        approximateRevenue: Number(leadRevenue) || undefined,
+        employeeCount: Number(leadEmployees) || undefined,
+        priority: leadPriority,
+        expectedCloseDate: leadCloseDate,
+        assignedUserId: leadAssigneeId || currentUser.id,
+        notes: leadNotes || undefined,
+      });
+
+      alert(`🎉 Lead "${leadName}" cadastrado com sucesso no Pipeline de Leads [${targetPipeline.name}]!`);
     } else if (quickCreateType === 'contact') {
       if (!contactName.trim()) return;
-      const res = addContact({
+      addContact({
         businessUnitId: activeBUId,
         name: contactName,
         email: contactEmail || `${contactName.toLowerCase().replace(/\s+/g, '')}@exemplo.com.br`,
@@ -184,10 +295,6 @@ export const QuickCreateDrawer: React.FC = () => {
         tags: contactTags.split(',').map((t) => t.trim()).filter(Boolean),
         assignedUserId: users[0]?.id || 'usr-william',
       });
-      if (!res.success) {
-        setContactDupWarning(res.duplicateWarning || 'Registro duplicado');
-        return;
-      }
     } else if (quickCreateType === 'company') {
       if (!compTradeName.trim()) return;
       addCompany({
@@ -206,25 +313,16 @@ export const QuickCreateDrawer: React.FC = () => {
         approximateRevenue: Number(compRevenue) || undefined,
         acquisitionChannel: compChannel || undefined,
         commercialNotes: compNotes || undefined,
-        address: compStreet ? {
-          street: compStreet,
-          number: '100',
-          city: compCity || 'Manaus',
-          state: compState || 'AM',
-          zipCode: compZip || '69000-000',
-        } : undefined,
         assignedUserId: users[0]?.id || 'usr-william',
         status: 'active',
         healthScore: 'green',
         tags: ['Novo Cliente CRM 2.0'],
       });
-      alert(`🏢 Empresa "${compTradeName}" cadastrada com sucesso no CRM Core!`);
     }
 
     setQuickCreateType(null);
   };
 
-  // Filtered contacts and companies for autocomplete
   const filteredContacts = contacts.filter((c) => {
     if (!contactSearchQuery.trim()) return true;
     const q = contactSearchQuery.toLowerCase();
@@ -235,19 +333,6 @@ export const QuickCreateDrawer: React.FC = () => {
       (c.document && c.document.toLowerCase().includes(q))
     );
   });
-
-  const filteredCompanies = companies.filter((comp) => {
-    if (!companySearchQuery.trim()) return true;
-    const q = companySearchQuery.toLowerCase();
-    return (
-      comp.tradeName.toLowerCase().includes(q) ||
-      comp.corporateName.toLowerCase().includes(q) ||
-      comp.cnpj.toLowerCase().includes(q)
-    );
-  });
-
-  const selectedContact = contacts.find((c) => c.id === dealContactId);
-  const selectedCompany = companies.find((c) => c.id === dealCompanyId);
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-2xs flex items-center justify-center p-4 animate-in fade-in duration-100 font-sans select-none">
@@ -263,7 +348,9 @@ export const QuickCreateDrawer: React.FC = () => {
             </div>
             <div>
               <h2 className="text-base font-black text-slate-900">
-                {quickCreateType === 'deal' ? 'Novo Cliente / Nova Oportunidade (CRM 2.0)' :
+                {quickCreateType === 'project' ? 'Cadastro de Novo Projeto (CRM 2.0 Operations)' :
+                 quickCreateType === 'deal' ? 'Novo Cliente / Nova Oportunidade (CRM 2.0)' :
+                 quickCreateType === 'lead' ? 'Assistente de Entrada de Novo Lead (CRM 2.0)' :
                  quickCreateType === 'company' ? 'Cadastro Completo de Empresa (CRM 2.0)' : 'Criar Registro'}
               </h2>
               <p className="text-xs text-slate-600 font-semibold">Unidade: {businessUnits.find(b => b.id === activeBUId)?.tradeName || activeBUId}</p>
@@ -280,10 +367,330 @@ export const QuickCreateDrawer: React.FC = () => {
         {/* Form Body */}
         <form onSubmit={handleCreate} className="flex-1 overflow-y-auto p-5 space-y-5 text-xs">
           
+          {/* PROJECT FORM — 5 BLOCOS ESTRUTURADOS DE PROJETO */}
+          {quickCreateType === 'project' && (
+            <>
+              {/* BLOCO 1: IDENTIFICAÇÃO DO PROJETO */}
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
+                <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                  <FolderKanban className="w-4 h-4 text-[#0F8A4B]" />
+                  Bloco 1 — Identificação Básica & Código do Projeto
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="md:col-span-2">
+                    <label className="block text-slate-800 font-bold mb-1">Nome do Projeto *</label>
+                    <input
+                      type="text"
+                      required
+                      value={projName}
+                      onChange={(e) => setProjName(e.target.value)}
+                      placeholder="Ex: Implantação do Sistema de BPO Contábil"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-bold text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-800 font-bold mb-1">Código Oficial do Projeto *</label>
+                    <input
+                      type="text"
+                      required
+                      value={projCode}
+                      onChange={(e) => setProjCode(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-mono font-bold text-xs text-[#0F8A4B]"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-slate-800 font-bold mb-1">Objetivo Específico do Projeto *</label>
+                  <input
+                    type="text"
+                    required
+                    value={projObjective}
+                    onChange={(e) => setProjObjective(e.target.value)}
+                    placeholder="Ex: Centralizar todas as rotinas operacionais e obrigações da VERCONTÁBIL"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-800 font-bold mb-1">Detalhamento do Escopo & Descrição:</label>
+                  <textarea
+                    rows={2}
+                    value={projDesc}
+                    onChange={(e) => setProjDesc(e.target.value)}
+                    placeholder="Detalhamento das entregas, normas e diretrizes operacionais do projeto..."
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold text-xs resize-none"
+                  />
+                </div>
+              </div>
+
+              {/* BLOCO 2: GOVERNANÇA E EQUIPE */}
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
+                <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-[#0F8A4B]" />
+                  Bloco 2 — Governança: Proprietário, Moderadores & Membros
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-800 font-bold mb-1">Empresa do Grupo (BU Proprietária) *</label>
+                    <select
+                      value={projBUId}
+                      onChange={(e) => setProjBUId(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-bold text-xs"
+                    >
+                      {businessUnits.map((bu) => (
+                        <option key={bu.id} value={bu.id}>🏢 {bu.tradeName || bu.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-800 font-bold mb-1">Proprietário Principal (Governança) *</label>
+                    <select
+                      value={projOwnerId}
+                      onChange={(e) => setProjOwnerId(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-bold text-xs"
+                    >
+                      {users.map((u) => (
+                        <option key={u.id} value={u.id}>{u.name} ({u.jobTitle})</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Seleção de Moderadores & Membros */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                  <div>
+                    <label className="block text-slate-800 font-bold mb-1">Moderadores do Projeto (Auxiliam a Gestão)</label>
+                    <div className="max-h-28 overflow-y-auto border border-slate-200 rounded-xl p-2 bg-white space-y-1">
+                      {users.map((u) => (
+                        <label key={u.id} className="flex items-center gap-2 text-[11px] font-semibold text-slate-700 cursor-pointer hover:bg-slate-50 p-1 rounded">
+                          <input
+                            type="checkbox"
+                            checked={projModeratorIds.includes(u.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) setProjModeratorIds([...projModeratorIds, u.id]);
+                              else setProjModeratorIds(projModeratorIds.filter((id) => id !== u.id));
+                            }}
+                            className="rounded accent-[#0F8A4B]"
+                          />
+                          <span>{u.name} ({u.jobTitle})</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-800 font-bold mb-1">Membros Operacionais Participantes *</label>
+                    <div className="max-h-28 overflow-y-auto border border-slate-200 rounded-xl p-2 bg-white space-y-1">
+                      {users.map((u) => (
+                        <label key={u.id} className="flex items-center gap-2 text-[11px] font-semibold text-slate-700 cursor-pointer hover:bg-slate-50 p-1 rounded">
+                          <input
+                            type="checkbox"
+                            checked={projMemberIds.includes(u.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) setProjMemberIds([...projMemberIds, u.id]);
+                              else setProjMemberIds(projMemberIds.filter((id) => id !== u.id));
+                            }}
+                            className="rounded accent-[#0F8A4B]"
+                          />
+                          <span>{u.name} ({u.jobTitle})</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* BLOCO 3: PRIVACIDADE & REGRAS DE VISIBILIDADE */}
+              <div className="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-200 space-y-3">
+                <h3 className="text-xs font-black text-[#0B6B3A] uppercase tracking-wider flex items-center gap-2">
+                  <Lock className="w-4 h-4 text-[#0F8A4B]" />
+                  Bloco 3 — Visibilidade & Regra de Privacidade das Tarefas
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <label
+                    onClick={() => setProjPrivacy('private')}
+                    className={`p-3 rounded-xl border flex items-start gap-3 cursor-pointer transition-all ${
+                      projPrivacy === 'private' ? 'bg-white border-[#0F8A4B] shadow-xs' : 'bg-slate-50 border-slate-200'
+                    }`}
+                  >
+                    <Lock className="w-5 h-5 text-[#0F8A4B] shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="font-extrabold text-xs text-slate-900">🔒 Projeto Privado (Recomendado)</h4>
+                      <p className="text-[11px] text-slate-500 font-medium leading-relaxed mt-0.5">
+                        Visível exclusivamente para o Proprietário, Moderadores, Membros e Administradores com scope na BU. **Tarefas do projeto ficam protegidas.**
+                      </p>
+                    </div>
+                  </label>
+
+                  <label
+                    onClick={() => setProjPrivacy('public')}
+                    className={`p-3 rounded-xl border flex items-start gap-3 cursor-pointer transition-all ${
+                      projPrivacy === 'public' ? 'bg-white border-[#0F8A4B] shadow-xs' : 'bg-slate-50 border-slate-200'
+                    }`}
+                  >
+                    <Eye className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="font-extrabold text-xs text-slate-900">🌐 Projeto Público da BU</h4>
+                      <p className="text-[11px] text-slate-500 font-medium leading-relaxed mt-0.5">
+                        Visível para todos os colaboradores autorizados da Business Unit `{projBUId}`.
+                      </p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {/* BLOCO 4: VÍNCULO CORPORATIVO E DATAS */}
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
+                <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                  <Building2 className="w-4 h-4 text-[#0F8A4B]" />
+                  Bloco 4 — Vínculo de Cliente & Planejamento Temporal
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-800 font-bold mb-1">Cliente / Empresa CRM (Opcional)</label>
+                    <select
+                      value={projCompanyId}
+                      onChange={(e) => setProjCompanyId(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-bold text-xs"
+                    >
+                      <option value="">-- Projeto Interno (Sem Cliente Vínculo) --</option>
+                      {companies.map((c) => (
+                        <option key={c.id} value={c.id}>🏢 {c.tradeName} ({c.cnpj})</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-slate-800 font-bold mb-1">Categoria de Serviço</label>
+                    <input
+                      type="text"
+                      value={projServiceCat}
+                      onChange={(e) => setProjServiceCat(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold text-xs"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-slate-800 font-bold mb-1">Data de Início *</label>
+                    <input
+                      type="date"
+                      required
+                      value={projStartDate}
+                      onChange={(e) => setProjStartDate(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-bold text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-800 font-bold mb-1">Data Prevista de Término *</label>
+                    <input
+                      type="date"
+                      required
+                      value={projEndDate}
+                      onChange={(e) => setProjEndDate(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-bold text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-800 font-bold mb-1">Orçamento Planejado (R$)</label>
+                    <input
+                      type="number"
+                      value={projBudget}
+                      onChange={(e) => setProjBudget(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-black text-xs text-[#0F8A4B]"
+                    />
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* LEAD FORM — 7 BLOCOS ESTRUTURADOS CRM 2.0 */}
+          {quickCreateType === 'lead' && (
+            <>
+              {leadDupWarning && (
+                <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-800 text-xs font-semibold flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span>{leadDupWarning}</span>
+                </div>
+              )}
+
+              {/* BLOCO 1: DADOS DO LEAD */}
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
+                <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                  <User className="w-4 h-4 text-[#0F8A4B]" />
+                  Bloco 1 — Identificação Pessoal & Empresa do Prospect
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-800 font-bold mb-1">Nome Completo do Prospect *</label>
+                    <input
+                      type="text"
+                      required
+                      value={leadName}
+                      onChange={(e) => setLeadName(e.target.value)}
+                      placeholder="Ex: Marcelo Pires"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-800 font-bold mb-1">Nome da Empresa (Se souber)</label>
+                    <input
+                      type="text"
+                      value={leadCompany}
+                      onChange={(e) => setLeadCompany(e.target.value)}
+                      placeholder="Ex: Inovar Logística Ltda"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold text-xs"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-slate-800 font-bold mb-1">E-mail Principal</label>
+                    <input
+                      type="email"
+                      value={leadEmail}
+                      onChange={(e) => setLeadEmail(e.target.value)}
+                      placeholder="marcelo@inovar.com.br"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-800 font-bold mb-1">Telefone Principal</label>
+                    <input
+                      type="text"
+                      value={leadPhone}
+                      onChange={(e) => setLeadPhone(e.target.value)}
+                      placeholder="+55 11 98888-0000"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-800 font-bold mb-1">WhatsApp Direct</label>
+                    <input
+                      type="text"
+                      value={leadWhatsapp}
+                      onChange={(e) => setLeadWhatsapp(e.target.value)}
+                      placeholder="+55 11 98888-0000"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold text-xs"
+                    />
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
           {/* DEAL FORM — 5 BLOCOS ESTRUTURADOS */}
           {quickCreateType === 'deal' && (
             <>
-              {/* BLOCO 1: DADOS DO NEGÓCIO */}
               <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
                 <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-[#0F8A4B]" />
@@ -301,379 +708,8 @@ export const QuickCreateDrawer: React.FC = () => {
                     className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold text-xs"
                   />
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-slate-800 font-bold mb-1">Pipeline / Jornada *</label>
-                    <select
-                      value={dealPipelineId}
-                      onChange={(e) => {
-                        setDealPipelineId(e.target.value);
-                        const pipe = pipelines.find((p) => p.id === e.target.value);
-                        if (pipe) setDealStageId(pipe.stages[0]?.id || '');
-                      }}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-bold text-xs"
-                    >
-                      {pipelines.map((p) => (
-                        <option key={p.id} value={p.id}>{p.name}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-800 font-bold mb-1">Etapa Inicial *</label>
-                    <select
-                      value={dealStageId}
-                      onChange={(e) => setDealStageId(e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-bold text-xs"
-                    >
-                      {activePipeline?.stages.map((s) => (
-                        <option key={s.id} value={s.id}>{s.name}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-800 font-bold mb-1">Valor Estimado (R$) *</label>
-                    <input
-                      type="number"
-                      required
-                      value={dealValue}
-                      onChange={(e) => setDealValue(e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-black text-xs text-[#0F8A4B]"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-slate-800 font-bold mb-1">Plano / Serviço Negociado *</label>
-                    <input
-                      type="text"
-                      value={dealService}
-                      onChange={(e) => setDealService(e.target.value)}
-                      placeholder="Ex: SaaS / BPO Financeiro / Consultoria"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold text-xs"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-800 font-bold mb-1">Responsável Comercial *</label>
-                    <select
-                      value={dealAssigneeId}
-                      onChange={(e) => setDealAssigneeId(e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-bold text-xs"
-                    >
-                      {users.map((u) => (
-                        <option key={u.id} value={u.id}>{u.name} ({u.jobTitle})</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-800 font-bold mb-1">Previsão de Fechamento *</label>
-                    <input
-                      type="date"
-                      required
-                      value={dealCloseDate}
-                      onChange={(e) => setDealCloseDate(e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-bold text-xs"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* BLOCO 2: CONTATO RESPONSÁVEL (MANDATORY) */}
-              <div className="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-200 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-black text-[#0B6B3A] uppercase tracking-wider flex items-center gap-2">
-                    <UserCheck className="w-4 h-4 text-[#0F8A4B]" />
-                    Bloco 2 — Contato Responsável (Obrigatório)
-                  </h3>
-                  <button
-                    type="button"
-                    onClick={() => setQuickCreateType('contact')}
-                    className="text-xs font-bold text-[#0F8A4B] hover:underline flex items-center gap-1 cursor-pointer"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>+ Criar Novo Contato</span>
-                  </button>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block text-slate-800 font-bold mb-1">Buscar Contato (`public.contacts`) *</label>
-                  <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200">
-                    <Search className="w-4 h-4 text-slate-400 shrink-0" />
-                    <input
-                      type="text"
-                      value={contactSearchQuery}
-                      onChange={(e) => setContactSearchQuery(e.target.value)}
-                      placeholder="Pesquisar por nome, e-mail, telefone ou CPF..."
-                      className="bg-transparent text-xs text-slate-900 focus:outline-none w-full font-semibold"
-                    />
-                  </div>
-
-                  <select
-                    required
-                    value={dealContactId}
-                    onChange={(e) => handleSelectContact(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-bold text-xs"
-                  >
-                    <option value="">-- Selecione o Contato Obrigatório --</option>
-                    {filteredContacts.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name} ({c.email} • {c.phone})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {selectedContact && (
-                  <div className="p-3 bg-white rounded-xl border border-emerald-200 flex items-center justify-between text-xs">
-                    <div>
-                      <strong className="text-slate-900 font-bold block">{selectedContact.name}</strong>
-                      <p className="text-slate-500 text-[11px]">{selectedContact.email} • {selectedContact.phone}</p>
-                      <p className="text-slate-500 text-[11px]">Cargo: {selectedContact.jobTitle || 'N/A'}</p>
-                    </div>
-                    <span className="text-[10px] font-black text-[#0B6B3A] bg-[#ECF8F1] px-2 py-0.5 rounded border border-[#0F8A4B]/20 uppercase">
-                      Contato Selecionado
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* BLOCO 3: EMPRESA / CLIENTE CRM */}
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                    <Building2 className="w-4 h-4 text-[#0F8A4B]" />
-                    Bloco 3 — Empresa / Cliente CRM
-                  </h3>
-                  <button
-                    type="button"
-                    onClick={() => setQuickCreateType('company')}
-                    className="text-xs font-bold text-[#0F8A4B] hover:underline flex items-center gap-1 cursor-pointer"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>+ Criar Nova Empresa</span>
-                  </button>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block text-slate-800 font-bold mb-1">Empresa Relacionada (`public.companies`):</label>
-                  <select
-                    value={dealCompanyId}
-                    onChange={(e) => setDealCompanyId(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-bold text-xs"
-                  >
-                    <option value="">Nenhuma / A definir</option>
-                    {filteredCompanies.map((comp) => (
-                      <option key={comp.id} value={comp.id}>
-                        {comp.tradeName} ({comp.cnpj})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {selectedCompany && (
-                  <div className="p-3 bg-white rounded-xl border border-slate-200 text-xs">
-                    <strong className="text-slate-900 font-bold block">{selectedCompany.tradeName}</strong>
-                    <p className="text-slate-500 text-[11px]">CNPJ: {selectedCompany.cnpj} • Segmento: {selectedCompany.segment}</p>
-                  </div>
-                )}
-              </div>
-
-              {/* BLOCO 4: INFORMAÇÕES DO PIPELINE (CUSTOM FIELDS) */}
-              {activePipeline?.customFields && activePipeline.customFields.length > 0 && (
-                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
-                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                    <FileCheck className="w-4 h-4 text-[#0F8A4B]" />
-                    Bloco 4 — Campos Especificos do Pipeline [{activePipeline.name}]
-                  </h3>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {activePipeline.customFields.map((field) => (
-                      <div key={field.id}>
-                        <label className="block text-slate-800 font-bold mb-1">
-                          {field.name} {field.isRequired && <span className="text-rose-600">*</span>}
-                        </label>
-                        <input
-                          type={field.fieldType === 'number' ? 'number' : 'text'}
-                          required={field.isRequired}
-                          value={dealCustomFieldValues[field.id] || ''}
-                          onChange={(e) => setDealCustomFieldValues({ ...dealCustomFieldValues, [field.id]: e.target.value })}
-                          placeholder={field.description || `Preencha ${field.name}`}
-                          className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold text-xs"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* BLOCO 5: OBSERVAÇÕES E NOTAS */}
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2">
-                <label className="block text-slate-800 font-bold">Bloco 5 — Observações & Notas Internas:</label>
-                <textarea
-                  rows={2}
-                  value={dealNotes}
-                  onChange={(e) => setDealNotes(e.target.value)}
-                  placeholder="Anotações comerciais, briefing inicial ou expectativas do cliente..."
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold text-xs resize-none"
-                />
               </div>
             </>
-          )}
-
-          {/* FORMULARIO AMPLO DE EMPRESA CRM 2.0 */}
-          {quickCreateType === 'company' && (
-            <div className="space-y-4">
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
-                <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                  <Building2 className="w-4 h-4 text-[#0F8A4B]" />
-                  Seção 1 — Identificação Empresarial
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block font-bold text-slate-800 mb-1">Nome Fantasia *</label>
-                    <input
-                      type="text"
-                      required
-                      value={compTradeName}
-                      onChange={(e) => setCompTradeName(e.target.value)}
-                      placeholder="Ex: Alfa Comércio Ltda"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-bold text-slate-800 mb-1">Razão Social</label>
-                    <input
-                      type="text"
-                      value={compCorpName}
-                      onChange={(e) => setCompCorpName(e.target.value)}
-                      placeholder="Ex: Alfa Comércio de Alimentos S.A."
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div>
-                    <label className="block font-bold text-slate-800 mb-1">CNPJ *</label>
-                    <input
-                      type="text"
-                      required
-                      value={compCnpj}
-                      onChange={(e) => setCompCnpj(e.target.value)}
-                      placeholder="00.000.000/0001-00"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-bold"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-bold text-slate-800 mb-1">Inscrição Estadual</label>
-                    <input
-                      type="text"
-                      value={compStateReg}
-                      onChange={(e) => setCompStateReg(e.target.value)}
-                      placeholder="Ex: 123.456.789.000"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-bold text-slate-800 mb-1">Inscrição Municipal</label>
-                    <input
-                      type="text"
-                      value={compMuniReg}
-                      onChange={(e) => setCompMuniReg(e.target.value)}
-                      placeholder="Ex: 987654-0"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
-                <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                  <PhoneCall className="w-4 h-4 text-[#0F8A4B]" />
-                  Seção 2 — Contato Corporativo & Endereço
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div>
-                    <label className="block font-bold text-slate-800 mb-1">Telefone Principal *</label>
-                    <input
-                      type="text"
-                      required
-                      value={compPhone}
-                      onChange={(e) => setCompPhone(e.target.value)}
-                      placeholder="+55 11 3000-0000"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-bold text-slate-800 mb-1">E-mail Principal *</label>
-                    <input
-                      type="email"
-                      required
-                      value={compEmail}
-                      onChange={(e) => setCompEmail(e.target.value)}
-                      placeholder="contato@empresa.com.br"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-bold text-slate-800 mb-1">Website</label>
-                    <input
-                      type="text"
-                      value={compWebsite}
-                      onChange={(e) => setCompWebsite(e.target.value)}
-                      placeholder="https://empresa.com.br"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* CONTACT FORM */}
-          {quickCreateType === 'contact' && (
-            <div className="space-y-3">
-              <div>
-                <label className="block font-bold text-slate-800 mb-1">Nome Completo do Contato *</label>
-                <input
-                  type="text"
-                  required
-                  value={contactName}
-                  onChange={(e) => setContactName(e.target.value)}
-                  placeholder="Ex: João Silva"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-800 mb-1">E-mail Principal *</label>
-                  <input
-                    type="email"
-                    required
-                    value={contactEmail}
-                    onChange={(e) => setContactEmail(e.target.value)}
-                    placeholder="joao@empresa.com.br"
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-slate-800 mb-1">Telefone / WhatsApp *</label>
-                  <input
-                    type="text"
-                    required
-                    value={contactPhone}
-                    onChange={(e) => setContactPhone(e.target.value)}
-                    placeholder="+55 11 99999-8888"
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold"
-                  />
-                </div>
-              </div>
-            </div>
           )}
         </form>
 
