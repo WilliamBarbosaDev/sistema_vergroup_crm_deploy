@@ -24,6 +24,7 @@ export const ClientsPipelineView: React.FC = () => {
     users,
     filterByBU,
     updateClientAccountStage,
+    setQuickCreateType,
   } = useApp();
 
   const filteredClients = filterByBU(clientAccounts);
@@ -81,8 +82,15 @@ export const ClientsPipelineView: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-xs">
+        <div className="flex items-center gap-3 text-xs">
           <span className="text-[#5F6B76]">Total de Contas: <strong className="text-[#17212B]">{displayedClients.length}</strong></span>
+          <button
+            onClick={() => setQuickCreateType('company')}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white rounded-lg text-xs font-bold shadow-xs cursor-pointer transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>+ Nova Empresa / Cliente</span>
+          </button>
         </div>
       </div>
 

@@ -431,28 +431,40 @@ export const QuickCreateDrawer: React.FC = () => {
       }
       return;
     } else if (quickCreateType === 'company') {
-      if (!compTradeName.trim()) return;
+      if (!compTradeName.trim()) {
+        alert('⚠️ Preencha o Nome Fantasia / Razão Social da Empresa.');
+        return;
+      }
       addCompany({
         businessUnitId: activeBUId,
-        tradeName: compTradeName,
-        corporateName: compCorpName || `${compTradeName} S.A.`,
-        cnpj: compCnpj || '00.000.000/0001-00',
+        tradeName: compTradeName.trim(),
+        corporateName: compCorpName.trim() || `${compTradeName.trim()} S.A.`,
+        cnpj: compCnpj.trim() || '00.000.000/0001-00',
         segment: compSegment,
         size: compSize,
-        email: compEmail || `contato@${compTradeName.toLowerCase().replace(/\s+/g, '')}.com.br`,
-        phone: compPhone || '+55 11 3000-0000',
-        website: compWebsite || undefined,
-        stateRegistration: compStateReg || undefined,
-        municipalRegistration: compMuniReg || undefined,
-        cnaePrimary: compCnae || undefined,
+        email: compEmail.trim() || `contato@${compTradeName.toLowerCase().replace(/\s+/g, '')}.com.br`,
+        phone: compPhone.trim() || '+55 11 3000-0000',
+        website: compWebsite.trim() || undefined,
+        stateRegistration: compStateReg.trim() || undefined,
+        municipalRegistration: compMuniReg.trim() || undefined,
+        cnaePrimary: compCnae.trim() || undefined,
         approximateRevenue: Number(compRevenue) || undefined,
         acquisitionChannel: compChannel || undefined,
-        commercialNotes: compNotes || undefined,
+        commercialNotes: compNotes.trim() || undefined,
         assignedUserId: users[0]?.id || 'usr-william',
         status: 'active',
         healthScore: 'green',
         tags: ['Novo Cliente CRM 2.0'],
       });
+      alert(`🎉 Empresa "${compTradeName.trim()}" cadastrada com sucesso no CRM!`);
+      setCompTradeName('');
+      setCompCorpName('');
+      setCompCnpj('');
+      setCompEmail('');
+      setCompPhone('');
+      setCompNotes('');
+      setQuickCreateType(null);
+      return;
     }
 
     setQuickCreateType(null);
