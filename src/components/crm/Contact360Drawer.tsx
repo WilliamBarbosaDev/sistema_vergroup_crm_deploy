@@ -57,6 +57,7 @@ export const Contact360Drawer: React.FC<Contact360DrawerProps> = ({
     currentUser,
     addActivity,
     setQuickCreateType,
+    openTaskCreate,
     setSelectedDealId,
     setSelectedTaskId,
   } = useApp();
@@ -239,7 +240,7 @@ export const Contact360Drawer: React.FC<Contact360DrawerProps> = ({
             </a>
 
             <button
-              onClick={() => setQuickCreateType('task')}
+              onClick={() => openTaskCreate({ contactId: contact.id, companyId: contact.companyId, businessUnitId: contact.businessUnitId })}
               className="btn-secondary text-xs flex items-center gap-1.5 px-3 py-1.5 shrink-0"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -579,7 +580,7 @@ export const Contact360Drawer: React.FC<Contact360DrawerProps> = ({
                   Tarefas Relacionadas ({contactTasks.length})
                 </h3>
                 <button
-                  onClick={() => setQuickCreateType('task')}
+                  onClick={() => openTaskCreate({ contactId: contact.id, companyId: contact.companyId, businessUnitId: contact.businessUnitId })}
                   className="btn-primary text-xs flex items-center gap-1 px-3 py-1.5"
                 >
                   <Plus className="w-3.5 h-3.5" />

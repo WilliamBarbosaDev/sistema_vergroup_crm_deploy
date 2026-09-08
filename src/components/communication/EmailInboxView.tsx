@@ -42,6 +42,7 @@ export const EmailInboxView: React.FC = () => {
     setSelectedTaskId,
     setCurrentTab,
     setQuickCreateType,
+    openTaskCreate,
   } = useApp();
 
   const [activeFolder, setActiveFolder] = useState<'inbox' | 'sent' | 'starred' | 'linked'>('inbox');
@@ -313,7 +314,7 @@ export const EmailInboxView: React.FC = () => {
                     </button>
 
                     <button
-                      onClick={() => setQuickCreateType('task')}
+                      onClick={() => openTaskCreate({ initialTitle: activeEmail ? `[E-mail] ${activeEmail.subject}` : 'Tarefa via E-mail' })}
                       className="px-3 py-1.5 border border-neutral-300 hover:bg-neutral-100 text-neutral-700 rounded-md text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
                       title="Transformar em Tarefa"
                     >

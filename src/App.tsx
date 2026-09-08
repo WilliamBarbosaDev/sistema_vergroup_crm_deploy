@@ -27,6 +27,8 @@ import { AuditView } from './components/management/AuditView';
 import { AdminView } from './components/admin/AdminView';
 import { FiscalModuleView } from './components/modules/fiscal/FiscalModuleView';
 
+import { TaskCreateWorkspace } from './components/work/TaskCreateWorkspace';
+
 const MainLayout: React.FC = () => {
   const { currentTab, isAuthenticated } = useApp();
 
@@ -107,6 +109,7 @@ const MainLayout: React.FC = () => {
       <GlobalSearchModal />
       <QuickCreateDrawer />
       <DealDetailDrawer />
+      <TaskCreateWorkspace />
     </div>
   );
 };

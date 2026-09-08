@@ -50,6 +50,7 @@ export const TasksView: React.FC = () => {
     currentUser,
     filterByBU,
     setQuickCreateType,
+    openTaskCreate,
     toggleTaskStatus,
     toggleTaskTimer,
     deleteTask,
@@ -305,7 +306,7 @@ export const TasksView: React.FC = () => {
           </button>
 
           <button
-            onClick={() => setQuickCreateType('task')}
+            onClick={() => openTaskCreate()}
             className="flex items-center gap-1.5 px-4 py-2 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white rounded-xl text-xs font-black shadow-md cursor-pointer transition-colors"
           >
             <Plus className="w-4 h-4" />

@@ -44,6 +44,7 @@ export const ProjectsView: React.FC = () => {
     businessUnits,
     filterByBU,
     setQuickCreateType,
+    openTaskCreate,
     updateProject,
     deleteProject,
     toggleMilestone,
@@ -259,7 +260,7 @@ export const ProjectsView: React.FC = () => {
             <span>+ Criar Projeto</span>
           </button>
           <button
-            onClick={() => setQuickCreateType('task')}
+            onClick={() => openTaskCreate()}
             className="flex items-center gap-1.5 px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 rounded-xl text-xs font-black shadow-2xs cursor-pointer transition-colors"
           >
             <Plus className="w-4 h-4 text-[#0F8A4B]" />
@@ -556,7 +557,7 @@ export const ProjectsView: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <h4 className="font-black text-slate-900 uppercase tracking-wider">Tarefas Vinculadas ao Projeto</h4>
                     <button
-                      onClick={() => setQuickCreateType('task')}
+                      onClick={() => openTaskCreate({ projectId: activeProject.id, businessUnitId: activeProject.businessUnitId })}
                       className="px-3 py-1.5 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white rounded-xl text-xs font-bold shadow-2xs cursor-pointer flex items-center gap-1"
                     >
                       <Plus className="w-3.5 h-3.5" /> + Nova Tarefa no Projeto

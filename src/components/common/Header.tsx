@@ -43,6 +43,7 @@ export const Header: React.FC = () => {
     switchUserRole,
     setIsSearchOpen,
     setQuickCreateType,
+    openTaskCreate,
     notifications,
     markNotificationRead,
     markAllNotificationsRead,
@@ -279,7 +280,7 @@ export const Header: React.FC = () => {
               </button>
               <button
                 onClick={() => {
-                  setQuickCreateType('task');
+                  openTaskCreate();
                   setIsQuickCreateOpen(false);
                 }}
                 className="w-full text-left px-3 py-2 text-xs text-[#17212B] hover:bg-[#ECF8F1] hover:text-[#0F8A4B] font-semibold flex items-center gap-2 cursor-pointer"

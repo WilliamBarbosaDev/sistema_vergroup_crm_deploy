@@ -30,6 +30,7 @@ export const CockpitView: React.FC = () => {
     setSelectedDealId,
     setSelectedTaskId,
     setQuickCreateType,
+    openTaskCreate,
     toggleTaskStatus,
   } = useApp();
 
@@ -87,7 +88,7 @@ export const CockpitView: React.FC = () => {
           </button>
 
           <button
-            onClick={() => setQuickCreateType('task')}
+            onClick={() => openTaskCreate()}
             className="btn-secondary flex items-center gap-1.5"
           >
             <CheckSquare className="w-4 h-4 text-slate-500" />

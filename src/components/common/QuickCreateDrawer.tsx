@@ -48,6 +48,7 @@ export const QuickCreateDrawer: React.FC = () => {
     tasks,
     deals,
     leads,
+    openTaskCreate,
     addDeal,
     addLead,
     addContact,
@@ -177,6 +178,13 @@ export const QuickCreateDrawer: React.FC = () => {
       }
     }
   }, [leadEmail, leadPhone, quickCreateType, contacts]);
+
+  useEffect(() => {
+    if (quickCreateType === 'task') {
+      setQuickCreateType(null);
+      openTaskCreate();
+    }
+  }, [quickCreateType]);
 
   if (!quickCreateType) return null;
 

@@ -61,6 +61,7 @@ export const TaskOperationalDrawer: React.FC<TaskOperationalDrawerProps> = ({ ta
     setSelectedContactId,
     setSelectedDealId,
     setSelectedTaskId,
+    openTaskCreate,
   } = useApp();
 
   const task = tasks.find((t) => t.id === taskId);
@@ -774,32 +775,20 @@ export const TaskOperationalDrawer: React.FC<TaskOperationalDrawerProps> = ({ ta
             <div className="bg-white p-5 rounded-2xl border border-slate-200 space-y-4 shadow-2xs">
               <h3 className="text-sm font-black text-slate-900">Subtarefas Vinculadas ({subtasks.length})</h3>
               
-              <form onSubmit={handleAddSubtask} className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
-                <span className="text-xs font-black text-[#0F493A] uppercase tracking-wider block">+ Criar Nova Subtarefa</span>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-                  <input
-                    type="text"
-                    value={subtaskTitle}
-                    onChange={(e) => setSubtaskTitle(e.target.value)}
-                    placeholder="Título da subtarefa..."
-                    className="md:col-span-2 px-3 py-2 border border-slate-200 rounded-xl bg-white outline-none focus:border-[#0F8A4B]"
-                  />
-                  <select
-                    value={subtaskAssigneeId}
-                    onChange={(e) => setSubtaskAssigneeId(e.target.value)}
-                    className="px-3 py-2 border border-slate-200 rounded-xl bg-white font-semibold outline-none"
-                  >
-                    {users.map((u) => (
-                      <option key={u.id} value={u.id}>
-                        {u.name}
-                      </option>
-                    ))}
-                  </select>
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3 flex items-center justify-between">
+                <div>
+                  <span className="text-xs font-black text-[#0F493A] uppercase tracking-wider block">+ Criar Nova Subtarefa</span>
+                  <p className="text-[11px] text-slate-500">Abre o Task Create Workspace com o vínculo de tarefa pai [${task.protocolNumber || task.id}]</p>
                 </div>
-                <button type="submit" className="px-4 py-2 bg-[#0F8A4B] text-white rounded-xl text-xs font-black cursor-pointer">
-                  Criar Subtarefa com Protocolo Próprio
+                <button
+                  type="button"
+                  onClick={() => openTaskCreate({ parentTaskId: task.id, projectId: task.projectId, companyId: task.clientId, businessUnitId: task.businessUnitId })}
+                  className="px-4 py-2 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white rounded-xl text-xs font-black cursor-pointer shadow-2xs flex items-center gap-1.5"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Criar Subtarefa no Workspace</span>
                 </button>
-              </form>
+              </div>
 
               <div className="space-y-2">
                 {subtasks.map((st) => (

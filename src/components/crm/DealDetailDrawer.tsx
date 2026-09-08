@@ -56,6 +56,7 @@ export const DealDetailDrawer: React.FC = () => {
     addDealDocument,
     linkContactToDeal,
     unlinkContactFromDeal,
+    openTaskCreate,
     addTask,
     toggleTaskStatus,
     toggleChecklistItem,
@@ -819,7 +820,7 @@ export const DealDetailDrawer: React.FC = () => {
                 </div>
                 <button
                   id="deal-drawer-new-task-btn"
-                  onClick={() => setShowAddTaskModal(true)}
+                  onClick={() => openTaskCreate({ dealId: deal.id, companyId: deal.companyId, contactId: deal.contactId, businessUnitId: deal.businessUnitId })}
                   className="px-3 py-1.5 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white rounded-md text-xs font-bold flex items-center gap-1.5 shadow-xs cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />

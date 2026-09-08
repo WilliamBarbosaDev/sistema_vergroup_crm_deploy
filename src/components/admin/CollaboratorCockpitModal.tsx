@@ -55,6 +55,7 @@ export const CollaboratorCockpitModal: React.FC<CollaboratorCockpitModalProps> =
     currentUser,
     addTask,
     setSelectedTaskId,
+    openTaskCreate,
     setCurrentTab,
   } = useApp();
 
@@ -219,7 +220,7 @@ export const CollaboratorCockpitModal: React.FC<CollaboratorCockpitModalProps> =
             </button>
 
             <button
-              onClick={() => setShowQuickTaskForm(true)}
+              onClick={() => openTaskCreate({ assignedUserId: collaborator.id, businessUnitId: collaborator.primaryBusinessUnitId })}
               className="px-3 py-1.5 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white rounded-xl text-xs font-black flex items-center gap-1.5 shadow-2xs cursor-pointer transition-all"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -590,7 +591,7 @@ export const CollaboratorCockpitModal: React.FC<CollaboratorCockpitModalProps> =
                   </div>
 
                   <button
-                    onClick={() => setShowQuickTaskForm(true)}
+                    onClick={() => openTaskCreate({ assignedUserId: collaborator.id, businessUnitId: collaborator.primaryBusinessUnitId })}
                     className="px-3 py-1.5 bg-[#0F8A4B] text-white hover:bg-[#0B6B3A] font-extrabold rounded-xl flex items-center gap-1 cursor-pointer shadow-2xs"
                   >
                     <Plus className="w-3.5 h-3.5" />

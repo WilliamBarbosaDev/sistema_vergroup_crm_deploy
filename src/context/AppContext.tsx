@@ -91,7 +91,26 @@ export interface NotificationItem {
   linkId?: string;
 }
 
-interface AppContextType {
+export interface TaskCreateContext {
+  businessUnitId?: string;
+  projectId?: string;
+  companyId?: string;
+  contactId?: string;
+  dealId?: string;
+  parentTaskId?: string;
+  assignedUserId?: string;
+  ownerUserId?: string;
+  initialTitle?: string;
+  initialDueDate?: string;
+}
+
+export interface AppContextType {
+  // Task Create Canonical Workspace State
+  isTaskCreateOpen: boolean;
+  setIsTaskCreateOpen: (open: boolean) => void;
+  taskCreateContext: TaskCreateContext | null;
+  openTaskCreate: (context?: TaskCreateContext) => void;
+  closeTaskCreate: () => void;
   // Auth & Session
   isAuthenticated: boolean;
   login: (email: string, password?: string) => boolean;
@@ -308,6 +327,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Drawers & Modals
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
   const [quickCreateType, setQuickCreateType] = useState<'lead' | 'contact' | 'company' | 'deal' | 'task' | 'event' | 'project' | null>(null);
+  
+  // Task Create Canonical Workspace State
+  const [isTaskCreateOpen, setIsTaskCreateOpen] = useState<boolean>(false);
+  const [taskCreateContext, setTaskCreateContext] = useState<TaskCreateContext | null>(null);
+
+  const openTaskCreate = (context?: TaskCreateContext) => {
+    setTaskCreateContext(context || null);
+    setIsTaskCreateOpen(true);
+  };
+
+  const closeTaskCreate = () => {
+    setIsTaskCreateOpen(false);
+    setTaskCreateContext(null);
+  };
   
   const [selectedDealId, setSelectedDealId] = useState<string | null>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
@@ -2180,6 +2213,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const value: AppContextType = {
+    isTaskCreateOpen,
+    setIsTaskCreateOpen,
+    taskCreateContext,
+    openTaskCreate,
+    closeTaskCreate,
     isAuthenticated,
     login,
     loginAsUser,
