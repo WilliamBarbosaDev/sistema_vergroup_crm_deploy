@@ -556,6 +556,292 @@ export const AdminView: React.FC = () => {
         </div>
       )}
 
+      {/* TAB 3: GESTÃO DE CONVITES DE COLABORADORES */}
+      {activeTab === 'invites' && (
+        <div className="space-y-4 font-sans">
+          {/* Header Bar */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-2xs">
+            <div>
+              <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                <Mail className="w-4 h-4 text-[#0F8A4B]" />
+                <span>Gestão de Convites de Colaboradores (`public.collaborator_invites`)</span>
+              </h3>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                Emissão e controle de tokens de convite com escopo por Empresa e Papel Funcional
+              </p>
+            </div>
+
+            <button
+              onClick={() => setShowInviteModal(true)}
+              className="px-4 py-2 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white rounded-xl text-xs font-black shadow-md cursor-pointer flex items-center gap-1.5 shrink-0"
+            >
+              <UserPlus className="w-4 h-4" />
+              <span>+ Convidar Colaborador</span>
+            </button>
+          </div>
+
+          {/* Invites List / Table */}
+          {invites.length === 0 ? (
+            <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center space-y-3 shadow-2xs">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-[#0F8A4B] flex items-center justify-center mx-auto border border-emerald-200">
+                <Mail className="w-6 h-6" />
+              </div>
+              <h4 className="text-sm font-black text-slate-900">Nenhum convite pendente ou cadastrado</h4>
+              <p className="text-xs text-slate-500 font-medium max-w-md mx-auto">
+                Convide novos colaboradores para ingressar na empresa com papeis, departamentos e gerências pré-configuradas.
+              </p>
+              <button
+                onClick={() => setShowInviteModal(true)}
+                className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white text-xs font-black rounded-xl cursor-pointer shadow-xs transition-colors"
+              >
+                <UserPlus className="w-4 h-4" />
+                <span>+ Convidar Colaborador Agora</span>
+              </button>
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-extrabold uppercase text-[10px]">
+                    <tr>
+                      <th className="p-3.5">E-mail do Convidado</th>
+                      <th className="p-3.5">Empresa Destino</th>
+                      <th className="p-3.5">Cargo / Papel</th>
+                      <th className="p-3.5">Status do Convite</th>
+                      <th className="p-3.5">Data de Envio</th>
+                      <th className="p-3.5 text-center">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-slate-800 font-medium">
+                    {invites.map((inv) => {
+                      const bu = businessUnits.find((b) => b.id === inv.businessUnitId);
+                      const isPending = inv.status === 'pending';
+
+                      return (
+                        <tr key={inv.id} className="hover:bg-slate-50/80 transition-colors">
+                          <td className="p-3.5">
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-xs">
+                                <Mail className="w-4 h-4 text-[#0F8A4B]" />
+                              </div>
+                              <div>
+                                <strong className="text-slate-900 font-black block">{inv.email}</strong>
+                                <span className="text-slate-400 font-mono text-[10px]">Token: {inv.token?.slice(0, 12)}...</span>
+                              </div>
+                            </div>
+                          </td>
+
+                          <td className="p-3.5">
+                            <span className="font-bold text-slate-800">{bu?.tradeName || inv.businessUnitId}</span>
+                          </td>
+
+                          <td className="p-3.5">
+                            <strong className="text-slate-900 font-bold block">{inv.jobTitle || 'Colaborador'}</strong>
+                            <span className="font-mono text-[10px] font-black text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200 uppercase">
+                              {inv.role}
+                            </span>
+                          </td>
+
+                          <td className="p-3.5">
+                            <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase border ${
+                              inv.status === 'pending' ? 'bg-amber-50 text-amber-800 border-amber-200' :
+                              inv.status === 'accepted' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
+                              'bg-rose-50 text-rose-800 border-rose-200'
+                            }`}>
+                              {inv.status === 'pending' ? '⏳ Pendente' : inv.status === 'accepted' ? '✅ Aceito' : '⛔ Revogado / Expirado'}
+                            </span>
+                          </td>
+
+                          <td className="p-3.5 text-slate-500 font-mono text-[11px]">
+                            {inv.createdAt ? new Date(inv.createdAt).toLocaleDateString('pt-BR') : 'Hoje'}
+                          </td>
+
+                          <td className="p-3.5 text-center">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                onClick={() => handleCopyInviteLink(inv)}
+                                className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-[11px] rounded-lg border border-slate-200 cursor-pointer flex items-center gap-1"
+                                title="Copiar Link do Convite"
+                              >
+                                <Copy className="w-3 h-3 text-slate-600" />
+                                <span>{copiedInviteId === inv.id ? 'Copiado!' : 'Copiar Link'}</span>
+                              </button>
+
+                              {isPending && (
+                                <>
+                                  <button
+                                    onClick={() => resendInvite(inv.id)}
+                                    className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-[#0B6B3A] font-bold text-[11px] rounded-lg border border-emerald-200 cursor-pointer"
+                                    title="Reenviar Convite"
+                                  >
+                                    Reenviar
+                                  </button>
+                                  <button
+                                    onClick={() => setActiveAcceptInvite(inv)}
+                                    className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 font-bold text-[11px] rounded-lg border border-indigo-200 cursor-pointer"
+                                    title="Simular Aceite (Homologação)"
+                                  >
+                                    Simular Aceite
+                                  </button>
+                                  <button
+                                    onClick={() => revokeInvite(inv.id)}
+                                    className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-[11px] rounded-lg border border-rose-200 cursor-pointer"
+                                    title="Revogar Convite"
+                                  >
+                                    Revogar
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB 6: GESTÃO DE PIPELINES & FUNIS DE VENDAS */}
+      {activeTab === 'pipelines' && (
+        <div className="space-y-4 font-sans">
+          {/* Header Bar */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-2xs">
+            <div>
+              <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                <Briefcase className="w-4 h-4 text-[#0F8A4B]" />
+                <span>Gestão de Pipelines, Etapas & Funis (`public.pipelines`)</span>
+              </h3>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                Configuração de esteiras comerciais, regras de probabilidade e etapas de avanço no funil
+              </p>
+            </div>
+
+            <button
+              onClick={() => {
+                setPipelineToEdit(null);
+                setShowPipelineModal(true);
+              }}
+              className="px-4 py-2 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white rounded-xl text-xs font-black shadow-md cursor-pointer flex items-center gap-1.5 shrink-0"
+            >
+              <Plus className="w-4 h-4" />
+              <span>+ Criar Novo Pipeline</span>
+            </button>
+          </div>
+
+          {/* Pipelines Grid / Cards */}
+          {pipelines.length === 0 ? (
+            <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center space-y-3 shadow-2xs">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-[#0F8A4B] flex items-center justify-center mx-auto border border-emerald-200">
+                <Briefcase className="w-6 h-6" />
+              </div>
+              <h4 className="text-sm font-black text-slate-900">Nenhum pipeline configurado para esta empresa</h4>
+              <p className="text-xs text-slate-500 font-medium max-w-md mx-auto">
+                Crie funis de vendas personalizados por Business Unit para estruturar o fluxo de prospecção e fechamento.
+              </p>
+              <button
+                onClick={() => {
+                  setPipelineToEdit(null);
+                  setShowPipelineModal(true);
+                }}
+                className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white text-xs font-black rounded-xl cursor-pointer shadow-xs transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                <span>+ Criar Primeiro Pipeline</span>
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {pipelines.map((pipe) => {
+                const bu = businessUnits.find((b) => b.id === pipe.businessUnitId);
+                const activeDealsCount = deals.filter((d) => d.pipelineId === pipe.id).length;
+
+                return (
+                  <div key={pipe.id} className="bg-white p-5 rounded-2xl border border-slate-200 space-y-4 shadow-2xs flex flex-col justify-between">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs font-black text-[#0F8A4B] bg-[#ECF8F1] px-2.5 py-0.5 rounded border border-[#0F8A4B]/20">
+                            {bu?.tradeName || pipe.businessUnitId}
+                          </span>
+                          <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                            {activeDealsCount} Negócios no Funil
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => duplicatePipeline(pipe.id)}
+                            className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg cursor-pointer transition-colors"
+                            title="Duplicar Pipeline"
+                          >
+                            <Copy className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (confirm(`Deseja excluir o pipeline "${pipe.name}"?`)) {
+                                deletePipeline(pipe.id);
+                              }
+                            }}
+                            className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg cursor-pointer transition-colors"
+                            title="Excluir Pipeline"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="text-sm font-black text-slate-900">{pipe.name}</h4>
+                        <p className="text-xs text-slate-500 font-medium mt-0.5">{pipe.description || 'Esteira de vendas CRM'}</p>
+                      </div>
+
+                      {/* Stepper Preview */}
+                      <div className="pt-2 border-t border-slate-100 space-y-1.5">
+                        <label className="block text-[11px] font-black uppercase text-slate-400 tracking-wider">
+                          Etapas do Funil ({pipe.stages?.length || 0}):
+                        </label>
+                        <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+                          {pipe.stages?.map((stg, idx) => (
+                            <div
+                              key={stg.id}
+                              className="px-2.5 py-1 bg-slate-50 rounded-lg border border-slate-200 text-[11px] shrink-0 flex items-center gap-1.5"
+                            >
+                              <span className="w-3.5 h-3.5 rounded-full bg-[#0F8A4B] text-white text-[9px] font-black flex items-center justify-center">
+                                {idx + 1}
+                              </span>
+                              <span className="font-bold text-slate-800">{stg.name}</span>
+                              <span className="text-[10px] text-slate-400 font-mono">({stg.probability || 0}%)</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                      <span className="text-[11px] text-slate-400 font-medium">Pipeline ID: {pipe.id}</span>
+                      <button
+                        onClick={() => {
+                          setPipelineForStageConfig(pipe);
+                          setShowStageConfigModal(true);
+                        }}
+                        className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-black text-xs rounded-xl shadow-2xs cursor-pointer transition-colors flex items-center gap-1.5"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Configurar Etapas</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* OFFBOARDING / REASSIGNMENT MODAL */}
       {userToSuspend && (
         <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-2xs flex items-center justify-center p-4 font-sans">
