@@ -38,6 +38,7 @@ import { InviteCollaboratorModal } from './InviteCollaboratorModal';
 import { AcceptInviteModal } from './AcceptInviteModal';
 import { CollaboratorCockpitModal } from './CollaboratorCockpitModal';
 import { StayCloudConfigModal } from './StayCloudConfigModal';
+import { WhatsAppConfigModal } from './WhatsAppConfigModal';
 import { PipelineModal } from './PipelineModal';
 import { PipelineStageConfigModal } from './PipelineStageConfigModal';
 import { Tabs } from '../ui/vercel-tabs';
@@ -68,6 +69,7 @@ export const AdminView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'users' | 'invites' | 'organogram' | 'units' | 'matrix' | 'pipelines'>('users');
   const [showInviteModal, setShowInviteModal] = useState<boolean>(false);
   const [showStayCloudModal, setShowStayCloudModal] = useState<boolean>(false);
+  const [showWppModal, setShowWppModal] = useState<boolean>(false);
   const [showPipelineModal, setShowPipelineModal] = useState<boolean>(false);
   const [pipelineToEdit, setPipelineToEdit] = useState<Pipeline | null>(null);
   const [showStageConfigModal, setShowStageConfigModal] = useState<boolean>(false);
@@ -202,6 +204,14 @@ export const AdminView: React.FC = () => {
 
         {/* Top Header Actions */}
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowWppModal(true)}
+            className="flex items-center gap-2 px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-[#0B6B3A] rounded-xl text-xs font-black shadow-2xs cursor-pointer transition-all border border-emerald-200"
+          >
+            <PhoneCall className="w-4 h-4 text-[#0F8A4B]" />
+            <span>WhatsApp API & Meta</span>
+          </button>
+
           <button
             onClick={() => setShowStayCloudModal(true)}
             className="flex items-center gap-2 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black shadow-2xs cursor-pointer transition-all border border-slate-700"
@@ -669,6 +679,13 @@ export const AdminView: React.FC = () => {
       {showStayCloudModal && (
         <StayCloudConfigModal
           onClose={() => setShowStayCloudModal(false)}
+        />
+      )}
+
+      {/* WhatsApp Multi-Provider & Meta Config Modal */}
+      {showWppModal && (
+        <WhatsAppConfigModal
+          onClose={() => setShowWppModal(false)}
         />
       )}
     </div>

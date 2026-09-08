@@ -795,7 +795,29 @@ export interface EmailMessage {
   receivedAt: string;
 }
 
-// Communication: WhatsApp
+export type WhatsAppProviderType = 'meta_official' | 'evolution_api' | 'z_api' | 'w_api' | 'baileys' | 'custom_webhook';
+
+export interface WhatsAppChannelConfig {
+  id: string;
+  businessUnitId: string;
+  phoneNumber: string;
+  channelName: string;
+  providerType: WhatsAppProviderType;
+  status: 'connected' | 'qr_code_pending' | 'disconnected';
+  qrCodeUrl?: string;
+  // Meta Official Cloud API
+  metaPhoneNumberId?: string;
+  metaWabaId?: string;
+  metaAccessToken?: string;
+  metaVerifyToken?: string;
+  // Third-party Gateway API (Z-API, Evolution API, W-API, Baileys, Custom)
+  apiUrl?: string;
+  apiKey?: string;
+  instanceId?: string;
+  webhookSecret?: string;
+  updatedAt: string;
+}
+
 export interface WhatsAppConversation {
   id: string;
   businessUnitId: string;

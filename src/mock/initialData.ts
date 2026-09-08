@@ -206,7 +206,60 @@ export const INITIAL_CHAT_MESSAGES: ChatMessage[] = [];
 
 export const INITIAL_EMAILS: EmailMessage[] = [];
 
-export const INITIAL_WHATSAPP_CONVERSATIONS: WhatsAppConversation[] = [];
+export const INITIAL_WHATSAPP_CONVERSATIONS: WhatsAppConversation[] = [
+  {
+    id: 'wpp-1',
+    businessUnitId: 'bu-tech',
+    contactName: 'Marcelo Pires (Inovar Logística)',
+    phone: '+55 (11) 98765-4321',
+    contactId: 'cont-101',
+    dealId: 'deal-101',
+    assignedUserId: 'usr-william',
+    status: 'in_progress',
+    unreadCount: 1,
+    lastMessage: 'Confirmado! Estaremos presentes no alinhamento técnico amanhã às 14h.',
+    lastMessageAt: '2026-09-08T10:15:00Z',
+    messages: [
+      { id: 'm1', sender: 'contact', text: 'Olá William, tudo bem? Recebi a proposta comercial da VERGROUP.', timestamp: '2026-09-08T09:30:00Z', status: 'read' },
+      { id: 'm2', sender: 'user', text: 'Olá Marcelo! Tudo ótimo por aqui. Conseguiram analisar o escopo de implantação?', timestamp: '2026-09-08T09:35:00Z', status: 'read' },
+      { id: 'm3', sender: 'contact', text: 'Confirmado! Estaremos presentes no alinhamento técnico amanhã às 14h.', timestamp: '2026-09-08T10:15:00Z', status: 'delivered' },
+    ],
+  },
+  {
+    id: 'wpp-2',
+    businessUnitId: 'bu-tech',
+    contactName: 'Dra. Beatriz Santos (Alpha Saúde)',
+    phone: '+55 (11) 91234-5678',
+    contactId: 'cont-102',
+    dealId: 'deal-102',
+    assignedUserId: 'usr-silvestre',
+    status: 'waiting',
+    unreadCount: 2,
+    lastMessage: 'Poderiam enviar a minuta ajustada com a cláusula de SLA?',
+    lastMessageAt: '2026-09-08T08:45:00Z',
+    messages: [
+      { id: 'm4', sender: 'contact', text: 'Bom dia time VERGROUP! Tivemos reunião com o jurídico.', timestamp: '2026-09-08T08:40:00Z', status: 'read' },
+      { id: 'm5', sender: 'contact', text: 'Poderiam enviar a minuta ajustada com a cláusula de SLA?', timestamp: '2026-09-08T08:45:00Z', status: 'delivered' },
+    ],
+  },
+  {
+    id: 'wpp-3',
+    businessUnitId: 'bu-[#1]',
+    contactName: 'Carlos Eduardo (Starlux Comercial)',
+    phone: '+55 (21) 99876-5432',
+    contactId: 'cont-103',
+    assignedUserId: 'usr-william',
+    status: 'closed',
+    unreadCount: 0,
+    lastMessage: 'Atendimento concluído com sucesso. Obrigado!',
+    lastMessageAt: '2026-09-07T16:20:00Z',
+    messages: [
+      { id: 'm6', sender: 'contact', text: 'Preciso tirar dúvidas sobre a fatura da BU Rio de Janeiro.', timestamp: '2026-09-07T16:00:00Z', status: 'read' },
+      { id: 'm7', sender: 'user', text: 'Claro Carlos, enviei o detalhamento para o seu e-mail cadastrado.', timestamp: '2026-09-07T16:15:00Z', status: 'read' },
+      { id: 'm8', sender: 'contact', text: 'Atendimento concluído com sucesso. Obrigado!', timestamp: '2026-09-07T16:20:00Z', status: 'read' },
+    ],
+  },
+];
 
 export const INITIAL_AUTOMATIONS: AutomationRule[] = [];
 

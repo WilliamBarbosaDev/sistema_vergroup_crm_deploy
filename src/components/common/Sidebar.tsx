@@ -94,7 +94,7 @@ export const Sidebar: React.FC = () => {
       items: [
         { id: 'comms-chat', label: 'Chat Interno', icon: MessageSquare },
         { id: 'comms-email', label: 'E-mail Integrado', icon: Mail, badge: unreadEmailCount > 0 ? unreadEmailCount : undefined, badgeColor: 'bg-indigo-600' },
-        { id: 'comms-whatsapp', label: 'WhatsApp (W-API)', icon: PhoneCall, badge: unreadWppCount > 0 ? unreadWppCount : undefined, badgeColor: 'bg-[#0F8A4B]' },
+        { id: 'comms-whatsapp', label: 'WhatsApp', icon: PhoneCall, badge: unreadWppCount > 0 ? unreadWppCount : undefined, badgeColor: 'bg-[#0F8A4B]' },
       ],
     },
     {
