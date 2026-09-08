@@ -62,7 +62,7 @@ export const Sidebar: React.FC = () => {
     {
       title: 'Início & IA',
       items: [
-        { id: 'cockpit', label: 'Visão Geral (Cockpit)', icon: LayoutDashboard },
+        { id: 'cockpit', label: 'Visão Geral', icon: LayoutDashboard },
         { id: 'cockpit', label: 'Centro de IA & Agentes', icon: Sparkles, badge: 4, badgeColor: 'bg-[#0F8A4B]' },
       ],
     },
