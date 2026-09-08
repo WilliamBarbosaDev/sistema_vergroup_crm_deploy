@@ -129,9 +129,13 @@ export interface User {
   phone: string;
   whatsapp?: string;
   alternatePhone?: string;
+  workPhone?: string;
   extensionPhone?: string;
   emergencyContactName?: string;
   emergencyContact?: string;
+  website?: string;
+  teamsAccount?: string;
+  zoomAccount?: string;
   birthDate?: string;
   gender?: string;
   language?: string;

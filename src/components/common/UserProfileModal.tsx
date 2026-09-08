@@ -15,6 +15,24 @@ import {
   Bell,
   AlertCircle,
   CheckCircle2,
+  Smartphone,
+  Laptop,
+  HardDrive,
+  Award,
+  Sparkles,
+  ShoppingBag,
+  Pencil,
+  Check,
+  Calendar,
+  FolderKanban,
+  FileText,
+  TrendingUp,
+  Clock,
+  Briefcase,
+  ExternalLink,
+  ChevronRight,
+  Video,
+  MessageSquare,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { UserAvatar } from './UserAvatar';
@@ -23,8 +41,6 @@ interface UserProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
-
-type ProfileTab = 'personal' | 'contact' | 'professional' | 'photo' | 'security' | 'preferences';
 
 const MAX_AVATAR_SIZE_BYTES = 2 * 1024 * 1024;
 const ALLOWED_AVATAR_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -41,64 +57,41 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
   } = useApp();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [activeTab, setActiveTab] = useState<ProfileTab>('personal');
+  const [activeTab, setActiveTab] = useState<string>('geral');
   const [isEditing, setIsEditing] = useState(false);
-  const [emailChangeRequest, setEmailChangeRequest] = useState('');
   const [avatarError, setAvatarError] = useState('');
   const [savedMessage, setSavedMessage] = useState('');
+
   const [draft, setDraft] = useState(() => ({
-    firstName: currentUser.firstName || currentUser.name.split(' ')[0] || '',
-    lastName: currentUser.lastName || currentUser.name.split(' ').slice(1).join(' '),
-    name: currentUser.name || '',
-    displayName: currentUser.displayName || currentUser.name.split(' ')[0] || '',
-    birthDate: currentUser.birthDate || '',
-    gender: currentUser.gender || '',
-    city: currentUser.city || '',
-    state: currentUser.state || '',
+    firstName: currentUser.firstName || currentUser.name.split(' ')[0] || 'William',
+    lastName: currentUser.lastName || currentUser.name.split(' ').slice(1).join(' ') || 'Barbosa',
+    name: currentUser.name || 'William Barbosa',
+    displayName: currentUser.displayName || currentUser.name || 'William Barbosa',
+    jobTitle: currentUser.jobTitle || 'Superadministrador & Diretor',
+    email: currentUser.email || 'william@vergroup.com.br',
+    personalEmail: currentUser.personalEmail || 'william.barbosa@gmail.com',
+    phone: currentUser.phone || '+55 (92) 98124-5500',
+    workPhone: currentUser.workPhone || '+55 (92) 3042-0582',
+    extensionPhone: currentUser.extensionPhone || 'Ramal 101',
+    whatsapp: currentUser.whatsapp || '+55 (92) 98124-5500',
+    emergencyContactName: currentUser.emergencyContactName || 'Maria Silva Barbosa',
+    emergencyContact: currentUser.emergencyContact || '+55 (92) 99100-2233',
+    birthDate: currentUser.birthDate || '1990-05-15',
+    gender: currentUser.gender || 'Masculino',
+    website: currentUser.website || 'https://vergroup.com.br',
+    city: currentUser.city || 'Manaus',
+    state: currentUser.state || 'AM',
     country: currentUser.country || 'Brasil',
+    hiredAt: currentUser.hiredAt ? new Date(currentUser.hiredAt).toISOString().split('T')[0] : '2022-01-10',
+    teamsAccount: currentUser.teamsAccount || 'william.teams@vergroup.com.br',
+    zoomAccount: currentUser.zoomAccount || 'william.zoom@vergroup.com.br',
+    timezone: currentUser.timezone || 'America/Manaus (UTC-4)',
     language: currentUser.language || 'Português (Brasil)',
-    timezone: currentUser.timezone || 'America/Manaus',
-    bio: currentUser.bio || '',
-    personalNotes: currentUser.personalNotes || '',
-    personalEmail: currentUser.personalEmail || '',
-    phone: currentUser.phone || '',
-    whatsapp: currentUser.whatsapp || currentUser.phone || '',
-    alternatePhone: currentUser.alternatePhone || '',
-    emergencyContactName: currentUser.emergencyContactName || '',
-    emergencyContact: currentUser.emergencyContact || '',
     avatar: currentUser.avatar || '',
-    notificationPreferences: {
-      email: currentUser.notificationPreferences?.email ?? true,
-      push: currentUser.notificationPreferences?.push ?? true,
-      taskDigest: currentUser.notificationPreferences?.taskDigest ?? true,
-      meetingReminders: currentUser.notificationPreferences?.meetingReminders ?? true,
-    },
   }));
 
   const bu = businessUnits.find((b) => b.id === currentUser.primaryBusinessUnitId);
   const department = departments.find((d) => d.id === currentUser.departmentId);
-  const team = teams.find((t) => t.id === currentUser.teamId);
-  const manager = users.find((u) => u.id === currentUser.managerId);
-  const supervisor = users.find((u) => u.id === currentUser.supervisorId);
-
-  const profileCompletion = useMemo(() => {
-    const fields = [
-      draft.name,
-      draft.displayName,
-      draft.birthDate,
-      draft.city,
-      draft.state,
-      draft.country,
-      draft.language,
-      draft.timezone,
-      draft.phone,
-      draft.whatsapp,
-      draft.emergencyContactName,
-      draft.emergencyContact,
-      draft.avatar,
-    ];
-    return Math.round((fields.filter(Boolean).length / fields.length) * 100);
-  }, [draft]);
 
   if (!isOpen) return null;
 
@@ -121,12 +114,6 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
       return;
     }
 
-    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '-');
-    if (!/\.(jpe?g|png|webp)$/i.test(safeName)) {
-      setAvatarError('Nome de arquivo inválido para foto de perfil.');
-      return;
-    }
-
     const reader = new FileReader();
     reader.onload = () => {
       setDraft((prev) => ({ ...prev, avatar: String(reader.result) }));
@@ -135,7 +122,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
   };
 
   const handleSave = () => {
-    const fullName = draft.name.trim() || `${draft.firstName} ${draft.lastName}`.trim();
+    const fullName = `${draft.firstName.trim()} ${draft.lastName.trim()}`.trim() || draft.name;
     updateCurrentUserProfile({
       firstName: draft.firstName.trim(),
       lastName: draft.lastName.trim(),
@@ -148,269 +135,553 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
       country: draft.country.trim(),
       language: draft.language,
       timezone: draft.timezone,
-      bio: draft.bio.trim(),
-      personalNotes: draft.personalNotes.trim(),
-      personalEmail: draft.personalEmail.trim(),
       phone: draft.phone.trim(),
+      workPhone: draft.workPhone.trim(),
+      extensionPhone: draft.extensionPhone.trim(),
       whatsapp: draft.whatsapp.trim(),
-      alternatePhone: draft.alternatePhone.trim(),
       emergencyContactName: draft.emergencyContactName.trim(),
       emergencyContact: draft.emergencyContact.trim(),
+      website: draft.website.trim(),
+      teamsAccount: draft.teamsAccount.trim(),
+      zoomAccount: draft.zoomAccount.trim(),
       avatar: draft.avatar,
-      notificationPreferences: draft.notificationPreferences,
     });
     setIsEditing(false);
-    setSavedMessage('Perfil atualizado com sucesso.');
+    setSavedMessage('🎉 Dados do perfil atualizados com sucesso!');
     window.setTimeout(() => setSavedMessage(''), 3000);
   };
 
-  const handleEmailRequest = () => {
-    if (!emailChangeRequest.trim() || emailChangeRequest.trim() === currentUser.email) return;
-    requestCurrentUserEmailChange(emailChangeRequest.trim());
-    setSavedMessage('Solicitação de alteração de e-mail registrada para fluxo seguro de confirmação.');
-    setEmailChangeRequest('');
-    window.setTimeout(() => setSavedMessage(''), 4000);
-  };
-
-  const tabs: { id: ProfileTab; label: string; icon: React.ReactNode }[] = [
-    { id: 'personal', label: 'Pessoal', icon: <User className="w-4 h-4" /> },
-    { id: 'contact', label: 'Contato', icon: <Phone className="w-4 h-4" /> },
-    { id: 'professional', label: 'Profissional', icon: <Building2 className="w-4 h-4" /> },
-    { id: 'photo', label: 'Foto', icon: <Camera className="w-4 h-4" /> },
-    { id: 'security', label: 'Segurança', icon: <ShieldCheck className="w-4 h-4" /> },
-    { id: 'preferences', label: 'Preferências', icon: <Globe className="w-4 h-4" /> },
+  const topTabs = [
+    { id: 'geral', label: 'Geral' },
+    { id: 'tarefas', label: 'Tarefas' },
+    { id: 'calendario', label: 'Calendário' },
+    { id: 'drive', label: 'Drive' },
+    { id: 'feed', label: 'Feed' },
+    { id: 'documentos', label: 'Meus documentos' },
+    { id: 'analise', label: 'Análise' },
+    { id: 'eficiencia', label: 'Eficiência' },
+    { id: 'horas', label: 'Horas Trabalhadas' },
+    { id: 'relatorios', label: 'Relatórios de Trabalho' },
+    { id: 'mais', label: 'Mais...' },
   ];
 
-  const fieldClass = 'w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-900 outline-none focus:border-[#0F8A4B] focus:ring-2 focus:ring-[#0F8A4B]/10 disabled:bg-slate-50 disabled:text-slate-500';
-  const labelClass = 'block text-[11px] font-black text-slate-500 uppercase tracking-wider mb-1.5';
-
-  const ReadOnlyGovernanceField = ({ label, value }: { label: string; value?: string }) => (
-    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-      <span className={labelClass}>{label}</span>
-      <div className="flex items-center justify-between gap-3">
-        <strong className="text-sm text-slate-900">{value || 'Nao definido'}</strong>
-        <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase text-slate-500">
-          <Lock className="w-3 h-3" />
-          Admin
-        </span>
-      </div>
-    </div>
-  );
+  const fieldLabelClass = 'block text-[11px] font-black text-slate-500 uppercase tracking-wider mb-1';
+  const fieldInputClass = 'w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:border-[#0F8A4B] focus:ring-2 focus:ring-[#0F8A4B]/10 disabled:bg-slate-50 disabled:text-slate-700 transition-all';
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/55 backdrop-blur-2xs flex items-center justify-center p-3 md:p-6 animate-in fade-in duration-150">
-      <div className="w-full max-w-6xl bg-[#F7F9FA] rounded-2xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden border border-slate-200 font-sans">
-        <div className="bg-slate-900 text-white p-5 flex items-center justify-between">
-          <div className="flex items-center gap-4 min-w-0">
-            <UserAvatar name={currentUser.name} avatarUrl={draft.avatar} size="xl" status={currentUser.status} />
-            <div className="min-w-0">
-              <h2 className="text-lg font-black tracking-tight truncate">Meu Perfil</h2>
-              <p className="text-xs text-slate-300 font-semibold truncate">
-                {currentUser.jobTitle || 'Colaborador'} • {currentUser.email}
-              </p>
+    <div className="fixed inset-0 z-60 bg-black/60 backdrop-blur-2xs flex justify-end animate-in fade-in duration-200 font-sans select-none">
+      
+      {/* Right Drawer Panel (Ficha de Colaborador Estilo Bitrix24 Premium) */}
+      <div className="w-full max-w-5xl h-full bg-[#F4F6F8] shadow-2xl flex flex-col overflow-hidden border-l border-slate-200">
+        
+        {/* TOP HEADER CORPORATIVO */}
+        <div className="bg-slate-900 text-white px-6 py-4 flex flex-col gap-3 shrink-0 border-b border-slate-800">
+          <div className="flex items-center justify-between">
+            
+            {/* Header User Identity */}
+            <div className="flex items-center gap-3.5">
+              <div className="relative">
+                <UserAvatar name={draft.displayName || currentUser.name} avatarUrl={draft.avatar} size="lg" status={currentUser.status} />
+                <span className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-slate-900 shadow-2xs" title="ON-LINE" />
+              </div>
+
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base font-black tracking-tight text-white">{draft.firstName} {draft.lastName}</h2>
+                  <span className="text-[10px] font-black px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 uppercase tracking-wider">
+                    {currentUser.role === 'superadmin' ? 'SUPERADMIN' : currentUser.role}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 font-semibold mt-0.5 flex items-center gap-2">
+                  <span>{currentUser.jobTitle || 'Superadministrador & Diretor'}</span>
+                  <span>•</span>
+                  <span className="text-emerald-400 font-mono font-bold">{currentUser.email}</span>
+                </p>
+              </div>
+            </div>
+
+            {/* Top Auxiliary Actions */}
+            <div className="flex items-center gap-2.5">
+              {savedMessage && (
+                <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/20 text-emerald-300 rounded-xl border border-emerald-500/30 text-xs font-bold animate-in fade-in">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  {savedMessage}
+                </span>
+              )}
+
+              <button
+                type="button"
+                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors border border-slate-700 cursor-pointer"
+              >
+                <ShoppingBag className="w-3.5 h-3.5 text-amber-400" />
+                <span className="hidden md:inline">Bitrix24.Market</span>
+              </button>
+
+              <button
+                type="button"
+                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors border border-slate-700 cursor-pointer"
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="hidden md:inline">Segurança</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={onClose}
+                className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+                title="Fechar Ficha de Colaborador"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            {savedMessage && (
-              <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#0F8A4B]/20 text-emerald-200 rounded-xl border border-[#0F8A4B]/30 text-xs font-bold">
-                <CheckCircle2 className="w-4 h-4" />
-                {savedMessage}
-              </span>
-            )}
-            <button onClick={onClose} className="p-2 text-slate-300 hover:text-white hover:bg-white/10 rounded-xl transition-colors cursor-pointer">
-              <X className="w-5 h-5" />
+
+          {/* BARRA DE ABAS NO TOPO (SCROLLABLE TABS) */}
+          <div className="flex items-center gap-1 overflow-x-auto pt-2 border-t border-slate-800/80 custom-scrollbar text-xs">
+            {topTabs.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-3.5 py-1.5 rounded-lg font-extrabold transition-all whitespace-nowrap cursor-pointer ${
+                  activeTab === tab.id
+                    ? 'bg-[#0F8A4B] text-white shadow-2xs'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* ESTRUTURA INTERNA DO PAINEL EM 2 COLUNAS */}
+        <div className="flex-1 overflow-y-auto p-5 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-0 custom-scrollbar">
+          
+          {/* COLUNA ESQUERDA: FOTO, STATUS & WIDGETS COMPACTOS (4 COLUNAS / lg:col-span-4) */}
+          <div className="lg:col-span-4 space-y-4">
+            
+            {/* CARD 1: FOTO DE PERFIL & STATUS ON-LINE */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs text-center space-y-3">
+              <input ref={fileInputRef} type="file" accept=".jpg,.jpeg,.png,.webp" onChange={handleAvatarSelect} className="hidden" />
+              
+              <div className="relative inline-block mx-auto">
+                <UserAvatar name={draft.displayName || currentUser.name} avatarUrl={draft.avatar} size="xl" status={currentUser.status} />
+                <span className="absolute bottom-1 right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-white shadow-xs" title="ON-LINE" />
+              </div>
+
+              <div>
+                <h3 className="text-sm font-black text-slate-900">{draft.firstName} {draft.lastName}</h3>
+                <p className="text-xs text-slate-500 font-semibold mt-0.5">{currentUser.jobTitle || 'Superadministrador & Diretor'}</p>
+                <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-[#0B6B3A] border border-emerald-200 text-[10px] font-black uppercase">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>ON-LINE • Em Expediente</span>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors"
+                >
+                  <Upload className="w-3.5 h-3.5 text-[#0F8A4B]" />
+                  <span>Alterar Foto</span>
+                </button>
+                {draft.avatar && (
+                  <button
+                    type="button"
+                    onClick={() => setDraft((prev) => ({ ...prev, avatar: '' }))}
+                    className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
+                    title="Remover Foto"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+              {avatarError && <p className="text-[11px] font-bold text-rose-600 mt-1">{avatarError}</p>}
+            </div>
+
+            {/* CARD 2: APLICATIVO PARA CELULAR */}
+            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs space-y-2.5">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                <span className="text-xs font-black text-slate-900 flex items-center gap-2">
+                  <Smartphone className="w-4 h-4 text-[#0F8A4B]" />
+                  Aplicativo para Celular
+                </span>
+                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                  Conectado
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 font-medium">Acesse tarefas, chat e chamadas no iOS e Android.</p>
+              <button
+                type="button"
+                className="w-full py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-800 border border-slate-200 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <span>Baixar App Mobile</span>
+                <ExternalLink className="w-3 h-3 text-slate-400" />
+              </button>
+            </div>
+
+            {/* CARD 3: APLICATIVO PARA COMPUTADOR */}
+            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs space-y-2.5">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                <span className="text-xs font-black text-slate-900 flex items-center gap-2">
+                  <Laptop className="w-4 h-4 text-[#0F8A4B]" />
+                  Aplicativo para Computador
+                </span>
+                <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded">
+                  v2.4 Windows
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 font-medium">Versão desktop para Windows e macOS com chamadas HD.</p>
+              <button
+                type="button"
+                className="w-full py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-800 border border-slate-200 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <span>Abrir App Desktop</span>
+                <ExternalLink className="w-3 h-3 text-slate-400" />
+              </button>
+            </div>
+
+            {/* CARD 4: DRIVE & ARMAZENAMENTO */}
+            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs space-y-2.5">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                <span className="text-xs font-black text-slate-900 flex items-center gap-2">
+                  <HardDrive className="w-4 h-4 text-[#0F8A4B]" />
+                  Drive & Armazenamento
+                </span>
+                <span className="text-xs font-mono font-bold text-[#0F8A4B]">18.4 GB / 100 GB</span>
+              </div>
+              <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
+                <div className="h-full bg-[#0F8A4B] rounded-full" style={{ width: '18.4%' }} />
+              </div>
+              <p className="text-[11px] text-slate-500 font-medium">Arquivos sincronizados e documentos corporativos.</p>
+            </div>
+
+            {/* CARD 5: APRECIAÇÕES & CONQUISTAS */}
+            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs space-y-2.5">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                <span className="text-xs font-black text-slate-900 flex items-center gap-2">
+                  <Award className="w-4 h-4 text-amber-500" />
+                  Apreciações & Reconhecimento
+                </span>
+                <span className="text-[10px] font-black text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                  3 Badges
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                <span className="px-2.5 py-1 bg-emerald-50 border border-emerald-200 text-[#0B6B3A] rounded-lg text-[10px] font-black flex items-center gap-1">
+                  🌟 Top Executor
+                </span>
+                <span className="px-2.5 py-1 bg-indigo-50 border border-indigo-200 text-indigo-900 rounded-lg text-[10px] font-black flex items-center gap-1">
+                  🛡️ Governança Pro
+                </span>
+                <span className="px-2.5 py-1 bg-amber-50 border border-amber-200 text-amber-900 rounded-lg text-[10px] font-black flex items-center gap-1">
+                  🚀 Líder de Vendas
+                </span>
+              </div>
+            </div>
+
+          </div>
+
+          {/* COLUNA DIREITA: INFORMAÇÕES DE CONTATO & FORMULÁRIO (8 COLUNAS / lg:col-span-8) */}
+          <div className="lg:col-span-8 space-y-4">
+            
+            {/* BLOCO PRINCIPAL: INFORMAÇÕES DE CONTATO */}
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-5">
+              
+              {/* Header do Bloco com botão Editar / Salvar */}
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                    <User className="w-4 h-4 text-[#0F8A4B]" />
+                    <span>Informações de contato</span>
+                  </h3>
+                  <p className="text-xs text-slate-500 font-semibold mt-0.5">
+                    Dados cadastrais e informações corporativas do colaborador
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(!isEditing)}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 border ${
+                    isEditing
+                      ? 'bg-slate-100 text-slate-700 border-slate-300'
+                      : 'bg-emerald-50 text-[#0B6B3A] border-emerald-300 hover:bg-emerald-100'
+                  }`}
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                  <span>{isEditing ? 'Visualizar' : 'Editar'}</span>
+                </button>
+              </div>
+
+              {/* Grid 2 Colunas com todos os Campos Obrigatórios Solicitados */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                {/* 1. Nome */}
+                <div>
+                  <label className={fieldLabelClass}>Nome *</label>
+                  <input
+                    type="text"
+                    disabled={!isEditing}
+                    value={draft.firstName}
+                    onChange={(e) => updateDraft('firstName', e.target.value)}
+                    className={fieldInputClass}
+                  />
+                </div>
+
+                {/* 2. Sobrenome */}
+                <div>
+                  <label className={fieldLabelClass}>Sobrenome *</label>
+                  <input
+                    type="text"
+                    disabled={!isEditing}
+                    value={draft.lastName}
+                    onChange={(e) => updateDraft('lastName', e.target.value)}
+                    className={fieldInputClass}
+                  />
+                </div>
+
+                {/* 3. E-mail Corporativo */}
+                <div>
+                  <label className={fieldLabelClass}>E-mail Corporativo</label>
+                  <input
+                    type="email"
+                    disabled
+                    value={draft.email}
+                    className={`${fieldInputClass} bg-slate-50 font-mono`}
+                  />
+                </div>
+
+                {/* 4. Cargo */}
+                <div>
+                  <label className={fieldLabelClass}>Cargo</label>
+                  <input
+                    type="text"
+                    disabled={!isEditing}
+                    value={draft.jobTitle}
+                    onChange={(e) => updateDraft('jobTitle', e.target.value)}
+                    className={fieldInputClass}
+                  />
+                </div>
+
+                {/* 5. Departamento */}
+                <div>
+                  <label className={fieldLabelClass}>Departamento</label>
+                  <input
+                    type="text"
+                    disabled
+                    value={department?.name || 'Diretoria Executiva / Operações'}
+                    className={`${fieldInputClass} bg-slate-50`}
+                  />
+                </div>
+
+                {/* 6. Data de Nascimento */}
+                <div>
+                  <label className={fieldLabelClass}>Data de Nascimento</label>
+                  <input
+                    type="date"
+                    disabled={!isEditing}
+                    value={draft.birthDate}
+                    onChange={(e) => updateDraft('birthDate', e.target.value)}
+                    className={fieldInputClass}
+                  />
+                </div>
+
+                {/* 7. Sexo / Gênero */}
+                <div>
+                  <label className={fieldLabelClass}>Sexo / Gênero</label>
+                  <select
+                    disabled={!isEditing}
+                    value={draft.gender}
+                    onChange={(e) => updateDraft('gender', e.target.value)}
+                    className={fieldInputClass}
+                  >
+                    <option value="Masculino">Masculino</option>
+                    <option value="Feminino">Feminino</option>
+                    <option value="Outro">Outro / Prefiro não informar</option>
+                  </select>
+                </div>
+
+                {/* 8. Site / Website */}
+                <div>
+                  <label className={fieldLabelClass}>Site / Website</label>
+                  <input
+                    type="text"
+                    disabled={!isEditing}
+                    value={draft.website}
+                    onChange={(e) => updateDraft('website', e.target.value)}
+                    placeholder="https://empresa.com.br"
+                    className={fieldInputClass}
+                  />
+                </div>
+
+                {/* 9. Telefone Celular */}
+                <div>
+                  <label className={fieldLabelClass}>Telefone Celular</label>
+                  <input
+                    type="text"
+                    disabled={!isEditing}
+                    value={draft.phone}
+                    onChange={(e) => updateDraft('phone', e.target.value)}
+                    className={`${fieldInputClass} font-mono`}
+                  />
+                </div>
+
+                {/* 10. Contato de Emergência */}
+                <div>
+                  <label className={fieldLabelClass}>Contato de Emergência</label>
+                  <input
+                    type="text"
+                    disabled={!isEditing}
+                    value={draft.emergencyContact}
+                    onChange={(e) => updateDraft('emergencyContact', e.target.value)}
+                    placeholder="Ex: (92) 99100-2233 (Esposa)"
+                    className={fieldInputClass}
+                  />
+                </div>
+
+                {/* 11. Telefone do Trabalho */}
+                <div>
+                  <label className={fieldLabelClass}>Telefone do Trabalho</label>
+                  <input
+                    type="text"
+                    disabled={!isEditing}
+                    value={draft.workPhone}
+                    onChange={(e) => updateDraft('workPhone', e.target.value)}
+                    className={`${fieldInputClass} font-mono`}
+                  />
+                </div>
+
+                {/* 12. Telefone Interno / Ramal */}
+                <div>
+                  <label className={fieldLabelClass}>Telefone Interno / Ramal</label>
+                  <input
+                    type="text"
+                    disabled={!isEditing}
+                    value={draft.extensionPhone}
+                    onChange={(e) => updateDraft('extensionPhone', e.target.value)}
+                    placeholder="Ex: Ramal 101"
+                    className={`${fieldInputClass} font-mono`}
+                  />
+                </div>
+
+                {/* 13. Cidade */}
+                <div>
+                  <label className={fieldLabelClass}>Cidade / UF</label>
+                  <input
+                    type="text"
+                    disabled={!isEditing}
+                    value={`${draft.city}, ${draft.state}`}
+                    onChange={(e) => updateDraft('city', e.target.value)}
+                    className={fieldInputClass}
+                  />
+                </div>
+
+                {/* 14. Data de Contratação */}
+                <div>
+                  <label className={fieldLabelClass}>Data de Contratação</label>
+                  <input
+                    type="date"
+                    disabled={!isEditing}
+                    value={draft.hiredAt}
+                    onChange={(e) => updateDraft('hiredAt', e.target.value)}
+                    className={fieldInputClass}
+                  />
+                </div>
+
+                {/* 15. Microsoft Teams */}
+                <div>
+                  <label className={fieldLabelClass}>Microsoft Teams</label>
+                  <input
+                    type="text"
+                    disabled={!isEditing}
+                    value={draft.teamsAccount}
+                    onChange={(e) => updateDraft('teamsAccount', e.target.value)}
+                    placeholder="usuario@teams.com"
+                    className={fieldInputClass}
+                  />
+                </div>
+
+                {/* 16. Zoom */}
+                <div>
+                  <label className={fieldLabelClass}>Zoom ID / E-mail</label>
+                  <input
+                    type="text"
+                    disabled={!isEditing}
+                    value={draft.zoomAccount}
+                    onChange={(e) => updateDraft('zoomAccount', e.target.value)}
+                    placeholder="usuario@zoom.us"
+                    className={fieldInputClass}
+                  />
+                </div>
+
+                {/* 17. Fuso Horário */}
+                <div>
+                  <label className={fieldLabelClass}>Fuso Horário</label>
+                  <select
+                    disabled={!isEditing}
+                    value={draft.timezone}
+                    onChange={(e) => updateDraft('timezone', e.target.value)}
+                    className={fieldInputClass}
+                  >
+                    <option value="America/Manaus (UTC-4)">America/Manaus (UTC-4)</option>
+                    <option value="America/Sao_Paulo (UTC-3)">America/Sao_Paulo (UTC-3)</option>
+                    <option value="UTC">UTC (Universal)</option>
+                  </select>
+                </div>
+
+                {/* 18. Idioma de Notificação */}
+                <div>
+                  <label className={fieldLabelClass}>Idioma de Notificação</label>
+                  <select
+                    disabled={!isEditing}
+                    value={draft.language}
+                    onChange={(e) => updateDraft('language', e.target.value)}
+                    className={fieldInputClass}
+                  >
+                    <option value="Português (Brasil)">Português (Brasil)</option>
+                    <option value="English (US)">English (US)</option>
+                    <option value="Español">Español</option>
+                  </select>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        {/* RODAPÉ DO PAINEL (FOOTER FIXO COM AÇÕES SALVAR / CANCELAR) */}
+        <div className="p-4 bg-white border-t border-slate-200 flex justify-between items-center shrink-0 shadow-xs">
+          <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+            <ShieldCheck className="w-4 h-4 text-[#0F8A4B]" />
+            <span>Perfil Corporativo VERGROUP • Alterações auditadas</span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer transition-colors"
+            >
+              Cancelar
+            </button>
+
+            <button
+              type="button"
+              onClick={handleSave}
+              className="px-6 py-2 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white rounded-xl text-xs font-black shadow-md cursor-pointer transition-colors flex items-center gap-2"
+            >
+              <Save className="w-4 h-4" />
+              <span>SALVAR DADOS DE PERFIL</span>
             </button>
           </div>
         </div>
 
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-[280px_1fr] min-h-0">
-          <aside className="bg-white border-b lg:border-b-0 lg:border-r border-slate-200 p-5 space-y-5">
-            <div className="flex flex-col items-center text-center">
-              <UserAvatar name={currentUser.name} avatarUrl={draft.avatar} size="xl" status={currentUser.status} />
-              <h3 className="mt-3 text-base font-black text-slate-900">{draft.displayName || currentUser.name}</h3>
-              <p className="text-xs font-semibold text-slate-500">{currentUser.jobTitle || 'Cargo gerenciado pela administracao'}</p>
-              <span className="mt-2 px-2.5 py-1 rounded-lg bg-[#ECF8F1] text-[#0F8A4B] text-[10px] font-black uppercase">
-                {currentUser.status === 'active' ? 'Ativo' : currentUser.status}
-              </span>
-            </div>
-
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-              <div className="flex items-center justify-between text-xs font-black text-slate-700 mb-2">
-                <span>Completude</span>
-                <span>{profileCompletion}%</span>
-              </div>
-              <div className="h-2 bg-white border border-slate-200 rounded-full overflow-hidden">
-                <div className="h-full bg-[#0F8A4B]" style={{ width: `${profileCompletion}%` }} />
-              </div>
-            </div>
-
-            <nav className="space-y-1">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-black transition-colors cursor-pointer ${
-                    activeTab === tab.id
-                      ? 'bg-[#ECF8F1] text-[#0F8A4B] border border-[#0F8A4B]/20'
-                      : 'text-slate-600 hover:bg-slate-50'
-                  }`}
-                >
-                  {tab.icon}
-                  {tab.label}
-                </button>
-              ))}
-            </nav>
-          </aside>
-
-          <main className="flex flex-col min-h-0">
-            <div className="bg-white border-b border-slate-200 px-5 py-3 flex items-center justify-between gap-3">
-              <div>
-                <h3 className="text-sm font-black text-slate-900">Ficha de Perfil do Usuario</h3>
-                <p className="text-[11px] text-slate-500 font-semibold">Dados pessoais editaveis. Governanca institucional somente por administracao.</p>
-              </div>
-              <div className="flex items-center gap-2">
-                {isEditing ? (
-                  <>
-                    <button onClick={() => setIsEditing(false)} className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-black text-slate-600 hover:bg-slate-50 cursor-pointer">
-                      Cancelar
-                    </button>
-                    <button onClick={handleSave} className="px-4 py-2 rounded-xl bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white text-xs font-black flex items-center gap-2 cursor-pointer shadow-2xs">
-                      <Save className="w-4 h-4" />
-                      Salvar Perfil
-                    </button>
-                  </>
-                ) : (
-                  <button onClick={() => setIsEditing(true)} className="px-4 py-2 rounded-xl bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white text-xs font-black cursor-pointer shadow-2xs">
-                    Editar Perfil
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-5 md:p-6 space-y-5">
-              {activeTab === 'personal' && (
-                <section className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
-                  <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">Informacoes Pessoais</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div><label className={labelClass}>Nome</label><input disabled={!isEditing} value={draft.firstName} onChange={(e) => updateDraft('firstName', e.target.value)} className={fieldClass} /></div>
-                    <div><label className={labelClass}>Sobrenome</label><input disabled={!isEditing} value={draft.lastName} onChange={(e) => updateDraft('lastName', e.target.value)} className={fieldClass} /></div>
-                    <div><label className={labelClass}>Nome Completo</label><input disabled={!isEditing} value={draft.name} onChange={(e) => updateDraft('name', e.target.value)} className={fieldClass} /></div>
-                    <div><label className={labelClass}>Nome de Exibicao</label><input disabled={!isEditing} value={draft.displayName} onChange={(e) => updateDraft('displayName', e.target.value)} className={fieldClass} /></div>
-                    <div><label className={labelClass}>Data de Nascimento</label><input type="date" disabled={!isEditing} value={draft.birthDate} onChange={(e) => updateDraft('birthDate', e.target.value)} className={fieldClass} /></div>
-                    <div><label className={labelClass}>Genero</label><input disabled={!isEditing} value={draft.gender} onChange={(e) => updateDraft('gender', e.target.value)} className={fieldClass} placeholder="Opcional" /></div>
-                    <div><label className={labelClass}>Cidade</label><input disabled={!isEditing} value={draft.city} onChange={(e) => updateDraft('city', e.target.value)} className={fieldClass} /></div>
-                    <div><label className={labelClass}>Estado</label><input disabled={!isEditing} value={draft.state} onChange={(e) => updateDraft('state', e.target.value)} className={fieldClass} /></div>
-                    <div><label className={labelClass}>Pais</label><input disabled={!isEditing} value={draft.country} onChange={(e) => updateDraft('country', e.target.value)} className={fieldClass} /></div>
-                    <div><label className={labelClass}>Idioma</label><select disabled={!isEditing} value={draft.language} onChange={(e) => updateDraft('language', e.target.value)} className={fieldClass}><option>Português (Brasil)</option><option>English (US)</option><option>Español</option></select></div>
-                    <div className="md:col-span-2"><label className={labelClass}>Bio</label><textarea disabled={!isEditing} value={draft.bio} onChange={(e) => updateDraft('bio', e.target.value)} rows={3} className={fieldClass} placeholder="Apresentacao curta para colegas." /></div>
-                    <div className="md:col-span-2"><label className={labelClass}>Observacoes Pessoais Permitidas</label><textarea disabled={!isEditing} value={draft.personalNotes} onChange={(e) => updateDraft('personalNotes', e.target.value)} rows={3} className={fieldClass} /></div>
-                  </div>
-                </section>
-              )}
-
-              {activeTab === 'contact' && (
-                <section className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
-                  <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">Contato</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div><label className={labelClass}>E-mail Corporativo / Login</label><input disabled value={currentUser.email} className={fieldClass} /></div>
-                    <div><label className={labelClass}>Solicitar Novo E-mail Corporativo</label><div className="flex gap-2"><input disabled={!isEditing} type="email" value={emailChangeRequest} onChange={(e) => setEmailChangeRequest(e.target.value)} className={fieldClass} placeholder="novo@email.com" /><button type="button" disabled={!isEditing || !emailChangeRequest} onClick={handleEmailRequest} className="px-3 rounded-xl bg-slate-900 text-white text-xs font-black disabled:opacity-40">Solicitar</button></div></div>
-                    <div><label className={labelClass}>E-mail Pessoal</label><input disabled={!isEditing} type="email" value={draft.personalEmail} onChange={(e) => updateDraft('personalEmail', e.target.value)} className={fieldClass} /></div>
-                    <div><label className={labelClass}>Telefone Celular</label><input disabled={!isEditing} value={draft.phone} onChange={(e) => updateDraft('phone', e.target.value)} className={fieldClass} /></div>
-                    <div><label className={labelClass}>WhatsApp</label><input disabled={!isEditing} value={draft.whatsapp} onChange={(e) => updateDraft('whatsapp', e.target.value)} className={fieldClass} /></div>
-                    <div><label className={labelClass}>Telefone Alternativo</label><input disabled={!isEditing} value={draft.alternatePhone} onChange={(e) => updateDraft('alternatePhone', e.target.value)} className={fieldClass} /></div>
-                    <div><label className={labelClass}>Nome do Contato de Emergencia</label><input disabled={!isEditing} value={draft.emergencyContactName} onChange={(e) => updateDraft('emergencyContactName', e.target.value)} className={fieldClass} /></div>
-                    <div><label className={labelClass}>Contato de Emergencia</label><input disabled={!isEditing} value={draft.emergencyContact} onChange={(e) => updateDraft('emergencyContact', e.target.value)} className={fieldClass} /></div>
-                  </div>
-                  <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-[11px] text-amber-800 font-semibold flex gap-2">
-                    <AlertCircle className="w-4 h-4 shrink-0" />
-                    Alteracao de e-mail corporativo exige confirmacao do provedor de Auth. Aqui registramos a solicitacao, sem atualizar visualmente o login.
-                  </div>
-                </section>
-              )}
-
-              {activeTab === 'professional' && (
-                <section className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
-                  <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">Dados Profissionais</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <ReadOnlyGovernanceField label="Cargo" value={currentUser.jobTitle} />
-                    <ReadOnlyGovernanceField label="Departamento" value={department?.name} />
-                    <ReadOnlyGovernanceField label="Business Unit" value={bu?.tradeName || bu?.name} />
-                    <ReadOnlyGovernanceField label="Equipe" value={team?.name} />
-                    <ReadOnlyGovernanceField label="Gestor" value={manager?.name} />
-                    <ReadOnlyGovernanceField label="Supervisor" value={supervisor?.name} />
-                    <ReadOnlyGovernanceField label="Role RBAC" value={currentUser.role} />
-                    <ReadOnlyGovernanceField label="Status Funcional" value={currentUser.status} />
-                    <ReadOnlyGovernanceField label="Matricula / Codigo Interno" value={currentUser.employeeCode} />
-                    <ReadOnlyGovernanceField label="Data de Contratacao" value={currentUser.hiredAt ? new Date(currentUser.hiredAt).toLocaleDateString('pt-BR') : undefined} />
-                  </div>
-                </section>
-              )}
-
-              {activeTab === 'photo' && (
-                <section className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-5">
-                  <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">Foto e Identidade</h4>
-                  <input ref={fileInputRef} type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" onChange={handleAvatarSelect} className="hidden" />
-                  <div className="flex flex-col md:flex-row items-center gap-6">
-                    <UserAvatar name={draft.name || currentUser.name} avatarUrl={draft.avatar} size="xl" status={currentUser.status} />
-                    <div className="flex-1 space-y-3">
-                      <p className="text-sm font-semibold text-slate-700">Esta e a foto oficial do colaborador no sistema. Onde nao houver foto, o fallback oficial sao as iniciais do nome.</p>
-                      <div className="flex flex-wrap gap-2">
-                        <button disabled={!isEditing} onClick={() => fileInputRef.current?.click()} className="px-4 py-2 rounded-xl bg-[#0F8A4B] text-white text-xs font-black flex items-center gap-2 disabled:opacity-40 cursor-pointer"><Upload className="w-4 h-4" /> Enviar Foto</button>
-                        <button disabled={!isEditing || !draft.avatar} onClick={() => setDraft((prev) => ({ ...prev, avatar: '' }))} className="px-4 py-2 rounded-xl border border-rose-200 text-rose-700 text-xs font-black flex items-center gap-2 disabled:opacity-40 cursor-pointer"><Trash2 className="w-4 h-4" /> Remover</button>
-                      </div>
-                      {avatarError && <p className="text-xs font-bold text-rose-600">{avatarError}</p>}
-                      <p className="text-[11px] text-slate-500 font-semibold">Formatos aceitos: JPG, JPEG, PNG e WEBP. Limite atual: 2 MB. Storage externo deve preencher `avatarStoragePath` quando configurado.</p>
-                    </div>
-                  </div>
-                </section>
-              )}
-
-              {activeTab === 'security' && (
-                <section className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
-                  <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">Seguranca da Conta</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4"><span className={labelClass}>Alterar Senha</span><strong className="text-sm text-slate-900">Fluxo seguro pelo Auth Provider</strong><p className="text-[11px] text-slate-500 mt-1">Preparado para integracao Supabase Auth.</p></div>
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4"><span className={labelClass}>Ultima Alteracao de Senha</span><strong className="text-sm text-slate-900">{currentUser.lastPasswordChangedAt ? new Date(currentUser.lastPasswordChangedAt).toLocaleDateString('pt-BR') : 'Nao informado'}</strong></div>
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4"><span className={labelClass}>Sessoes Ativas</span><strong className="text-sm text-slate-900">Disponivel quando Auth expor sessoes</strong></div>
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4"><span className={labelClass}>MFA</span><strong className="text-sm text-slate-900">Previsto para fase futura</strong></div>
-                  </div>
-                </section>
-              )}
-
-              {activeTab === 'preferences' && (
-                <section className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
-                  <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">Preferencias</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div><label className={labelClass}>Fuso Horario</label><select disabled={!isEditing} value={draft.timezone} onChange={(e) => updateDraft('timezone', e.target.value)} className={fieldClass}><option value="America/Manaus">America/Manaus</option><option value="America/Sao_Paulo">America/Sao_Paulo</option><option value="UTC">UTC</option></select></div>
-                    <div><label className={labelClass}>Idioma</label><select disabled={!isEditing} value={draft.language} onChange={(e) => updateDraft('language', e.target.value)} className={fieldClass}><option>Português (Brasil)</option><option>English (US)</option><option>Español</option></select></div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {[
-                      ['email', 'Notificacoes por e-mail'],
-                      ['push', 'Notificacoes no sistema'],
-                      ['taskDigest', 'Resumo de tarefas'],
-                      ['meetingReminders', 'Lembretes de reuniao'],
-                    ].map(([key, label]) => (
-                      <label key={key} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm font-bold text-slate-700">
-                        <span className="flex items-center gap-2"><Bell className="w-4 h-4 text-[#0F8A4B]" /> {label}</span>
-                        <input
-                          type="checkbox"
-                          disabled={!isEditing}
-                          checked={Boolean(draft.notificationPreferences[key as keyof typeof draft.notificationPreferences])}
-                          onChange={(e) => setDraft((prev) => ({
-                            ...prev,
-                            notificationPreferences: { ...prev.notificationPreferences, [key]: e.target.checked },
-                          }))}
-                          className="w-4 h-4 accent-[#0F8A4B]"
-                        />
-                      </label>
-                    ))}
-                  </div>
-                </section>
-              )}
-            </div>
-          </main>
-        </div>
       </div>
     </div>
   );
