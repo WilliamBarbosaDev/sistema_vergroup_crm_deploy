@@ -217,7 +217,7 @@ export const DealDetailDrawer: React.FC = () => {
   return (
     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-2xs flex items-center justify-center p-4 animate-in fade-in duration-100">
       <div
-        className="w-full max-w-5xl bg-white rounded-2xl shadow-2xl border border-[#DDE3E8] flex flex-col max-h-[88vh] overflow-hidden animate-in zoom-in-95 duration-150"
+        className="w-full max-w-[96vw] max-h-[95vh] bg-white rounded-2xl shadow-2xl border border-[#DDE3E8] flex flex-col overflow-hidden animate-in zoom-in-95 duration-150 font-sans"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Header Bar */}

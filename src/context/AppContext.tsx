@@ -178,7 +178,7 @@ interface AppContextType {
   addCompany: (company: Omit<Company, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateCompany: (id: string, updates: Partial<Company>) => void;
 
-  addDeal: (deal: Omit<Deal, 'id' | 'stageChangedAt' | 'createdAt' | 'updatedAt'>) => void;
+  addDeal: (deal: Omit<Deal, 'id' | 'stageChangedAt' | 'createdAt' | 'updatedAt'>) => Deal;
   updateDeal: (id: string, updates: Partial<Deal>) => void;
   moveDealStage: (dealId: string, targetStageId: string) => void;
   markDealWon: (dealId: string) => void;
@@ -765,7 +765,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // CRM: Deals & Pipeline
-  const addDeal = (dealData: Omit<Deal, 'id' | 'stageChangedAt' | 'createdAt' | 'updatedAt'>) => {
+  const addDeal = (dealData: Omit<Deal, 'id' | 'stageChangedAt' | 'createdAt' | 'updatedAt'>): Deal => {
     const newDeal: Deal = {
       ...dealData,
       id: `deal-${Date.now()}`,
@@ -784,6 +784,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       title: 'Negócio aberto no pipeline',
       description: `Criado por ${currentUser.name}. Valor: R$ ${newDeal.value.toLocaleString('pt-BR')}`,
     });
+    return newDeal;
   };
 
   const updateDeal = (id: string, updates: Partial<Deal>) => {

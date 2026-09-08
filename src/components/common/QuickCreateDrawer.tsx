@@ -24,15 +24,19 @@ import {
   Eye,
   ShieldCheck,
   Target,
+  Tag,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { TaskPriority } from '../../types';
 import { AiToolRegistryService } from '../../services/aiToolRegistry';
+import { DealCompanyContactSelector } from '../crm/DealCompanyContactSelector';
 
 export const QuickCreateDrawer: React.FC = () => {
   const {
     quickCreateType,
     setQuickCreateType,
+    selectedDealId,
+    setSelectedDealId,
     selectedBusinessUnitId,
     businessUnits,
     pipelines,
@@ -72,6 +76,10 @@ export const QuickCreateDrawer: React.FC = () => {
   const [dealSource, setDealSource] = useState('Outbound Comercial / SDR');
   const [dealProbability, setDealProbability] = useState('50');
   const [dealPriority, setDealPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>('medium');
+  const [dealPaymentCondition, setDealPaymentCondition] = useState('Faturamento Mensal (30 dias)');
+  const [dealPlan, setDealPlan] = useState('Plano Corp / Enterprise');
+  const [dealParticipantIds, setDealParticipantIds] = useState<string[]>([]);
+  const [dealInitialTaskTitle, setDealInitialTaskTitle] = useState('');
 
   // Autocomplete Searches for Contact & Company
   const [contactSearchQuery, setContactSearchQuery] = useState('');
@@ -184,7 +192,7 @@ export const QuickCreateDrawer: React.FC = () => {
       const targetPipeline = pipelines.find((p) => p.id === dealPipelineId) || pipelines[0];
       const targetStage = dealStageId || targetPipeline.stages[0]?.id || 'stg-1';
 
-      addDeal({
+      const newDeal = addDeal({
         businessUnitId: dealBUId || activeBUId,
         pipelineId: dealPipelineId || targetPipeline.id,
         stageId: targetStage,
@@ -198,14 +206,37 @@ export const QuickCreateDrawer: React.FC = () => {
         serviceCategory: dealService,
         leadSource: dealSource,
         notes: dealNotes || undefined,
-        customFields: dealCustomFieldValues,
+        customFields: {
+          ...dealCustomFieldValues,
+          'Condição de Pagamento': dealPaymentCondition,
+          'Plano Contratado': dealPlan,
+        },
         tags: [dealPriority === 'urgent' ? 'Urgente' : 'Novo'],
       });
 
-      alert(`🎉 Oportunidade / Negócio "${dealTitle}" criado com sucesso no pipeline!`);
+      // Add initial task if entered
+      if (dealInitialTaskTitle.trim()) {
+        addTask({
+          businessUnitId: newDeal.businessUnitId,
+          title: dealInitialTaskTitle.trim(),
+          description: `Próxima ação criada na abertura do negócio "${newDeal.title}"`,
+          status: 'pending',
+          priority: 'high',
+          dueDate: newDeal.expectedCloseDate,
+          assignedUserId: newDeal.assignedUserId,
+          dealId: newDeal.id,
+          clientId: newDeal.companyId,
+          tags: ['Próxima Ação', 'Comercial'],
+        });
+      }
+
       setQuickCreateType(null);
       setDealTitle('');
       setDealNotes('');
+      setDealInitialTaskTitle('');
+
+      // Seamless Transition to complete Operational Workspace
+      setSelectedDealId(newDeal.id);
       return;
     } else if (quickCreateType === 'project') {
       if (!projName.trim()) {
@@ -343,31 +374,74 @@ export const QuickCreateDrawer: React.FC = () => {
   return (
     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-2xs flex items-center justify-center p-4 animate-in fade-in duration-100 font-sans select-none">
       <div
-        className="w-full max-w-3xl bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col max-h-[92vh] overflow-hidden animate-in zoom-in-95 duration-150"
+        className={`${
+          quickCreateType === 'deal' ? 'w-full max-w-[96vw] max-h-[95vh] h-[95vh]' : 'w-full max-w-3xl max-h-[92vh]'
+        } bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden animate-in zoom-in-95 duration-150`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="p-4.5 border-b border-slate-200 flex items-center justify-between bg-[#ECF8F1]">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-white text-[#0F8A4B] rounded-xl border border-[#0F8A4B]/20 shadow-2xs">
-              <Sparkles className="w-5 h-5" />
+        <div className="p-4 border-b border-slate-200 bg-[#ECF8F1] flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-white text-[#0F8A4B] rounded-xl border border-[#0F8A4B]/20 shadow-2xs">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
+                  <span>
+                    {quickCreateType === 'project' ? 'Cadastro de Novo Projeto (CRM 2.0 Operations)' :
+                     quickCreateType === 'deal' ? 'Ficha de Novo Negócio / Nova Oportunidade (CRM 2.0)' :
+                     quickCreateType === 'lead' ? 'Assistente de Entrada de Novo Lead (CRM 2.0)' :
+                     quickCreateType === 'company' ? 'Cadastro Completo de Empresa (CRM 2.0)' : 'Criar Registro'}
+                  </span>
+                  {quickCreateType === 'deal' && (
+                    <span className="text-xs font-bold px-2.5 py-0.5 bg-white text-[#0F8A4B] rounded-md border border-[#0F8A4B]/30 font-mono">
+                      Funil: {activePipeline?.name || 'CRM Vendas'}
+                    </span>
+                  )}
+                </h2>
+                <p className="text-xs text-slate-600 font-semibold mt-0.5">
+                  Unidade do Grupo: {businessUnits.find(b => b.id === activeBUId)?.tradeName || activeBUId}
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-base font-black text-slate-900">
-                {quickCreateType === 'project' ? 'Cadastro de Novo Projeto (CRM 2.0 Operations)' :
-                 quickCreateType === 'deal' ? 'Novo Cliente / Nova Oportunidade (CRM 2.0)' :
-                 quickCreateType === 'lead' ? 'Assistente de Entrada de Novo Lead (CRM 2.0)' :
-                 quickCreateType === 'company' ? 'Cadastro Completo de Empresa (CRM 2.0)' : 'Criar Registro'}
-              </h2>
-              <p className="text-xs text-slate-600 font-semibold">Unidade: {businessUnits.find(b => b.id === activeBUId)?.tradeName || activeBUId}</p>
-            </div>
+            <button
+              type="button"
+              onClick={() => setQuickCreateType(null)}
+              className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
-          <button
-            onClick={() => setQuickCreateType(null)}
-            className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
+
+          {/* Interactive Pipeline Stage Stepper for Deal Creation */}
+          {quickCreateType === 'deal' && activePipeline && (
+            <div className="bg-white p-2 rounded-xl border border-slate-200 flex items-center gap-1.5 overflow-x-auto text-xs">
+              <span className="text-[11px] font-black text-slate-400 uppercase tracking-wider px-2 shrink-0">Etapa Inicial:</span>
+              {activePipeline.stages.map((stg, idx) => {
+                const isSelected = (dealStageId || activePipeline.stages[0]?.id) === stg.id;
+
+                return (
+                  <button
+                    key={stg.id}
+                    type="button"
+                    onClick={() => setDealStageId(stg.id)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer border ${
+                      isSelected
+                        ? 'bg-[#0F8A4B] text-white border-[#0F8A4B] shadow-2xs'
+                        : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    <span className="w-4 h-4 rounded-full bg-white/20 text-current flex items-center justify-center font-mono text-[10px]">
+                      {idx + 1}
+                    </span>
+                    <span>{stg.name}</span>
+                    {isSelected && <Check className="w-3.5 h-3.5 text-white" />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Form Body */}
@@ -694,251 +768,258 @@ export const QuickCreateDrawer: React.FC = () => {
             </>
           )}
 
-          {/* DEAL FORM — 5 BLOCOS ESTRUTURADOS CRM 2.0 */}
+          {/* DEAL FORM — FICHA AMPLA CRM 2.0 (LAYOUT EM 2 GRANDES COLUNAS) */}
           {quickCreateType === 'deal' && (
-            <>
-              {/* BLOCO 1: DADOS BÁSICOS & CÓDIGO DA OPORTUNIDADE */}
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
-                <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-[#0F8A4B]" />
-                  Bloco 1 — Identificação da Oportunidade & Contrato
-                </h3>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+              {/* COLUNA ESQUERDA (65% / lg:col-span-7) — FICHA CADASTRAL & COMERCIAL */}
+              <div className="lg:col-span-7 space-y-4">
+                {/* SEÇÃO 1: SOBRE O NEGÓCIO */}
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
+                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2 border-b border-slate-200/80 pb-2">
+                    <Sparkles className="w-4 h-4 text-[#0F8A4B]" />
+                    1. Sobre o Negócio & Contrato
+                  </h3>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div className="md:col-span-2">
-                    <label className="block text-slate-800 font-bold mb-1">Título do Negócio / Contrato *</label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="md:col-span-2">
+                      <label className="block text-slate-800 font-bold mb-1">Título do Negócio / Contrato *</label>
+                      <input
+                        type="text"
+                        required
+                        value={dealTitle}
+                        onChange={(e) => setDealTitle(e.target.value)}
+                        placeholder="Ex: Expansão de Licenças SaaS e Suporte 24/7"
+                        className="w-full px-3.5 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-bold text-xs"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-800 font-bold mb-1">Empresa do Grupo (BU Proprietária) *</label>
+                      <select
+                        value={dealBUId}
+                        onChange={(e) => setDealBUId(e.target.value)}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-bold text-xs"
+                      >
+                        {businessUnits.map((bu) => (
+                          <option key={bu.id} value={bu.id}>🏢 {bu.tradeName || bu.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-800 font-bold mb-1">Valor Estimado / MRR (R$) *</label>
+                      <input
+                        type="number"
+                        required
+                        value={dealValue}
+                        onChange={(e) => setDealValue(e.target.value)}
+                        placeholder="50000"
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-black text-xs text-[#0F8A4B]"
+                      />
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <label className="block text-slate-800 font-bold mb-1">Categoria de Serviço / Solução *</label>
+                      <select
+                        value={dealService}
+                        onChange={(e) => setDealService(e.target.value)}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold text-xs"
+                      >
+                        <option value="BPO Contábil & Fiscal">BPO Contábil & Fiscal</option>
+                        <option value="BPO Financeiro & Faturamento">BPO Financeiro & Faturamento</option>
+                        <option value="Licenciamento SaaS & Suporte">Licenciamento SaaS & Suporte</option>
+                        <option value="Consultoria Tributária & Societária">Consultoria Tributária & Societária</option>
+                        <option value="Departamento Pessoal / eSocial">Departamento Pessoal / eSocial</option>
+                        <option value="Solução Integrada VERGROUP">Solução Integrada VERGROUP</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* SEÇÃO 2: SEÇÃO FINANCEIRA */}
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
+                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2 border-b border-slate-200/80 pb-2">
+                    <DollarSign className="w-4 h-4 text-[#0F8A4B]" />
+                    2. Condições Financeiras & Plano
+                  </h3>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-slate-800 font-bold mb-1">Condição de Pagamento:</label>
+                      <select
+                        value={dealPaymentCondition}
+                        onChange={(e) => setDealPaymentCondition(e.target.value)}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold text-xs"
+                      >
+                        <option value="Faturamento Mensal (30 dias)">Faturamento Mensal (30 dias)</option>
+                        <option value="Boleto Recorrente Automatizado">Boleto Recorrente Automatizado</option>
+                        <option value="PIX / Cartão Recorrente">PIX / Cartão Recorrente</option>
+                        <option value="Pagamento Trimestral Antecipado">Pagamento Trimestral Antecipado</option>
+                        <option value="Pagamento Anual com Desconto">Pagamento Anual com Desconto</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-800 font-bold mb-1">Plano Contratado (Plano ≠ Etapa):</label>
+                      <select
+                        value={dealPlan}
+                        onChange={(e) => setDealPlan(e.target.value)}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-bold text-xs text-indigo-900"
+                      >
+                        <option value="Plano Econômico / Essencial">Plano Econômico / Essencial</option>
+                        <option value="Plano Profissional / Growth">Plano Profissional / Growth</option>
+                        <option value="Plano Corp / Enterprise">Plano Corp / Enterprise</option>
+                        <option value="Personalizado / Sob Demanda">Personalizado / Sob Demanda</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* SEÇÃO 3: EMPRESA CLIENTE & CONTATO OFICIAL (COMPANIES & CONTACTS) */}
+                <DealCompanyContactSelector
+                  businessUnitId={dealBUId}
+                  selectedCompanyId={dealCompanyId}
+                  onSelectCompany={(compGoalId) => setDealCompanyId(compGoalId)}
+                  selectedContactId={dealContactId}
+                  onSelectContact={(contGoalId) => setDealContactId(contGoalId)}
+                  additionalParticipantIds={dealParticipantIds}
+                  onUpdateParticipants={(partIds) => setDealParticipantIds(partIds)}
+                />
+
+                {/* SEÇÃO 4: COMERCIAL & GOVERNANÇA */}
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
+                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2 border-b border-slate-200/80 pb-2">
+                    <ShieldCheck className="w-4 h-4 text-[#0F8A4B]" />
+                    4. Governança Comercial & Previsão de Fechamento
+                  </h3>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-slate-800 font-bold mb-1">Origem do Lead / Canal:</label>
+                      <select
+                        value={dealSource}
+                        onChange={(e) => setDealSource(e.target.value)}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold text-xs"
+                      >
+                        <option value="Outbound Comercial / SDR">Outbound Comercial / SDR</option>
+                        <option value="Indicação Direta">Indicação Direta</option>
+                        <option value="WhatsApp Direct">WhatsApp Direct</option>
+                        <option value="Website / Form Inbound">Website / Form Inbound</option>
+                        <option value="Base de Clientes Existente">Base de Clientes Existente</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-800 font-bold mb-1">Closer Responsável *</label>
+                      <select
+                        value={dealAssigneeId}
+                        onChange={(e) => setDealAssigneeId(e.target.value)}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-bold text-xs"
+                      >
+                        {users.map((u) => (
+                          <option key={u.id} value={u.id}>👤 {u.name} ({u.jobTitle})</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-800 font-bold mb-1">Data Prevista de Fechamento *</label>
+                      <input
+                        type="date"
+                        required
+                        value={dealCloseDate}
+                        onChange={(e) => setDealCloseDate(e.target.value)}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-bold text-xs"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* SEÇÃO 5: CAMPOS PERSONALIZADOS DO PIPELINE (`pipeline_custom_fields`) */}
+                {activePipeline && activePipeline.customFields && activePipeline.customFields.length > 0 && (
+                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
+                    <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2 border-b border-slate-200/80 pb-2">
+                      <Tag className="w-4 h-4 text-[#0F8A4B]" />
+                      5. Campos Personalizados do Pipeline ({activePipeline.name})
+                    </h3>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {activePipeline.customFields.map((cf) => (
+                        <div key={cf.id}>
+                          <label className="block text-slate-800 font-bold mb-1">{cf.name} {cf.required && '*'}</label>
+                          <input
+                            type="text"
+                            value={dealCustomFieldValues[cf.name] || ''}
+                            onChange={(e) => setDealCustomFieldValues({ ...dealCustomFieldValues, [cf.name]: e.target.value })}
+                            placeholder={`Preencher ${cf.name}...`}
+                            className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold text-xs"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* SEÇÃO 6: ESCOPO & OBSERVAÇÕES */}
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
+                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2 border-b border-slate-200/80 pb-2">
+                    <FileCheck className="w-4 h-4 text-[#0F8A4B]" />
+                    6. Detalhamento do Escopo & Observações
+                  </h3>
+
+                  <div>
+                    <textarea
+                      rows={3}
+                      value={dealNotes}
+                      onChange={(e) => setDealNotes(e.target.value)}
+                      placeholder="Registrar premissas do projeto, necessidades técnicas do cliente, prazos especiais ou notas comerciais..."
+                      className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold text-xs resize-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* COLUNA DIREITA (35% / lg:col-span-5) — CENTRAL DE ATIVIDADES & REGISTROS DE ABERTURA */}
+              <div className="lg:col-span-5 space-y-4 sticky top-0">
+                <div className="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
+                  <div className="flex items-center gap-2 pb-2.5 border-b border-slate-100">
+                    <div className="w-8 h-8 rounded-xl bg-[#ECF8F1] text-[#0F8A4B] flex items-center justify-center font-bold">
+                      <Clock className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">Central de Atividades Pré-Salvamento</h4>
+                      <p className="text-[11px] text-slate-500 font-medium">Ações e agendamentos vinculados ao negócio</p>
+                    </div>
+                  </div>
+
+                  {/* Campo Próxima Ação */}
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-black text-slate-800 flex items-center gap-1.5">
+                      <Target className="w-3.5 h-3.5 text-[#0F8A4B]" />
+                      <span>O que precisa ser feito agora? (Próxima Ação / Tarefa)</span>
+                    </label>
                     <input
                       type="text"
-                      required
-                      value={dealTitle}
-                      onChange={(e) => setDealTitle(e.target.value)}
-                      placeholder="Ex: Expansão de Licenças SaaS e Suporte 24/7"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-bold text-xs"
+                      value={dealInitialTaskTitle}
+                      onChange={(e) => setDealInitialTaskTitle(e.target.value)}
+                      placeholder="Ex: Agendar demonstração da solução com o diretor financeiro..."
+                      className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-[#0F8A4B] outline-none font-semibold text-xs"
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-slate-800 font-bold mb-1">Empresa do Grupo (BU Proprietária) *</label>
-                    <select
-                      value={dealBUId}
-                      onChange={(e) => setDealBUId(e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-bold text-xs"
-                    >
-                      {businessUnits.map((bu) => (
-                        <option key={bu.id} value={bu.id}>🏢 {bu.tradeName || bu.name}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-800 font-bold mb-1">Valor Estimado do Negócio / MRR (R$) *</label>
-                    <input
-                      type="number"
-                      required
-                      value={dealValue}
-                      onChange={(e) => setDealValue(e.target.value)}
-                      placeholder="50000"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-black text-xs text-[#0F8A4B]"
-                    />
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="block text-slate-800 font-bold mb-1">Categoria de Serviço / Solução *</label>
-                    <select
-                      value={dealService}
-                      onChange={(e) => setDealService(e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold text-xs"
-                    >
-                      <option value="BPO Contábil & Fiscal">BPO Contábil & Fiscal</option>
-                      <option value="BPO Financeiro & Faturamento">BPO Financeiro & Faturamento</option>
-                      <option value="Licenciamento SaaS & Suporte">Licenciamento SaaS & Suporte</option>
-                      <option value="Consultoria Tributária & Societária">Consultoria Tributária & Societária</option>
-                      <option value="Departamento Pessoal / eSocial">Departamento Pessoal / eSocial</option>
-                      <option value="Solução Integrada VERGROUP">Solução Integrada VERGROUP</option>
-                    </select>
+                  {/* Mensagem Explicativa de Produção */}
+                  <div className="p-3.5 bg-emerald-50/70 rounded-xl border border-emerald-200/80 text-xs text-[#0B6B3A] space-y-1 font-medium leading-relaxed">
+                    <div className="flex items-center gap-1.5 font-bold">
+                      <Sparkles className="w-4 h-4 text-[#0F8A4B] shrink-0" />
+                      <span>Ficha Operacional de Produção (CRM 2.0)</span>
+                    </div>
+                    <p className="text-[11px]">
+                      Ao salvar este formulário amplo, a oportunidade é criada e a tela abre **imediatamente na Central Operacional Completa** com timeline em tempo real, integração com WhatsApp, e-mail e tarefas.
+                    </p>
                   </div>
                 </div>
               </div>
-
-              {/* BLOCO 2: VÍNCULO COM EMPRESA & CONTATO PRINCIPAL */}
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
-                <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                  <Building2 className="w-4 h-4 text-[#0F8A4B]" />
-                  Bloco 2 — Vínculo com Empresa Cliente & Contato Decisor (Ficha 360º)
-                </h3>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-slate-800 font-bold mb-1">Empresa Cliente (Razão Social / Fantasia)</label>
-                    <select
-                      value={dealCompanyId}
-                      onChange={(e) => setDealCompanyId(e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold text-xs"
-                    >
-                      <option value="">Nenhuma empresa vinculada (Definir depois)</option>
-                      {companies.map((c) => (
-                        <option key={c.id} value={c.id}>🏭 {c.tradeName} ({c.cnpj})</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-800 font-bold mb-1">Contato Principal / Interlocutor</label>
-                    <select
-                      value={dealContactId}
-                      onChange={(e) => handleSelectContact(e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold text-xs"
-                    >
-                      <option value="">Nenhum contato selecionado</option>
-                      {contacts.map((ct) => (
-                        <option key={ct.id} value={ct.id}>👤 {ct.name} ({ct.email})</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="block text-slate-800 font-bold mb-1">Origem do Lead / Canal de Aquisição</label>
-                    <select
-                      value={dealSource}
-                      onChange={(e) => setDealSource(e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold text-xs"
-                    >
-                      <option value="Outbound Comercial / SDR">Outbound Comercial / SDR</option>
-                      <option value="Indicação Direta">Indicação Direta</option>
-                      <option value="WhatsApp Direct">WhatsApp Direct</option>
-                      <option value="Website / Form Inbound">Website / Form Inbound</option>
-                      <option value="Base de Clientes Existente">Base de Clientes Existente</option>
-                      <option value="Evento / Network">Evento / Network</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {/* BLOCO 3: FUNIL COMERCIAL & ESTÁGIO INICIAL */}
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
-                <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                  <Target className="w-4 h-4 text-[#0F8A4B]" />
-                  Bloco 3 — Funil Comercial & Estágio Inicial no Pipeline
-                </h3>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div className="md:col-span-2">
-                    <label className="block text-slate-800 font-bold mb-1">Pipeline / Funil Comercial *</label>
-                    <select
-                      value={dealPipelineId}
-                      onChange={(e) => {
-                        setDealPipelineId(e.target.value);
-                        const selPipe = pipelines.find((p) => p.id === e.target.value);
-                        if (selPipe && selPipe.stages.length > 0) {
-                          setDealStageId(selPipe.stages[0].id);
-                        }
-                      }}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-bold text-xs"
-                    >
-                      {pipelines.map((p) => (
-                        <option key={p.id} value={p.id}>🎯 {p.name}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-800 font-bold mb-1">Estágio Inicial *</label>
-                    <select
-                      value={dealStageId}
-                      onChange={(e) => setDealStageId(e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold text-xs"
-                    >
-                      {activePipeline?.stages?.map((stg) => (
-                        <option key={stg.id} value={stg.id}>{stg.name}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="md:col-span-3">
-                    <label className="block text-slate-800 font-bold mb-1">Probabilidade Estimada de Fechamento (%)</label>
-                    <select
-                      value={dealProbability}
-                      onChange={(e) => setDealProbability(e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold text-xs"
-                    >
-                      <option value="10">10% — Prospecção Inicial</option>
-                      <option value="30">30% — Qualificação Concluída</option>
-                      <option value="50">50% — Proposta Comercial Enviada</option>
-                      <option value="70">70% — Em Negociação Avançada</option>
-                      <option value="90">90% — Minuta Contratual em Aprovação</option>
-                      <option value="100">100% — Contrato Assinado / Ganho</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {/* BLOCO 4: GOVERNANÇA COMERCIAL & PREVISÃO */}
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
-                <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-[#0F8A4B]" />
-                  Bloco 4 — Governança Comercial, Responsável & Previsão
-                </h3>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-slate-800 font-bold mb-1">Executivo Responsável (Closer) *</label>
-                    <select
-                      value={dealAssigneeId}
-                      onChange={(e) => setDealAssigneeId(e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-bold text-xs"
-                    >
-                      {users.map((u) => (
-                        <option key={u.id} value={u.id}>👤 {u.name} ({u.jobTitle})</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-800 font-bold mb-1">Data Prevista de Fechamento *</label>
-                    <input
-                      type="date"
-                      required
-                      value={dealCloseDate}
-                      onChange={(e) => setDealCloseDate(e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-bold text-xs"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-800 font-bold mb-1">Prioridade / Criticidade</label>
-                    <select
-                      value={dealPriority}
-                      onChange={(e) => setDealPriority(e.target.value as any)}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold text-xs"
-                    >
-                      <option value="low">Baixa</option>
-                      <option value="medium">Normal</option>
-                      <option value="high">Alta</option>
-                      <option value="urgent">🔥 Urgente / Estratégica</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {/* BLOCO 5: OBSERVAÇÕES & REQUISITOS ESPECIAIS */}
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
-                <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                  <FileCheck className="w-4 h-4 text-[#0F8A4B]" />
-                  Bloco 5 — Escopo, Requisitos & Observações da Oportunidade
-                </h3>
-
-                <div>
-                  <label className="block text-slate-800 font-bold mb-1">Detalhamento do Escopo & Observações:</label>
-                  <textarea
-                    rows={3}
-                    value={dealNotes}
-                    onChange={(e) => setDealNotes(e.target.value)}
-                    placeholder="Registrar necessidades técnicas, expectativas do cliente, condições de pagamento e diretrizes comerciais..."
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold text-xs resize-none"
-                  />
-                </div>
-              </div>
-            </>
+            </div>
           )}
         </form>
 
