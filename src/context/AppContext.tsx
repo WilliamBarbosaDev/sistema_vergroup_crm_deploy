@@ -189,7 +189,7 @@ export interface AppContextType {
   deleteLead: (id: string) => void;
   convertLeadToDeal: (leadId: string, options: { pipelineId: string; stageId: string; title: string; value: number }) => void;
 
-  addContact: (contact: Omit<Contact, 'id' | 'createdAt' | 'updatedAt'>) => { success: boolean; duplicateWarning?: string };
+  addContact: (contact: Omit<Contact, 'id' | 'createdAt' | 'updatedAt'>) => { success: boolean; contact?: Contact; duplicateWarning?: string };
   updateContact: (id: string, updates: Partial<Contact>) => void;
   deleteContact: (id: string) => void;
   checkDuplicate: (email: string, phone: string, document?: string, excludeId?: string) => string | null;
@@ -764,7 +764,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
     setContacts((prev) => [newContact, ...prev]);
     addAuditLog('create', 'contact', newContact.id, `Contato "${newContact.name}" adicionado`);
-    return { success: true };
+    return { success: true, contact: newContact };
   };
 
   const updateContact = (id: string, updates: Partial<Contact>) => {
