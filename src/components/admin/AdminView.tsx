@@ -61,6 +61,9 @@ export const AdminView: React.FC = () => {
     deals,
     tasks,
     catalogItems,
+    salesTunnels,
+    addSalesTunnel,
+    deleteSalesTunnel,
     currentUser,
     switchUserRole,
     revokeInvite,
@@ -83,6 +86,16 @@ export const AdminView: React.FC = () => {
   const [pipelineToEdit, setPipelineToEdit] = useState<Pipeline | null>(null);
   const [showStageConfigModal, setShowStageConfigModal] = useState<boolean>(false);
   const [pipelineForStageConfig, setPipelineForStageConfig] = useState<Pipeline | null>(null);
+
+  // Sales Tunneling States (Bitrix24 Tunneling Engine)
+  const [showTunnelModal, setShowTunnelModal] = useState<boolean>(false);
+  const [tunName, setTunName] = useState<string>('');
+  const [tunSourcePipeId, setTunSourcePipeId] = useState<string>('');
+  const [tunSourceStageId, setTunSourceStageId] = useState<string>('');
+  const [tunTargetPipeId, setTunTargetPipeId] = useState<string>('');
+  const [tunTargetStageId, setTunTargetStageId] = useState<string>('');
+  const [tunActionType, setTunActionType] = useState<'copy' | 'move'>('copy');
+  const [tunConditionType, setTunConditionType] = useState<'on_deal_won' | 'on_deal_lost' | 'on_enter_stage'>('on_deal_won');
   const [activeAcceptInvite, setActiveAcceptInvite] = useState<CollaboratorInvite | null>(null);
   const [activeCockpitCollaborator, setActiveCockpitCollaborator] = useState<User | null>(null);
 
@@ -1092,6 +1105,86 @@ export const AdminView: React.FC = () => {
               })}
             </div>
           )}
+
+          {/* SEÇÃO TÚNEIS DE VENDAS (BITRIX24 SALES TUNNELING ENGINE) */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-4 shadow-2xs">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                  <ArrowRight className="w-4 h-4 text-[#0F8A4B]" />
+                  <span>Túneis entre Pipelines (Sales Tunneling Engine)</span>
+                </h3>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">
+                  Regras automáticas para copiar ou mover Oportunidades comerciais entre diferentes esteiras de processos
+                </p>
+              </div>
+
+              <button
+                onClick={() => {
+                  const p1 = pipelines[0];
+                  const p2 = pipelines[1] || pipelines[0];
+                  setTunSourcePipeId(p1?.id || '');
+                  setTunSourceStageId(p1?.stages[0]?.id || '');
+                  setTunTargetPipeId(p2?.id || '');
+                  setTunTargetStageId(p2?.stages[0]?.id || '');
+                  setTunName('Túnel Automático de Transição');
+                  setShowTunnelModal(true);
+                }}
+                className="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-[#0B6B3A] border border-emerald-200 rounded-xl text-xs font-black shadow-2xs cursor-pointer flex items-center gap-1.5 shrink-0 transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                <span>+ Criar Novo Túnel de Vendas</span>
+              </button>
+            </div>
+
+            {salesTunnels.length === 0 ? (
+              <p className="text-xs text-slate-400 italic">Nenhuma regra de túnel configurada ainda.</p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {salesTunnels.map((tun) => {
+                  const srcPipe = pipelines.find((p) => p.id === tun.sourcePipelineId);
+                  const srcStage = srcPipe?.stages.find((s) => s.id === tun.sourceStageId);
+                  const tgtPipe = pipelines.find((p) => p.id === tun.targetPipelineId);
+                  const tgtStage = tgtPipe?.stages.find((s) => s.id === tun.targetStageId);
+
+                  return (
+                    <div key={tun.id} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2 text-xs flex flex-col justify-between">
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="font-black text-slate-900">{tun.name}</span>
+                          <button
+                            onClick={() => deleteSalesTunnel(tun.id)}
+                            className="p-1 text-rose-500 hover:bg-rose-100 rounded cursor-pointer"
+                            title="Excluir Túnel"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+
+                        <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-600">
+                          <span className="px-2 py-0.5 bg-white border border-slate-200 rounded font-bold text-slate-800">
+                            {srcPipe?.name || tun.sourcePipelineId} ➔ Etapa: {srcStage?.name || tun.sourceStageId}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2 text-[11px]">
+                          <span className={`px-2 py-0.5 rounded font-black uppercase text-[10px] ${
+                            tun.actionType === 'copy' ? 'bg-emerald-100 text-[#0B6B3A]' : 'bg-indigo-100 text-indigo-900'
+                          }`}>
+                            {tun.actionType === 'copy' ? '📋 Copiar Deal' : '➡️ Mover Deal'}
+                          </span>
+                          <span className="text-slate-400">para</span>
+                          <span className="px-2 py-0.5 bg-white border border-slate-200 rounded font-bold text-slate-800">
+                            {tgtPipe?.name || tun.targetPipelineId} ➔ Etapa: {tgtStage?.name || tun.targetStageId}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -1204,6 +1297,165 @@ export const AdminView: React.FC = () => {
               </button>
               <button type="submit" className="px-4 py-2 bg-[#0F8A4B] text-white rounded-xl text-xs font-black shadow-md">
                 Criar Empresa
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* SALES TUNNEL CREATION MODAL */}
+      {showTunnelModal && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-2xs flex items-center justify-center p-4 font-sans">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!tunName.trim() || !tunSourcePipeId || !tunSourceStageId || !tunTargetPipeId || !tunTargetStageId) {
+                alert('⚠️ Preencha todos os campos do Túnel de Vendas.');
+                return;
+              }
+              addSalesTunnel({
+                businessUnitId: currentUser.businessUnitId || 'bu-tech',
+                name: tunName.trim(),
+                sourcePipelineId: tunSourcePipeId,
+                sourceStageId: tunSourceStageId,
+                targetPipelineId: tunTargetPipeId,
+                targetStageId: tunTargetStageId,
+                actionType: tunActionType,
+                conditionType: tunConditionType,
+                assigneeRule: 'keep_owner',
+                active: true,
+              });
+              alert(`🎉 Túnel de Vendas "${tunName}" criado com sucesso!`);
+              setShowTunnelModal(false);
+            }}
+            className="bg-white rounded-2xl p-6 max-w-lg w-full border border-emerald-200 shadow-2xl space-y-4"
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-emerald-50 text-[#0F8A4B] rounded-xl border border-emerald-200">
+                  <ArrowRight className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900">Novo Túnel de Vendas (Sales Tunneling)</h3>
+                  <p className="text-xs text-slate-500 font-medium">Automação de transição entre pipelines</p>
+                </div>
+              </div>
+              <button type="button" onClick={() => setShowTunnelModal(false)} className="text-slate-400 hover:text-slate-700">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-slate-800 mb-1">Nome da Regra do Túnel *</label>
+                <input
+                  type="text"
+                  required
+                  value={tunName}
+                  onChange={(e) => setTunName(e.target.value)}
+                  placeholder="Ex: Copiar Deal ganho para Onboarding Pós-Venda"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-slate-50 font-bold outline-none focus:border-[#0F8A4B]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                <div>
+                  <label className="block font-bold text-slate-800 mb-1">Pipeline de Origem *</label>
+                  <select
+                    value={tunSourcePipeId}
+                    onChange={(e) => {
+                      setTunSourcePipeId(e.target.value);
+                      const p = pipelines.find((pipe) => pipe.id === e.target.value);
+                      setTunSourceStageId(p?.stages[0]?.id || '');
+                    }}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white font-bold outline-none text-slate-900"
+                  >
+                    {pipelines.map((p) => (
+                      <option key={p.id} value={p.id}>🏢 {p.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-800 mb-1">Etapa de Disparo (Origem) *</label>
+                  <select
+                    value={tunSourceStageId}
+                    onChange={(e) => setTunSourceStageId(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white font-bold outline-none text-slate-900"
+                  >
+                    {pipelines.find((p) => p.id === tunSourcePipeId)?.stages.map((stg) => (
+                      <option key={stg.id} value={stg.id}>📌 {stg.name} ({stg.stageType})</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                <div>
+                  <label className="block font-bold text-slate-800 mb-1">Pipeline de Destino *</label>
+                  <select
+                    value={tunTargetPipeId}
+                    onChange={(e) => {
+                      setTunTargetPipeId(e.target.value);
+                      const p = pipelines.find((pipe) => pipe.id === e.target.value);
+                      setTunTargetStageId(p?.stages[0]?.id || '');
+                    }}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white font-bold outline-none text-slate-900"
+                  >
+                    {pipelines.map((p) => (
+                      <option key={p.id} value={p.id}>🏢 {p.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-800 mb-1">Etapa de Entrada (Destino) *</label>
+                  <select
+                    value={tunTargetStageId}
+                    onChange={(e) => setTunTargetStageId(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white font-bold outline-none text-slate-900"
+                  >
+                    {pipelines.find((p) => p.id === tunTargetPipeId)?.stages.map((stg) => (
+                      <option key={stg.id} value={stg.id}>📌 {stg.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-800 mb-1">Ação Executada *</label>
+                  <select
+                    value={tunActionType}
+                    onChange={(e) => setTunActionType(e.target.value as any)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white font-bold outline-none text-slate-900"
+                  >
+                    <option value="copy">📋 Copiar Oportunidade (Criar no destino)</option>
+                    <option value="move">➡️ Mover Oportunidade (Trocar de pipeline)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-800 mb-1">Condição de Disparo *</label>
+                  <select
+                    value={tunConditionType}
+                    onChange={(e) => setTunConditionType(e.target.value as any)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white font-bold outline-none text-slate-900"
+                  >
+                    <option value="on_deal_won">🎉 Ao Ganhar o Negócio (Ganhou)</option>
+                    <option value="on_deal_lost">❌ Ao Perder o Negócio (Perdeu)</option>
+                    <option value="on_enter_stage">⚡ Ao Entrar na Etapa de Origem</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-slate-100 flex justify-end gap-2">
+              <button type="button" onClick={() => setShowTunnelModal(false)} className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs font-bold">
+                Cancelar
+              </button>
+              <button type="submit" className="px-5 py-2 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white rounded-xl text-xs font-black shadow-md cursor-pointer transition-colors">
+                Salvar Regra do Túnel
               </button>
             </div>
           </form>

@@ -399,6 +399,7 @@ export interface Pipeline {
   departmentId?: string;
   teamId?: string;
   name: string;
+  code?: string;
   description?: string;
   type: PipelineType;
   status: PipelineStatus;
@@ -412,6 +413,24 @@ export interface Pipeline {
 }
 
 export type DealStatus = 'open' | 'won' | 'lost';
+
+export type CrmMode = 'with_leads' | 'without_leads';
+
+export interface SalesTunnel {
+  id: string;
+  businessUnitId: string;
+  name: string;
+  sourcePipelineId: string;
+  sourceStageId: string;
+  targetPipelineId: string;
+  targetStageId: string;
+  actionType: 'copy' | 'move';
+  conditionType: 'on_enter_stage' | 'on_deal_won' | 'on_deal_lost';
+  assigneeRule: 'keep_owner' | 'default_user' | 'unassigned';
+  targetUserId?: string;
+  active: boolean;
+  createdAt: string;
+}
 
 export interface DealAdditionalContact {
   contactId: string;

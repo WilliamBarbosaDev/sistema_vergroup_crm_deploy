@@ -30,6 +30,8 @@ export const DealsPipelineView: React.FC = () => {
     contacts,
     companies,
     users,
+    crmMode,
+    setCrmMode,
     filterByBU,
     moveDealStage,
     markDealWon,
@@ -43,6 +45,7 @@ export const DealsPipelineView: React.FC = () => {
   const [viewMode, setViewMode] = useState<'kanban' | 'table'>('kanban');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUserId, setSelectedUserId] = useState<string>('all');
+  const [selectedCompanyIdFilter, setSelectedCompanyIdFilter] = useState<string>('all');
   const [draggedDealId, setDraggedDealId] = useState<string | null>(null);
 
   // Loss Reason Modal State
@@ -54,6 +57,7 @@ export const DealsPipelineView: React.FC = () => {
   const filteredPipelineDeals = filteredDeals.filter((deal) => {
     if (deal.pipelineId !== activePipeline?.id) return false;
     if (selectedUserId !== 'all' && deal.assignedUserId !== selectedUserId) return false;
+    if (selectedCompanyIdFilter !== 'all' && deal.companyId !== selectedCompanyIdFilter) return false;
     if (searchTerm.trim()) {
       const q = searchTerm.toLowerCase();
       const matchTitle = deal.title.toLowerCase().includes(q);
@@ -243,20 +247,57 @@ export const DealsPipelineView: React.FC = () => {
           />
         </div>
 
-        <div className="flex items-center gap-2">
-          <label className="text-slate-600 font-bold">Responsável:</label>
-          <select
-            value={selectedUserId}
-            onChange={(e) => setSelectedUserId(e.target.value)}
-            className="px-3 py-1.5 border border-slate-200 rounded-xl bg-slate-50 text-slate-900 font-bold outline-none cursor-pointer"
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Seletor por Empresa Cliente */}
+          <div className="flex items-center gap-1.5">
+            <Building2 className="w-3.5 h-3.5 text-[#0F8A4B]" />
+            <label className="text-slate-600 font-bold">Empresa:</label>
+            <select
+              value={selectedCompanyIdFilter}
+              onChange={(e) => setSelectedCompanyIdFilter(e.target.value)}
+              className="px-3 py-1.5 border border-slate-200 rounded-xl bg-slate-50 text-slate-900 font-bold outline-none cursor-pointer hover:border-[#0F8A4B]"
+            >
+              <option value="all">Todas as Empresas</option>
+              {companies.map((c) => (
+                <option key={c.id} value={c.id}>
+                  🏢 {c.tradeName}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Seletor por Responsável */}
+          <div className="flex items-center gap-1.5">
+            <User className="w-3.5 h-3.5 text-slate-500" />
+            <label className="text-slate-600 font-bold">Responsável:</label>
+            <select
+              value={selectedUserId}
+              onChange={(e) => setSelectedUserId(e.target.value)}
+              className="px-3 py-1.5 border border-slate-200 rounded-xl bg-slate-50 text-slate-900 font-bold outline-none cursor-pointer"
+            >
+              <option value="all">Todos os responsáveis</option>
+              {users.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Selector de Modo CRM (Bitrix24 Grade: Com Leads vs Sem Leads) */}
+          <button
+            type="button"
+            onClick={() => setCrmMode(crmMode === 'with_leads' ? 'without_leads' : 'with_leads')}
+            title="Alternar entre CRM com pré-qualificação de Leads ou entrada direta de Deals"
+            className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all border flex items-center gap-1.5 cursor-pointer ${
+              crmMode === 'with_leads'
+                ? 'bg-emerald-50 text-[#0B6B3A] border-emerald-300 hover:bg-emerald-100'
+                : 'bg-indigo-50 text-indigo-900 border-indigo-200 hover:bg-indigo-100'
+            }`}
           >
-            <option value="all">Todos os responsáveis</option>
-            {users.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.name}
-              </option>
-            ))}
-          </select>
+            <span>Modo:</span>
+            <strong>{crmMode === 'with_leads' ? '⚡ CRM Com Leads' : '💼 CRM Sem Leads'}</strong>
+          </button>
         </div>
       </div>
 

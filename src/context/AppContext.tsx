@@ -35,6 +35,8 @@ import {
   JobExecutionLog,
   CatalogItem,
   ImportJob,
+  CrmMode,
+  SalesTunnel,
 } from '../types';
 import {
   INITIAL_BUSINESS_UNITS,
@@ -191,6 +193,13 @@ export interface AppContextType {
   setCatalogItems: React.Dispatch<React.SetStateAction<CatalogItem[]>>;
   importJobs: ImportJob[];
   addImportJob: (job: Omit<ImportJob, 'id' | 'createdAt' | 'updatedAt'>) => ImportJob;
+
+  // CRM Mode & Sales Tunneling Engine (Bitrix24 Grade)
+  crmMode: CrmMode;
+  setCrmMode: (mode: CrmMode) => void;
+  salesTunnels: SalesTunnel[];
+  addSalesTunnel: (tunnel: Omit<SalesTunnel, 'id' | 'createdAt'>) => void;
+  deleteSalesTunnel: (id: string) => void;
 
   // Multi-company filtering helpers
   filterByBU: <T extends { businessUnitId?: string }>(items: T[]) => T[];
@@ -612,6 +621,70 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     return INITIAL_IMPORT_JOBS;
   });
+
+  // CRM Mode (with_leads vs without_leads)
+  const [crmMode, setCrmMode] = useState<CrmMode>(() => {
+    const saved = localStorage.getItem(`${STORAGE_KEY}_crmMode`);
+    return (saved as CrmMode) || 'with_leads';
+  });
+
+  useEffect(() => {
+    localStorage.setItem(`${STORAGE_KEY}_crmMode`, crmMode);
+  }, [crmMode]);
+
+  // Sales Tunnels (Bitrix24 Tunneling Engine)
+  const [salesTunnels, setSalesTunnels] = useState<SalesTunnel[]>(() => {
+    const saved = localStorage.getItem(`${STORAGE_KEY}_salesTunnels`);
+    return saved ? JSON.parse(saved) : [
+      {
+        id: 'tun-vendas-onboarding',
+        businessUnitId: 'bu-tech',
+        name: 'Túnel Vendas ➔ Onboarding Pós-Venda (Cópia ao Ganhar)',
+        sourcePipelineId: 'pipe-ver-clientes',
+        sourceStageId: 'stg-won-01',
+        targetPipelineId: 'pipe-onboarding',
+        targetStageId: 'stg-onb-01',
+        actionType: 'copy',
+        conditionType: 'on_deal_won',
+        assigneeRule: 'keep_owner',
+        active: true,
+        createdAt: new Date().toISOString(),
+      },
+      {
+        id: 'tun-churn-reativacao',
+        businessUnitId: 'bu-tech',
+        name: 'Túnel Perdas ➔ Reativação de Clientes (Movimentação ao Perder)',
+        sourcePipelineId: 'pipe-ver-clientes',
+        sourceStageId: 'stg-lost-01',
+        targetPipelineId: 'pipe-renovacao',
+        targetStageId: 'stg-ren-01',
+        actionType: 'move',
+        conditionType: 'on_deal_lost',
+        assigneeRule: 'keep_owner',
+        active: true,
+        createdAt: new Date().toISOString(),
+      }
+    ];
+  });
+
+  useEffect(() => {
+    localStorage.setItem(`${STORAGE_KEY}_salesTunnels`, JSON.stringify(salesTunnels));
+  }, [salesTunnels]);
+
+  const addSalesTunnel = (tunnelData: Omit<SalesTunnel, 'id' | 'createdAt'>) => {
+    const newTunnel: SalesTunnel = {
+      ...tunnelData,
+      id: `tun-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+    };
+    setSalesTunnels((prev) => [newTunnel, ...prev]);
+    addAuditLog('create', 'automation', newTunnel.id, `Túnel de Vendas "${newTunnel.name}" criado`);
+  };
+
+  const deleteSalesTunnel = (id: string) => {
+    setSalesTunnels((prev) => prev.filter((t) => t.id !== id));
+    addAuditLog('delete', 'automation', id, `Túnel de Vendas removido`);
+  };
 
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>(() => {
     const saved = localStorage.getItem(`${STORAGE_KEY}_auditLogs`);
@@ -1117,6 +1190,59 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       type: 'stage_change',
       title: `Negócio avançou para "${stageName}"`,
       description: `Alteração realizada por ${currentUser.name}`,
+    });
+
+    // Execute Sales Tunneling triggers (Bitrix24 Tunneling Engine)
+    const matchingTunnels = salesTunnels.filter(
+      (t) => t.active && t.sourcePipelineId === deal.pipelineId && t.sourceStageId === targetStageId
+    );
+
+    matchingTunnels.forEach((tunnel) => {
+      if (tunnel.actionType === 'copy') {
+        const clonedDeal: Deal = {
+          ...deal,
+          id: `deal-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+          title: `${deal.title} (Túnel Pós-Venda)`,
+          pipelineId: tunnel.targetPipelineId,
+          stageId: tunnel.targetStageId,
+          status: 'open',
+          stageChangedAt: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        setDeals((prev) => [clonedDeal, ...prev]);
+        addActivity({
+          entityType: 'deal',
+          entityId: clonedDeal.id,
+          businessUnitId: clonedDeal.businessUnitId,
+          userId: currentUser.id,
+          type: 'system_automation',
+          title: `Túnel de Vendas: Negócio copiado para pipeline de destino`,
+          description: `Disparado por regra de túnel: "${tunnel.name}"`,
+        });
+      } else if (tunnel.actionType === 'move') {
+        setDeals((prev) =>
+          prev.map((d) =>
+            d.id === dealId
+              ? {
+                  ...d,
+                  pipelineId: tunnel.targetPipelineId,
+                  stageId: tunnel.targetStageId,
+                  updatedAt: new Date().toISOString(),
+                }
+              : d
+          )
+        );
+        addActivity({
+          entityType: 'deal',
+          entityId: dealId,
+          businessUnitId: deal.businessUnitId,
+          userId: currentUser.id,
+          type: 'system_automation',
+          title: `Túnel de Vendas: Negócio movido para novo pipeline`,
+          description: `Disparado por regra de túnel: "${tunnel.name}"`,
+        });
+      }
     });
   };
 
@@ -2829,6 +2955,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     markNotificationRead,
     markAllNotificationsRead,
     resetAllData,
+    crmMode,
+    setCrmMode,
+    salesTunnels,
+    addSalesTunnel,
+    deleteSalesTunnel,
   };
 
   return (
