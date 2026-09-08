@@ -584,8 +584,8 @@ export const TasksView: React.FC = () => {
 
       {/* ADVANCED BITRIX24 FILTER DRAWER */}
       {isAdvancedFilterOpen && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-2xs flex justify-end font-sans animate-in fade-in duration-150">
-          <div className="w-full max-w-lg bg-white h-full shadow-2xl border-l border-slate-200 flex flex-col justify-between overflow-hidden animate-in slide-in-from-right duration-200">
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-2xs flex items-center justify-center p-4 font-sans animate-in fade-in duration-150">
+          <div className="w-full max-w-xl bg-white max-h-[90vh] rounded-2xl shadow-2xl border border-slate-200 flex flex-col justify-between overflow-hidden animate-in zoom-in-95 duration-150">
             
             <div className="p-5 bg-gradient-to-r from-[#0F493A] to-[#13604C] text-white flex items-center justify-between border-b border-[#13604C] shrink-0">
               <div className="flex items-center gap-2">

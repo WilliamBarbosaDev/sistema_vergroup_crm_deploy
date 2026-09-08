@@ -135,8 +135,8 @@ export const Contact360Drawer: React.FC<Contact360DrawerProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex justify-end font-sans select-none animate-in fade-in duration-150">
-      <div className="bg-white w-full max-w-4xl h-full shadow-2xl flex flex-col border-l border-[#E2E6EA] overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-2xs flex items-center justify-center p-4 font-sans select-none animate-in fade-in duration-150">
+      <div className="bg-white w-full max-w-[96vw] max-h-[95vh] h-[95vh] rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
         
         {/* TOP BAR & HEADER */}
         <div className="px-6 py-4 border-b border-[#E2E6EA] bg-[#F8FAFB] space-y-4">
