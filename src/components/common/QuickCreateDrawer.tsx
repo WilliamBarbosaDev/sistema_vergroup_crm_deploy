@@ -417,29 +417,41 @@ export const QuickCreateDrawer: React.FC = () => {
           {/* Interactive Pipeline Stage Stepper for Deal Creation */}
           {quickCreateType === 'deal' && activePipeline && (
             <div className="bg-white p-2 rounded-xl border border-slate-200 flex items-center gap-1.5 overflow-x-auto text-xs">
-              <span className="text-[11px] font-black text-slate-400 uppercase tracking-wider px-2 shrink-0">Etapa Inicial:</span>
-              {activePipeline.stages.map((stg, idx) => {
-                const isSelected = (dealStageId || activePipeline.stages[0]?.id) === stg.id;
+              <span className="text-[11px] font-black text-slate-400 uppercase tracking-wider px-2 shrink-0">Avanço no Funil:</span>
+              {(() => {
+                const currentStageId = dealStageId || activePipeline.stages[0]?.id;
+                const selectedIdx = activePipeline.stages.findIndex((s) => s.id === currentStageId);
+                const activeIdx = selectedIdx >= 0 ? selectedIdx : 0;
 
-                return (
-                  <button
-                    key={stg.id}
-                    type="button"
-                    onClick={() => setDealStageId(stg.id)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer border ${
-                      isSelected
-                        ? 'bg-[#0F8A4B] text-white border-[#0F8A4B] shadow-2xs'
-                        : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                    }`}
-                  >
-                    <span className="w-4 h-4 rounded-full bg-white/20 text-current flex items-center justify-center font-mono text-[10px]">
-                      {idx + 1}
-                    </span>
-                    <span>{stg.name}</span>
-                    {isSelected && <Check className="w-3.5 h-3.5 text-white" />}
-                  </button>
-                );
-              })}
+                return activePipeline.stages.map((stg, idx) => {
+                  const isCurrent = idx === activeIdx;
+                  const isPassed = idx < activeIdx;
+
+                  return (
+                    <button
+                      key={stg.id}
+                      type="button"
+                      onClick={() => setDealStageId(stg.id)}
+                      className={`px-3 py-1.5 rounded-lg text-xs transition-all flex items-center gap-1.5 shrink-0 cursor-pointer border ${
+                        isCurrent
+                          ? 'bg-[#0F8A4B] text-white border-[#0F8A4B] font-black shadow-2xs'
+                          : isPassed
+                          ? 'bg-emerald-50 text-[#0F8A4B] border-emerald-300 font-extrabold hover:bg-emerald-100'
+                          : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 font-medium'
+                      }`}
+                      title={isCurrent ? `Etapa Atual: ${stg.name}` : isPassed ? `Etapa Percorrida: ${stg.name}` : `Etapa Futura: ${stg.name}`}
+                    >
+                      <span className={`w-4 h-4 rounded-full flex items-center justify-center font-mono text-[10px] ${
+                        isCurrent ? 'bg-white/20 text-white font-bold' : isPassed ? 'bg-emerald-200/60 text-[#0F8A4B] font-bold' : 'bg-slate-200/60 text-slate-600'
+                      }`}>
+                        {idx + 1}
+                      </span>
+                      <span>{stg.name}</span>
+                      {(isCurrent || isPassed) && <Check className="w-3.5 h-3.5 shrink-0" />}
+                    </button>
+                  );
+                });
+              })()}
             </div>
           )}
         </div>

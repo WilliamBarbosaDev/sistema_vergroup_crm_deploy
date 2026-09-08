@@ -288,29 +288,39 @@ export const DealDetailDrawer: React.FC = () => {
 
         {/* Pipeline Stage Bar */}
         <div className="px-4 py-2 bg-slate-50/80 border-b border-[#DDE3E8] flex items-center gap-1.5 overflow-x-auto">
-          {pipeline?.stages.map((stage, idx) => {
-            const isCurrent = stage.id === deal.stageId;
-            const isPassed = (currentStage?.order || 1) >= stage.order;
-            return (
-              <button
-                key={stage.id}
-                onClick={() => moveDealStage(deal.id, stage.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold shrink-0 transition-all flex items-center gap-1.5 border cursor-pointer ${
-                  isCurrent
-                    ? 'bg-[#0F8A4B] text-white border-[#0F8A4B] font-extrabold shadow-2xs'
-                    : isPassed
-                    ? 'bg-emerald-50 text-[#0F8A4B] border-emerald-200/80 hover:bg-emerald-100 font-semibold'
-                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                }`}
-              >
-                <span className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center text-[10px] font-bold">
-                  {idx + 1}
-                </span>
-                <span>{stage.name}</span>
-                <span className="text-[10px] opacity-80 font-normal">({stage.probability}%)</span>
-              </button>
-            );
-          })}
+          {(() => {
+            const currentStageIdx = pipeline?.stages.findIndex((s) => s.id === deal.stageId) ?? 0;
+            const activeIdx = currentStageIdx >= 0 ? currentStageIdx : 0;
+
+            return pipeline?.stages.map((stage, idx) => {
+              const isCurrent = idx === activeIdx;
+              const isPassed = idx < activeIdx;
+
+              return (
+                <button
+                  key={stage.id}
+                  onClick={() => moveDealStage(deal.id, stage.id)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold shrink-0 transition-all flex items-center gap-1.5 border cursor-pointer ${
+                    isCurrent
+                      ? 'bg-[#0F8A4B] text-white border-[#0F8A4B] font-black shadow-2xs'
+                      : isPassed
+                      ? 'bg-emerald-50 text-[#0F8A4B] border-emerald-300 font-extrabold hover:bg-emerald-100'
+                      : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 font-medium'
+                  }`}
+                  title={isCurrent ? `Etapa Atual: ${stage.name}` : isPassed ? `Etapa Percorrida: ${stage.name}` : `Etapa Futura: ${stage.name}`}
+                >
+                  <span className={`w-4 h-4 rounded-full flex items-center justify-center font-mono text-[10px] ${
+                    isCurrent ? 'bg-white/20 text-white font-bold' : isPassed ? 'bg-emerald-200/60 text-[#0F8A4B] font-bold' : 'bg-slate-100 text-slate-600'
+                  }`}>
+                    {idx + 1}
+                  </span>
+                  <span>{stage.name}</span>
+                  {(isCurrent || isPassed) && <Check className="w-3.5 h-3.5 shrink-0" />}
+                  <span className="text-[10px] opacity-80 font-normal">({stage.probability}%)</span>
+                </button>
+              );
+            });
+          })()}
         </div>
 
         {/* Tabs Bar */}
