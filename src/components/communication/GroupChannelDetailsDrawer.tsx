@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { ChatChannel } from '../../types';
+import { UserAvatar } from '../common/UserAvatar';
 
 interface GroupChannelDetailsDrawerProps {
   isOpen: boolean;
@@ -211,11 +212,7 @@ export const GroupChannelDetailsDrawer: React.FC<GroupChannelDetailsDrawerProps>
                     className="p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 flex items-center justify-between transition-colors"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <img
-                        src={u.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
-                        alt={u.name}
-                        className="w-8 h-8 rounded-full object-cover shrink-0 border border-slate-200"
-                      />
+                      <UserAvatar name={u.name} avatarUrl={u.avatar} size="sm" status={u.status} showStatus={false} />
                       <div className="min-w-0">
                         <p className="font-bold text-slate-900 flex items-center gap-1.5 truncate">
                           <span>{u.name}</span>
@@ -281,11 +278,7 @@ export const GroupChannelDetailsDrawer: React.FC<GroupChannelDetailsDrawerProps>
                     className="p-2.5 rounded-xl border border-slate-200 bg-white flex items-center justify-between"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <img
-                        src={u.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
-                        alt={u.name}
-                        className="w-8 h-8 rounded-full object-cover shrink-0 border border-slate-200"
-                      />
+                      <UserAvatar name={u.name} avatarUrl={u.avatar} size="sm" status={u.status} showStatus={false} />
                       <div className="min-w-0">
                         <p className="font-bold text-slate-900 truncate">{u.name}</p>
                         <p className="text-[10px] text-slate-500 font-medium truncate">

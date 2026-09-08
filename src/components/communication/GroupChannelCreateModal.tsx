@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { ChatChannel } from '../../types';
+import { UserAvatar } from '../common/UserAvatar';
 
 interface GroupChannelCreateModalProps {
   isOpen: boolean;
@@ -342,11 +343,7 @@ export const GroupChannelCreateModal: React.FC<GroupChannelCreateModalProps> = (
                         onChange={() => {}}
                         className="rounded accent-[#0F8A4B]"
                       />
-                      <img
-                        src={u.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
-                        alt={u.name}
-                        className="w-7 h-7 rounded-full object-cover shrink-0 border border-slate-200"
-                      />
+                      <UserAvatar name={u.name} avatarUrl={u.avatar} size="xs" status={u.status} showStatus={false} />
                       <div>
                         <p className="font-bold text-slate-900 flex items-center gap-1.5">
                           <span>{u.name}</span>

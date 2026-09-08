@@ -1,369 +1,415 @@
-import React, { useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   X,
-  Clock,
-  CheckCircle2,
-  Calendar,
-  Layers,
-  FileText,
   User,
-  Shield,
-  TrendingUp,
-  Sparkles,
-  Play,
-  Pause,
   Mail,
   Phone,
   Building2,
-  ThumbsUp,
-  Award,
-  ChevronRight,
-  ExternalLink,
+  ShieldCheck,
+  Camera,
+  Upload,
+  Trash2,
+  Save,
+  Lock,
+  Globe,
+  Bell,
+  AlertCircle,
+  CheckCircle2,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { UserAvatar } from './UserAvatar';
 
 interface UserProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+type ProfileTab = 'personal' | 'contact' | 'professional' | 'photo' | 'security' | 'preferences';
+
+const MAX_AVATAR_SIZE_BYTES = 2 * 1024 * 1024;
+const ALLOWED_AVATAR_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
 export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose }) => {
-  const { currentUser, tasks } = useApp();
-  const [activeTab, setActiveTab] = useState<'geral' | 'tarefas' | 'calendario' | 'eficiencia' | 'horas'>('eficiencia');
-  const [isWorkdayPaused, setIsWorkdayPaused] = useState(false);
-  const [workdaySeconds, setWorkdaySeconds] = useState(4418); // 01:13:38
+  const {
+    currentUser,
+    businessUnits,
+    departments,
+    teams,
+    users,
+    updateCurrentUserProfile,
+    requestCurrentUserEmailChange,
+  } = useApp();
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [activeTab, setActiveTab] = useState<ProfileTab>('personal');
+  const [isEditing, setIsEditing] = useState(false);
+  const [emailChangeRequest, setEmailChangeRequest] = useState('');
+  const [avatarError, setAvatarError] = useState('');
+  const [savedMessage, setSavedMessage] = useState('');
+  const [draft, setDraft] = useState(() => ({
+    firstName: currentUser.firstName || currentUser.name.split(' ')[0] || '',
+    lastName: currentUser.lastName || currentUser.name.split(' ').slice(1).join(' '),
+    name: currentUser.name || '',
+    displayName: currentUser.displayName || currentUser.name.split(' ')[0] || '',
+    birthDate: currentUser.birthDate || '',
+    gender: currentUser.gender || '',
+    city: currentUser.city || '',
+    state: currentUser.state || '',
+    country: currentUser.country || 'Brasil',
+    language: currentUser.language || 'Português (Brasil)',
+    timezone: currentUser.timezone || 'America/Manaus',
+    bio: currentUser.bio || '',
+    personalNotes: currentUser.personalNotes || '',
+    personalEmail: currentUser.personalEmail || '',
+    phone: currentUser.phone || '',
+    whatsapp: currentUser.whatsapp || currentUser.phone || '',
+    alternatePhone: currentUser.alternatePhone || '',
+    emergencyContactName: currentUser.emergencyContactName || '',
+    emergencyContact: currentUser.emergencyContact || '',
+    avatar: currentUser.avatar || '',
+    notificationPreferences: {
+      email: currentUser.notificationPreferences?.email ?? true,
+      push: currentUser.notificationPreferences?.push ?? true,
+      taskDigest: currentUser.notificationPreferences?.taskDigest ?? true,
+      meetingReminders: currentUser.notificationPreferences?.meetingReminders ?? true,
+    },
+  }));
+
+  const bu = businessUnits.find((b) => b.id === currentUser.primaryBusinessUnitId);
+  const department = departments.find((d) => d.id === currentUser.departmentId);
+  const team = teams.find((t) => t.id === currentUser.teamId);
+  const manager = users.find((u) => u.id === currentUser.managerId);
+  const supervisor = users.find((u) => u.id === currentUser.supervisorId);
+
+  const profileCompletion = useMemo(() => {
+    const fields = [
+      draft.name,
+      draft.displayName,
+      draft.birthDate,
+      draft.city,
+      draft.state,
+      draft.country,
+      draft.language,
+      draft.timezone,
+      draft.phone,
+      draft.whatsapp,
+      draft.emergencyContactName,
+      draft.emergencyContact,
+      draft.avatar,
+    ];
+    return Math.round((fields.filter(Boolean).length / fields.length) * 100);
+  }, [draft]);
 
   if (!isOpen) return null;
 
-  const formatTime = (secs: number) => {
-    const hrs = Math.floor(secs / 3600);
-    const mins = Math.floor((secs % 3600) / 60);
-    const s = secs % 60;
-    return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  const updateDraft = (field: keyof typeof draft, value: string) => {
+    setDraft((prev) => ({ ...prev, [field]: value }));
   };
 
-  const userTasks = tasks.filter((t) => t.assignedUserId === currentUser.id);
-  const completedCount = 67;
-  const inProgressCount = 159;
-  const noObjectionCount = 30;
-  const efficiencyPercentage = 81;
+  const handleAvatarSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    setAvatarError('');
+    if (!file) return;
+
+    if (!ALLOWED_AVATAR_MIME_TYPES.includes(file.type)) {
+      setAvatarError('Formato inválido. Use JPG, JPEG, PNG ou WEBP.');
+      return;
+    }
+
+    if (file.size > MAX_AVATAR_SIZE_BYTES) {
+      setAvatarError('A foto deve ter no máximo 2 MB.');
+      return;
+    }
+
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '-');
+    if (!/\.(jpe?g|png|webp)$/i.test(safeName)) {
+      setAvatarError('Nome de arquivo inválido para foto de perfil.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setDraft((prev) => ({ ...prev, avatar: String(reader.result) }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSave = () => {
+    const fullName = draft.name.trim() || `${draft.firstName} ${draft.lastName}`.trim();
+    updateCurrentUserProfile({
+      firstName: draft.firstName.trim(),
+      lastName: draft.lastName.trim(),
+      name: fullName,
+      displayName: draft.displayName.trim() || fullName,
+      birthDate: draft.birthDate,
+      gender: draft.gender,
+      city: draft.city.trim(),
+      state: draft.state.trim(),
+      country: draft.country.trim(),
+      language: draft.language,
+      timezone: draft.timezone,
+      bio: draft.bio.trim(),
+      personalNotes: draft.personalNotes.trim(),
+      personalEmail: draft.personalEmail.trim(),
+      phone: draft.phone.trim(),
+      whatsapp: draft.whatsapp.trim(),
+      alternatePhone: draft.alternatePhone.trim(),
+      emergencyContactName: draft.emergencyContactName.trim(),
+      emergencyContact: draft.emergencyContact.trim(),
+      avatar: draft.avatar,
+      notificationPreferences: draft.notificationPreferences,
+    });
+    setIsEditing(false);
+    setSavedMessage('Perfil atualizado com sucesso.');
+    window.setTimeout(() => setSavedMessage(''), 3000);
+  };
+
+  const handleEmailRequest = () => {
+    if (!emailChangeRequest.trim() || emailChangeRequest.trim() === currentUser.email) return;
+    requestCurrentUserEmailChange(emailChangeRequest.trim());
+    setSavedMessage('Solicitação de alteração de e-mail registrada para fluxo seguro de confirmação.');
+    setEmailChangeRequest('');
+    window.setTimeout(() => setSavedMessage(''), 4000);
+  };
+
+  const tabs: { id: ProfileTab; label: string; icon: React.ReactNode }[] = [
+    { id: 'personal', label: 'Pessoal', icon: <User className="w-4 h-4" /> },
+    { id: 'contact', label: 'Contato', icon: <Phone className="w-4 h-4" /> },
+    { id: 'professional', label: 'Profissional', icon: <Building2 className="w-4 h-4" /> },
+    { id: 'photo', label: 'Foto', icon: <Camera className="w-4 h-4" /> },
+    { id: 'security', label: 'Segurança', icon: <ShieldCheck className="w-4 h-4" /> },
+    { id: 'preferences', label: 'Preferências', icon: <Globe className="w-4 h-4" /> },
+  ];
+
+  const fieldClass = 'w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-900 outline-none focus:border-[#0F8A4B] focus:ring-2 focus:ring-[#0F8A4B]/10 disabled:bg-slate-50 disabled:text-slate-500';
+  const labelClass = 'block text-[11px] font-black text-slate-500 uppercase tracking-wider mb-1.5';
+
+  const ReadOnlyGovernanceField = ({ label, value }: { label: string; value?: string }) => (
+    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+      <span className={labelClass}>{label}</span>
+      <div className="flex items-center justify-between gap-3">
+        <strong className="text-sm text-slate-900">{value || 'Nao definido'}</strong>
+        <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase text-slate-500">
+          <Lock className="w-3 h-3" />
+          Admin
+        </span>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-2xs flex items-center justify-center p-4 animate-fade-in">
-      <div className="w-full max-w-3xl bg-[#F7F9FA] rounded-xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden border border-[#DDE3E8] animate-in zoom-in-95 duration-150">
-        {/* Top Header */}
-        <div className="bg-[#17212B] text-white p-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <img
-                src={currentUser.avatar}
-                alt={currentUser.name}
-                className="w-12 h-12 rounded-full object-cover ring-2 ring-[#0F8A4B]"
-              />
-              <span className="absolute bottom-0 right-0 w-3 h-3 bg-[#0F8A4B] rounded-full ring-2 ring-[#17212B]" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-base font-bold text-white">{currentUser.name}</h2>
-                <span className="px-2 py-0.5 rounded bg-[#0F8A4B]/20 text-[#0F8A4B] text-[10px] font-bold border border-[#0F8A4B]/40">
-                  ONLINE
-                </span>
-              </div>
-              <p className="text-xs text-neutral-300">
-                {currentUser.jobTitle} • {currentUser.email}
+    <div className="fixed inset-0 z-50 bg-black/55 backdrop-blur-2xs flex items-center justify-center p-3 md:p-6 animate-in fade-in duration-150">
+      <div className="w-full max-w-6xl bg-[#F7F9FA] rounded-2xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden border border-slate-200 font-sans">
+        <div className="bg-slate-900 text-white p-5 flex items-center justify-between">
+          <div className="flex items-center gap-4 min-w-0">
+            <UserAvatar name={currentUser.name} avatarUrl={draft.avatar} size="xl" status={currentUser.status} />
+            <div className="min-w-0">
+              <h2 className="text-lg font-black tracking-tight truncate">Meu Perfil</h2>
+              <p className="text-xs text-slate-300 font-semibold truncate">
+                {currentUser.jobTitle || 'Colaborador'} • {currentUser.email}
               </p>
             </div>
           </div>
-
-          <button
-            onClick={onClose}
-            className="p-1.5 text-neutral-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Workday Tracker Bar (Bitrix Style) */}
-        <div className="bg-white px-6 py-3 border-b border-[#DDE3E8] flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-[#ECF8F1] text-[#0F8A4B]">
-              <Clock className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="text-[10px] uppercase font-bold text-[#5F6B76] tracking-wider block">
-                Tempo de Trabalho Hoje
-              </span>
-              <span className="text-xl font-mono font-black text-[#17212B]">
-                {formatTime(workdaySeconds)}
-              </span>
-            </div>
-          </div>
-
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setIsWorkdayPaused(!isWorkdayPaused)}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer ${
-                isWorkdayPaused
-                  ? 'bg-amber-500 hover:bg-amber-600 text-white'
-                  : 'bg-[#F7F9FA] hover:bg-[#EAEFF3] text-[#17212B] border border-[#DDE3E8]'
-              }`}
-            >
-              {isWorkdayPaused ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
-              <span>{isWorkdayPaused ? 'Continuar' : 'Pausar'}</span>
-            </button>
-
-            <button
-              onClick={() => alert('Jornada de trabalho estendida com sucesso.')}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer"
-            >
-              <span>Estender / Finalizar</span>
+            {savedMessage && (
+              <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#0F8A4B]/20 text-emerald-200 rounded-xl border border-[#0F8A4B]/30 text-xs font-bold">
+                <CheckCircle2 className="w-4 h-4" />
+                {savedMessage}
+              </span>
+            )}
+            <button onClick={onClose} className="p-2 text-slate-300 hover:text-white hover:bg-white/10 rounded-xl transition-colors cursor-pointer">
+              <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        {/* Bitrix Navigation Subtabs */}
-        <div className="bg-white border-b border-[#DDE3E8] px-6 flex items-center gap-6 text-xs font-bold overflow-x-auto shadow-2xs">
-          {[
-            { id: 'geral', label: 'Geral' },
-            { id: 'tarefas', label: 'Tarefas' },
-            { id: 'calendario', label: 'Calendário' },
-            { id: 'eficiencia', label: 'Eficiência' },
-            { id: 'horas', label: 'Horas Trabalhadas' },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`py-3 border-b-2 transition-all cursor-pointer whitespace-nowrap ${
-                activeTab === tab.id
-                  ? 'border-[#0F8A4B] text-[#0F8A4B]'
-                  : 'border-transparent text-[#5F6B76] hover:text-[#17212B]'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        <div className="flex-1 grid grid-cols-1 lg:grid-cols-[280px_1fr] min-h-0">
+          <aside className="bg-white border-b lg:border-b-0 lg:border-r border-slate-200 p-5 space-y-5">
+            <div className="flex flex-col items-center text-center">
+              <UserAvatar name={currentUser.name} avatarUrl={draft.avatar} size="xl" status={currentUser.status} />
+              <h3 className="mt-3 text-base font-black text-slate-900">{draft.displayName || currentUser.name}</h3>
+              <p className="text-xs font-semibold text-slate-500">{currentUser.jobTitle || 'Cargo gerenciado pela administracao'}</p>
+              <span className="mt-2 px-2.5 py-1 rounded-lg bg-[#ECF8F1] text-[#0F8A4B] text-[10px] font-black uppercase">
+                {currentUser.status === 'active' ? 'Ativo' : currentUser.status}
+              </span>
+            </div>
 
-        {/* Modal Content Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* TAB: EFICIÊNCIA (Exact Bitrix layout from video 04:12) */}
-          {activeTab === 'eficiencia' && (
-            <div className="space-y-6 animate-fade-in">
-              <div className="bg-white rounded-2xl border border-[#DDE3E8] p-6 shadow-xs flex flex-col md:flex-row items-center justify-between gap-6">
-                {/* Radial Gauge */}
-                <div className="flex items-center gap-6">
-                  <div className="relative w-32 h-32 flex items-center justify-center">
-                    <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                      <circle
-                        cx="50"
-                        cy="50"
-                        r="42"
-                        stroke="#E2E8F0"
-                        strokeWidth="8"
-                        fill="transparent"
-                      />
-                      <circle
-                        cx="50"
-                        cy="50"
-                        r="42"
-                        stroke="#0F8A4B"
-                        strokeWidth="8"
-                        strokeDasharray={264}
-                        strokeDashoffset={264 - (264 * efficiencyPercentage) / 100}
-                        strokeLinecap="round"
-                        fill="transparent"
-                        className="transition-all duration-1000 ease-out"
-                      />
-                    </svg>
-                    <div className="absolute flex flex-col items-center">
-                      <span className="text-2xl font-black text-[#17212B] font-mono">
-                        {efficiencyPercentage}%
-                      </span>
-                      <span className="text-[10px] font-bold text-[#5F6B76] uppercase">Eficiência</span>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+              <div className="flex items-center justify-between text-xs font-black text-slate-700 mb-2">
+                <span>Completude</span>
+                <span>{profileCompletion}%</span>
+              </div>
+              <div className="h-2 bg-white border border-slate-200 rounded-full overflow-hidden">
+                <div className="h-full bg-[#0F8A4B]" style={{ width: `${profileCompletion}%` }} />
+              </div>
+            </div>
+
+            <nav className="space-y-1">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-black transition-colors cursor-pointer ${
+                    activeTab === tab.id
+                      ? 'bg-[#ECF8F1] text-[#0F8A4B] border border-[#0F8A4B]/20'
+                      : 'text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  {tab.icon}
+                  {tab.label}
+                </button>
+              ))}
+            </nav>
+          </aside>
+
+          <main className="flex flex-col min-h-0">
+            <div className="bg-white border-b border-slate-200 px-5 py-3 flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-black text-slate-900">Ficha de Perfil do Usuario</h3>
+                <p className="text-[11px] text-slate-500 font-semibold">Dados pessoais editaveis. Governanca institucional somente por administracao.</p>
+              </div>
+              <div className="flex items-center gap-2">
+                {isEditing ? (
+                  <>
+                    <button onClick={() => setIsEditing(false)} className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-black text-slate-600 hover:bg-slate-50 cursor-pointer">
+                      Cancelar
+                    </button>
+                    <button onClick={handleSave} className="px-4 py-2 rounded-xl bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white text-xs font-black flex items-center gap-2 cursor-pointer shadow-2xs">
+                      <Save className="w-4 h-4" />
+                      Salvar Perfil
+                    </button>
+                  </>
+                ) : (
+                  <button onClick={() => setIsEditing(true)} className="px-4 py-2 rounded-xl bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white text-xs font-black cursor-pointer shadow-2xs">
+                    Editar Perfil
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-5 md:p-6 space-y-5">
+              {activeTab === 'personal' && (
+                <section className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
+                  <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">Informacoes Pessoais</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div><label className={labelClass}>Nome</label><input disabled={!isEditing} value={draft.firstName} onChange={(e) => updateDraft('firstName', e.target.value)} className={fieldClass} /></div>
+                    <div><label className={labelClass}>Sobrenome</label><input disabled={!isEditing} value={draft.lastName} onChange={(e) => updateDraft('lastName', e.target.value)} className={fieldClass} /></div>
+                    <div><label className={labelClass}>Nome Completo</label><input disabled={!isEditing} value={draft.name} onChange={(e) => updateDraft('name', e.target.value)} className={fieldClass} /></div>
+                    <div><label className={labelClass}>Nome de Exibicao</label><input disabled={!isEditing} value={draft.displayName} onChange={(e) => updateDraft('displayName', e.target.value)} className={fieldClass} /></div>
+                    <div><label className={labelClass}>Data de Nascimento</label><input type="date" disabled={!isEditing} value={draft.birthDate} onChange={(e) => updateDraft('birthDate', e.target.value)} className={fieldClass} /></div>
+                    <div><label className={labelClass}>Genero</label><input disabled={!isEditing} value={draft.gender} onChange={(e) => updateDraft('gender', e.target.value)} className={fieldClass} placeholder="Opcional" /></div>
+                    <div><label className={labelClass}>Cidade</label><input disabled={!isEditing} value={draft.city} onChange={(e) => updateDraft('city', e.target.value)} className={fieldClass} /></div>
+                    <div><label className={labelClass}>Estado</label><input disabled={!isEditing} value={draft.state} onChange={(e) => updateDraft('state', e.target.value)} className={fieldClass} /></div>
+                    <div><label className={labelClass}>Pais</label><input disabled={!isEditing} value={draft.country} onChange={(e) => updateDraft('country', e.target.value)} className={fieldClass} /></div>
+                    <div><label className={labelClass}>Idioma</label><select disabled={!isEditing} value={draft.language} onChange={(e) => updateDraft('language', e.target.value)} className={fieldClass}><option>Português (Brasil)</option><option>English (US)</option><option>Español</option></select></div>
+                    <div className="md:col-span-2"><label className={labelClass}>Bio</label><textarea disabled={!isEditing} value={draft.bio} onChange={(e) => updateDraft('bio', e.target.value)} rows={3} className={fieldClass} placeholder="Apresentacao curta para colegas." /></div>
+                    <div className="md:col-span-2"><label className={labelClass}>Observacoes Pessoais Permitidas</label><textarea disabled={!isEditing} value={draft.personalNotes} onChange={(e) => updateDraft('personalNotes', e.target.value)} rows={3} className={fieldClass} /></div>
+                  </div>
+                </section>
+              )}
+
+              {activeTab === 'contact' && (
+                <section className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
+                  <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">Contato</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div><label className={labelClass}>E-mail Corporativo / Login</label><input disabled value={currentUser.email} className={fieldClass} /></div>
+                    <div><label className={labelClass}>Solicitar Novo E-mail Corporativo</label><div className="flex gap-2"><input disabled={!isEditing} type="email" value={emailChangeRequest} onChange={(e) => setEmailChangeRequest(e.target.value)} className={fieldClass} placeholder="novo@email.com" /><button type="button" disabled={!isEditing || !emailChangeRequest} onClick={handleEmailRequest} className="px-3 rounded-xl bg-slate-900 text-white text-xs font-black disabled:opacity-40">Solicitar</button></div></div>
+                    <div><label className={labelClass}>E-mail Pessoal</label><input disabled={!isEditing} type="email" value={draft.personalEmail} onChange={(e) => updateDraft('personalEmail', e.target.value)} className={fieldClass} /></div>
+                    <div><label className={labelClass}>Telefone Celular</label><input disabled={!isEditing} value={draft.phone} onChange={(e) => updateDraft('phone', e.target.value)} className={fieldClass} /></div>
+                    <div><label className={labelClass}>WhatsApp</label><input disabled={!isEditing} value={draft.whatsapp} onChange={(e) => updateDraft('whatsapp', e.target.value)} className={fieldClass} /></div>
+                    <div><label className={labelClass}>Telefone Alternativo</label><input disabled={!isEditing} value={draft.alternatePhone} onChange={(e) => updateDraft('alternatePhone', e.target.value)} className={fieldClass} /></div>
+                    <div><label className={labelClass}>Nome do Contato de Emergencia</label><input disabled={!isEditing} value={draft.emergencyContactName} onChange={(e) => updateDraft('emergencyContactName', e.target.value)} className={fieldClass} /></div>
+                    <div><label className={labelClass}>Contato de Emergencia</label><input disabled={!isEditing} value={draft.emergencyContact} onChange={(e) => updateDraft('emergencyContact', e.target.value)} className={fieldClass} /></div>
+                  </div>
+                  <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-[11px] text-amber-800 font-semibold flex gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    Alteracao de e-mail corporativo exige confirmacao do provedor de Auth. Aqui registramos a solicitacao, sem atualizar visualmente o login.
+                  </div>
+                </section>
+              )}
+
+              {activeTab === 'professional' && (
+                <section className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
+                  <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">Dados Profissionais</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <ReadOnlyGovernanceField label="Cargo" value={currentUser.jobTitle} />
+                    <ReadOnlyGovernanceField label="Departamento" value={department?.name} />
+                    <ReadOnlyGovernanceField label="Business Unit" value={bu?.tradeName || bu?.name} />
+                    <ReadOnlyGovernanceField label="Equipe" value={team?.name} />
+                    <ReadOnlyGovernanceField label="Gestor" value={manager?.name} />
+                    <ReadOnlyGovernanceField label="Supervisor" value={supervisor?.name} />
+                    <ReadOnlyGovernanceField label="Role RBAC" value={currentUser.role} />
+                    <ReadOnlyGovernanceField label="Status Funcional" value={currentUser.status} />
+                    <ReadOnlyGovernanceField label="Matricula / Codigo Interno" value={currentUser.employeeCode} />
+                    <ReadOnlyGovernanceField label="Data de Contratacao" value={currentUser.hiredAt ? new Date(currentUser.hiredAt).toLocaleDateString('pt-BR') : undefined} />
+                  </div>
+                </section>
+              )}
+
+              {activeTab === 'photo' && (
+                <section className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-5">
+                  <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">Foto e Identidade</h4>
+                  <input ref={fileInputRef} type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" onChange={handleAvatarSelect} className="hidden" />
+                  <div className="flex flex-col md:flex-row items-center gap-6">
+                    <UserAvatar name={draft.name || currentUser.name} avatarUrl={draft.avatar} size="xl" status={currentUser.status} />
+                    <div className="flex-1 space-y-3">
+                      <p className="text-sm font-semibold text-slate-700">Esta e a foto oficial do colaborador no sistema. Onde nao houver foto, o fallback oficial sao as iniciais do nome.</p>
+                      <div className="flex flex-wrap gap-2">
+                        <button disabled={!isEditing} onClick={() => fileInputRef.current?.click()} className="px-4 py-2 rounded-xl bg-[#0F8A4B] text-white text-xs font-black flex items-center gap-2 disabled:opacity-40 cursor-pointer"><Upload className="w-4 h-4" /> Enviar Foto</button>
+                        <button disabled={!isEditing || !draft.avatar} onClick={() => setDraft((prev) => ({ ...prev, avatar: '' }))} className="px-4 py-2 rounded-xl border border-rose-200 text-rose-700 text-xs font-black flex items-center gap-2 disabled:opacity-40 cursor-pointer"><Trash2 className="w-4 h-4" /> Remover</button>
+                      </div>
+                      {avatarError && <p className="text-xs font-bold text-rose-600">{avatarError}</p>}
+                      <p className="text-[11px] text-slate-500 font-semibold">Formatos aceitos: JPG, JPEG, PNG e WEBP. Limite atual: 2 MB. Storage externo deve preencher `avatarStoragePath` quando configurado.</p>
                     </div>
                   </div>
+                </section>
+              )}
 
-                  <div className="space-y-1">
-                    <h3 className="text-sm font-bold text-[#17212B]">Desempenho Geral do Colaborador</h3>
-                    <p className="text-xs text-[#5F6B76] max-w-xs">
-                      Cálculo automatizado do Bitrix24 baseado no cumprimento de prazos e checklists sem pendências.
-                    </p>
-                    <span className="inline-block text-[11px] text-[#0F8A4B] font-semibold underline cursor-pointer">
-                      Como funciona?
-                    </span>
+              {activeTab === 'security' && (
+                <section className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
+                  <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">Seguranca da Conta</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4"><span className={labelClass}>Alterar Senha</span><strong className="text-sm text-slate-900">Fluxo seguro pelo Auth Provider</strong><p className="text-[11px] text-slate-500 mt-1">Preparado para integracao Supabase Auth.</p></div>
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4"><span className={labelClass}>Ultima Alteracao de Senha</span><strong className="text-sm text-slate-900">{currentUser.lastPasswordChangedAt ? new Date(currentUser.lastPasswordChangedAt).toLocaleDateString('pt-BR') : 'Nao informado'}</strong></div>
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4"><span className={labelClass}>Sessoes Ativas</span><strong className="text-sm text-slate-900">Disponivel quando Auth expor sessoes</strong></div>
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4"><span className={labelClass}>MFA</span><strong className="text-sm text-slate-900">Previsto para fase futura</strong></div>
                   </div>
-                </div>
+                </section>
+              )}
 
-                {/* Stat pills */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full md:w-auto">
-                  <div className="bg-[#ECF8F1] border border-[#0F8A4B]/20 p-3.5 rounded-xl text-center min-w-[110px]">
-                    <span className="text-xs font-bold text-[#0F8A4B] block">Tarefas concluídas</span>
-                    <span className="text-2xl font-black text-[#0F8A4B] font-mono">{completedCount}</span>
+              {activeTab === 'preferences' && (
+                <section className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
+                  <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">Preferencias</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div><label className={labelClass}>Fuso Horario</label><select disabled={!isEditing} value={draft.timezone} onChange={(e) => updateDraft('timezone', e.target.value)} className={fieldClass}><option value="America/Manaus">America/Manaus</option><option value="America/Sao_Paulo">America/Sao_Paulo</option><option value="UTC">UTC</option></select></div>
+                    <div><label className={labelClass}>Idioma</label><select disabled={!isEditing} value={draft.language} onChange={(e) => updateDraft('language', e.target.value)} className={fieldClass}><option>Português (Brasil)</option><option>English (US)</option><option>Español</option></select></div>
                   </div>
-                  <div className="bg-amber-50 border border-amber-200 p-3.5 rounded-xl text-center min-w-[110px]">
-                    <span className="text-xs font-bold text-amber-800 block">Sem objeções</span>
-                    <span className="text-2xl font-black text-amber-700 font-mono">{noObjectionCount}</span>
-                  </div>
-                  <div className="bg-blue-50 border border-blue-200 p-3.5 rounded-xl text-center min-w-[110px]">
-                    <span className="text-xs font-bold text-blue-800 block">Em andamento</span>
-                    <span className="text-2xl font-black text-blue-700 font-mono">{inProgressCount}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Daily Efficiency Chart */}
-              <div className="bg-white rounded-2xl border border-[#DDE3E8] p-5 shadow-xs space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-bold text-[#17212B] uppercase tracking-wider">
-                    Eficiência Diária (Agosto 2026)
-                  </h4>
-                  <span className="text-xs text-[#5F6B76] font-medium">Média: 82%</span>
-                </div>
-
-                {/* SVG Line Chart */}
-                <div className="h-44 w-full relative pt-2">
-                  <svg className="w-full h-full overflow-visible" viewBox="0 0 500 120" preserveAspectRatio="none">
-                    <line x1="0" y1="20" x2="500" y2="20" stroke="#F1F5F9" strokeWidth="1" />
-                    <line x1="0" y1="60" x2="500" y2="60" stroke="#F1F5F9" strokeWidth="1" />
-                    <line x1="0" y1="100" x2="500" y2="100" stroke="#F1F5F9" strokeWidth="1" />
-
-                    <path
-                      d="M 20 50 Q 100 30, 180 35 T 340 25 T 480 30"
-                      fill="none"
-                      stroke="#0F8A4B"
-                      strokeWidth="3"
-                    />
-
-                    {/* Data dots */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {[
-                      { cx: 20, cy: 50, label: '01 Ago', val: '78%' },
-                      { cx: 100, cy: 30, label: '02 Ago', val: '85%' },
-                      { cx: 180, cy: 35, label: '03 Ago', val: '82%' },
-                      { cx: 260, cy: 40, label: '04 Ago', val: '80%' },
-                      { cx: 340, cy: 25, label: '05 Ago', val: '88%' },
-                      { cx: 480, cy: 30, label: '06 Ago', val: '84%' },
-                    ].map((pt, i) => (
-                      <g key={i}>
-                        <circle cx={pt.cx} cy={pt.cy} r="4" fill="#0F8A4B" stroke="#fff" strokeWidth="2" />
-                        <text x={pt.cx} y="115" fontSize="9" fill="#5F6B76" textAnchor="middle">
-                          {pt.label}
-                        </text>
-                      </g>
+                      ['email', 'Notificacoes por e-mail'],
+                      ['push', 'Notificacoes no sistema'],
+                      ['taskDigest', 'Resumo de tarefas'],
+                      ['meetingReminders', 'Lembretes de reuniao'],
+                    ].map(([key, label]) => (
+                      <label key={key} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm font-bold text-slate-700">
+                        <span className="flex items-center gap-2"><Bell className="w-4 h-4 text-[#0F8A4B]" /> {label}</span>
+                        <input
+                          type="checkbox"
+                          disabled={!isEditing}
+                          checked={Boolean(draft.notificationPreferences[key as keyof typeof draft.notificationPreferences])}
+                          onChange={(e) => setDraft((prev) => ({
+                            ...prev,
+                            notificationPreferences: { ...prev.notificationPreferences, [key]: e.target.checked },
+                          }))}
+                          className="w-4 h-4 accent-[#0F8A4B]"
+                        />
+                      </label>
                     ))}
-                  </svg>
-                </div>
-              </div>
+                  </div>
+                </section>
+              )}
             </div>
-          )}
-
-          {/* TAB: GERAL */}
-          {activeTab === 'geral' && (
-            <div className="space-y-6 animate-fade-in">
-              <div className="bg-white rounded-2xl border border-[#DDE3E8] p-5 shadow-xs space-y-4">
-                <h3 className="text-xs font-bold text-[#17212B] uppercase tracking-wider">
-                  Informações de Contato e Cargo
-                </h3>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                  <div>
-                    <span className="text-[#5F6B76] block">Nome Completo</span>
-                    <span className="font-bold text-[#17212B] text-sm">William Barbosa</span>
-                  </div>
-                  <div>
-                    <span className="text-[#5F6B76] block">Cargo</span>
-                    <span className="font-bold text-[#17212B] text-sm">Web Designer / Diretor de Tecnologia</span>
-                  </div>
-                  <div>
-                    <span className="text-[#5F6B76] block">E-mail Corporativo</span>
-                    <span className="font-medium text-[#17212B]">william@verads.com.br</span>
-                  </div>
-                  <div>
-                    <span className="text-[#5F6B76] block">Telefone</span>
-                    <span className="font-medium text-[#17212B]">+55 92 98282-4592</span>
-                  </div>
-                  <div>
-                    <span className="text-[#5F6B76] block">Departamento</span>
-                    <span className="font-medium text-[#17212B]">
-                      Gerência Geral, Comercial, Design, Tráfego
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[#5F6B76] block">Localização</span>
-                    <span className="font-medium text-[#17212B]">Manaus, AM - Brasil</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Apreciações / Badges */}
-              <div className="bg-white rounded-2xl border border-[#DDE3E8] p-5 shadow-xs space-y-3">
-                <h3 className="text-xs font-bold text-[#17212B] uppercase tracking-wider">
-                  Apreciações da Empresa
-                </h3>
-                <div className="flex items-center gap-3">
-                  <div className="p-3 rounded-xl bg-purple-50 text-purple-700 border border-purple-200 flex items-center gap-2">
-                    <Award className="w-5 h-5" />
-                    <div>
-                      <span className="text-xs font-bold block">Livros e material eletrônico</span>
-                      <span className="text-[10px] text-purple-600">Reconhecimento pela equipe</span>
-                    </div>
-                  </div>
-                  <div className="p-3 rounded-xl bg-emerald-50 text-[#0F8A4B] border border-emerald-200 flex items-center gap-2">
-                    <ThumbsUp className="w-5 h-5" />
-                    <div>
-                      <span className="text-xs font-bold block">Top Eficiência Q3</span>
-                      <span className="text-[10px] text-emerald-600">81% de metas batidas</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB: HORAS TRABALHADAS */}
-          {activeTab === 'horas' && (
-            <div className="bg-white rounded-2xl border border-[#DDE3E8] overflow-hidden shadow-xs animate-fade-in">
-              <div className="p-4 border-b border-[#DDE3E8] flex items-center justify-between">
-                <h4 className="text-xs font-bold text-[#17212B] uppercase tracking-wider">
-                  Registro Semanal de Horas (1 de Agosto - 31 de Agosto)
-                </h4>
-                <span className="text-xs font-bold text-[#0F8A4B]">Total da Semana: 40h 15m</span>
-              </div>
-              <table className="w-full text-left text-xs">
-                <thead className="bg-[#F7F9FA] text-[#5F6B76] font-semibold border-b border-[#DDE3E8]">
-                  <tr>
-                    <th className="p-3">Dia</th>
-                    <th className="p-3">Entrada</th>
-                    <th className="p-3">Intervalo</th>
-                    <th className="p-3">Saída</th>
-                    <th className="p-3">Total</th>
-                    <th className="p-3">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#F0F4F7]">
-                  {[
-                    { dia: 'Seg, 03 Ago', in: '08:00', int: '12:00 - 13:00', out: '17:00', total: '08:00', status: 'Concluído' },
-                    { dia: 'Ter, 04 Ago', in: '08:05', int: '12:00 - 13:00', out: '17:15', total: '08:10', status: 'Concluído' },
-                    { dia: 'Qua, 05 Ago', in: '07:55', int: '12:00 - 13:00', out: '17:00', total: '08:05', status: 'Concluído' },
-                    { dia: 'Qui, 06 Ago', in: '08:00', int: '12:00 - 13:00', out: '17:00', total: '08:00', status: 'Concluído' },
-                    { dia: 'Sex, 07 Ago', in: '08:10', int: '12:00 - 13:00', out: '17:10', total: '08:00', status: 'Concluído' },
-                  ].map((row, i) => (
-                    <tr key={i} className="hover:bg-[#F7F9FA]">
-                      <td className="p-3 font-bold text-[#17212B]">{row.dia}</td>
-                      <td className="p-3 font-mono">{row.in}</td>
-                      <td className="p-3 font-mono text-[#5F6B76]">{row.int}</td>
-                      <td className="p-3 font-mono">{row.out}</td>
-                      <td className="p-3 font-mono font-bold text-[#0F8A4B]">{row.total}</td>
-                      <td className="p-3">
-                        <span className="px-2 py-0.5 rounded bg-emerald-50 text-[#0F8A4B] text-[10px] font-bold">
-                          {row.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          </main>
         </div>
       </div>
     </div>

@@ -43,9 +43,12 @@ import { WhatsAppConfigModal } from './WhatsAppConfigModal';
 import { PipelineModal } from './PipelineModal';
 import { PipelineStageConfigModal } from './PipelineStageConfigModal';
 import { CatalogTab } from './CatalogTab';
+import { ImportsTab } from './ImportsTab';
+import { AdminGovernanceTab } from './AdminGovernanceTab';
 import { Tabs } from '../ui/vercel-tabs';
 import { PermissionEngineService, CAPABILITIES_REGISTRY } from '../../services/permissionEngine';
 import { PermissionScope } from '../../types';
+import { UserAvatar } from '../common/UserAvatar';
 
 export const AdminView: React.FC = () => {
   const {
@@ -72,7 +75,7 @@ export const AdminView: React.FC = () => {
 
   const isSuperadmin = currentUser.role === 'superadmin' || currentUser.isSuperadmin;
 
-  const [activeTab, setActiveTab] = useState<'users' | 'invites' | 'organogram' | 'units' | 'matrix' | 'pipelines' | 'catalog'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'invites' | 'organogram' | 'units' | 'matrix' | 'governance' | 'pipelines' | 'catalog' | 'imports'>('users');
   const [showInviteModal, setShowInviteModal] = useState<boolean>(false);
   const [showStayCloudModal, setShowStayCloudModal] = useState<boolean>(false);
   const [showWppModal, setShowWppModal] = useState<boolean>(false);
@@ -248,9 +251,15 @@ export const AdminView: React.FC = () => {
               { id: 'invites', label: 'Convites', badge: invites.length },
               { id: 'units', label: 'Empresas (BUs)', badge: businessUnits.length },
               { id: 'matrix', label: 'Matriz de Permissões' },
+              { id: 'governance', label: 'Governança Operacional' },
               { id: 'pipelines', label: 'Pipelines & Funis', badge: pipelines.length },
               { id: 'catalog', label: 'Produtos & Serviços', badge: catalogItems.length },
-            ]}
+              { id: 'imports', label: 'Migração / Importação' },
+            ].filter(t => {
+              if (t.id === 'catalog' && !isSuperadmin && !currentUser.capabilities?.includes('catalog.manage')) return false;
+              if (t.id === 'imports' && !isSuperadmin && !currentUser.capabilities?.includes('imports.manage')) return false;
+              return true;
+            })}
             activeTab={activeTab}
             onTabChange={(id) => setActiveTab(id as any)}
           />
@@ -319,9 +328,7 @@ export const AdminView: React.FC = () => {
                       <tr key={u.id} className="hover:bg-slate-50/80 transition-colors">
                         <td className="p-3.5">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-[#0F8A4B] text-white flex items-center justify-center font-bold text-xs uppercase shadow-2xs">
-                              {u.avatar ? <img src={u.avatar} alt={u.name} className="w-8 h-8 rounded-full object-cover" /> : u.name.slice(0, 2)}
-                            </div>
+                            <UserAvatar name={u.name} avatarUrl={u.avatar} size="sm" status={u.status} showStatus={false} />
                             <div>
                               <strong className="text-slate-900 font-black block">{u.name}</strong>
                               <span className="text-slate-500 text-[11px]">{u.email}</span>
@@ -768,6 +775,11 @@ export const AdminView: React.FC = () => {
         );
       })()}
 
+      {/* TAB 5: GOVERNANÇA OPERACIONAL */}
+      {activeTab === 'governance' && (
+        <AdminGovernanceTab />
+      )}
+
       {/* TAB 5: EMPRESAS DO GRUPO (BUSINESS UNITS) */}
       {activeTab === 'units' && (
         <div className="space-y-4 font-sans">
@@ -1105,6 +1117,13 @@ export const AdminView: React.FC = () => {
         </div>
       )}
 
+      {/* TAB 8: IMPORTAÇÃO */}
+      {activeTab === 'imports' && (
+        <div className="space-y-4">
+          <ImportsTab />
+        </div>
+      )}
+
       {/* OFFBOARDING / REASSIGNMENT MODAL */}
       {userToSuspend && (
         <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-2xs flex items-center justify-center p-4 font-sans">
@@ -1163,7 +1182,7 @@ export const AdminView: React.FC = () => {
         <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-2xs flex items-center justify-center p-4 font-sans">
           <form onSubmit={handleCreateBusinessUnit} className="bg-white rounded-2xl p-6 max-w-md w-full border border-emerald-200 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-sm font-black text-slate-900">Nova Empresa do Grupo (`business_unit`)</h3>
+              <h3 className="text-sm font-black text-slate-900">Nova Empresa do Grupo</h3>
               <button type="button" onClick={() => setShowNewBuModal(false)} className="text-slate-400 hover:text-slate-700">
                 <X className="w-5 h-5" />
               </button>

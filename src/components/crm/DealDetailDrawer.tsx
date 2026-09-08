@@ -31,6 +31,10 @@ import {
   TrendingUp,
   CreditCard,
   Percent,
+  Settings,
+  MoreVertical,
+  Link,
+  Package,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { DealDocument, DealItem } from '../../types';

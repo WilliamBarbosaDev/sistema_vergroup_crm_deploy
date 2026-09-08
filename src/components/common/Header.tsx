@@ -11,7 +11,6 @@ import {
   CheckCircle2,
   Clock,
   Sparkles,
-  RotateCcw,
   Check,
   User,
   Activity,
@@ -22,16 +21,15 @@ import {
   QrCode,
   Smartphone,
   Palette,
-  Users,
   LogOut,
   ShieldCheck,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { UserRole } from '../../types';
 import { UserProfileModal } from './UserProfileModal';
 import { VerGroupLogo } from './VerGroupLogo';
 import greenLogoAsset from '../../assets/vergroup-logo-green.png';
 import { AIAgentCenterModal } from '../ai/AIAgentCenterModal';
+import { UserAvatar } from './UserAvatar';
 
 export const Header: React.FC = () => {
   const {
@@ -39,8 +37,6 @@ export const Header: React.FC = () => {
     businessUnits,
     setSelectedBusinessUnitId,
     currentUser,
-    userRole,
-    switchUserRole,
     setIsSearchOpen,
     setQuickCreateType,
     openTaskCreate,
@@ -60,7 +56,6 @@ export const Header: React.FC = () => {
   const [isQuickCreateOpen, setIsQuickCreateOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isAIAgentCenterOpen, setIsAIAgentCenterOpen] = useState(false);
-  const [showRbacSimulator, setShowRbacSimulator] = useState(false);
 
   // Active Work Timer State (Bitrix24 Timecard)
   const [isWorking, setIsWorking] = useState<boolean>(true);
@@ -83,7 +78,6 @@ export const Header: React.FC = () => {
       }
       if (roleDropdownRef.current && !roleDropdownRef.current.contains(event.target as Node)) {
         setIsRoleDropdownOpen(false);
-        setShowRbacSimulator(false);
       }
       if (notifDropdownRef.current && !notifDropdownRef.current.contains(event.target as Node)) {
         setIsNotifOpen(false);
@@ -119,15 +113,6 @@ export const Header: React.FC = () => {
     const secs = totalSeconds % 60;
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
-
-  const rolesList: { role: UserRole; label: string; desc: string }[] = [
-    { role: 'superadmin', label: 'Superadministrador', desc: 'Acesso total a todas as empresas, configurações e auditoria' },
-    { role: 'manager', label: 'Gestor de Área', desc: 'Acompanhamento de equipes, aprovações e relatórios do setor' },
-    { role: 'sales', label: 'Comercial / Vendas', desc: 'Gestão de leads, contatos, prospecção e pipeline de negócios' },
-    { role: 'operations', label: 'Operações & Projetos', desc: 'Execução de clientes, onboarding, tarefas e apontamento de horas' },
-    { role: 'financial', label: 'Financeiro / BPO', desc: 'Controle de valores, faturamento, contratos e conciliação' },
-    { role: 'viewer', label: 'Visualizador (Auditor)', desc: 'Acesso apenas para leitura e consulta de relatórios autorizados' },
-  ];
 
   return (
     <header id="vergroup-topbar" className="h-14 bg-white border-b border-[#E2E6EA] px-4 md:px-6 flex items-center justify-between sticky top-0 z-30 font-sans select-none">
@@ -373,11 +358,7 @@ export const Header: React.FC = () => {
             className="flex items-center gap-2 px-2.5 py-1 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl transition-all shadow-2xs cursor-pointer"
             title="Perfil e Controle de Ponto"
           >
-            <img
-              src={currentUser.avatar}
-              alt={currentUser.name}
-              className="w-7 h-7 rounded-full object-cover ring-1 ring-slate-200"
-            />
+            <UserAvatar name={currentUser.name} avatarUrl={currentUser.avatar} size="xs" status={currentUser.status} showStatus={false} />
             <div className="text-left hidden sm:block leading-tight">
               <p className="text-xs font-black text-slate-900 leading-none">{currentUser.name.split(' ')[0]}</p>
               <span className="text-[10px] font-black text-[#0F8A4B] leading-none uppercase tracking-wider block mt-0.5">
@@ -400,11 +381,7 @@ export const Header: React.FC = () => {
                 className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer"
               >
                 <div className="flex items-center gap-3">
-                  <img
-                    src={currentUser.avatar}
-                    alt={currentUser.name}
-                    className="w-12 h-12 rounded-full object-cover border border-slate-200 shadow-2xs"
-                  />
+                  <UserAvatar name={currentUser.name} avatarUrl={currentUser.avatar} size="xl" status={currentUser.status} />
                   <div className="text-left">
                     <h3 className="text-sm font-black text-slate-900 flex items-center gap-1">
                       <span>{currentUser.name}</span>
@@ -461,11 +438,14 @@ export const Header: React.FC = () => {
                 </div>
               </div>
 
-              {/* 3. Quick Feature Grid Cards (Segurança & Extensões) */}
+              {/* 3. Quick Feature Grid Cards (Perfil & Segurança) */}
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <button
                   type="button"
-                  onClick={() => setShowRbacSimulator(!showRbacSimulator)}
+                  onClick={() => {
+                    setIsRoleDropdownOpen(false);
+                    setIsProfileModalOpen(true);
+                  }}
                   className="p-3 bg-white hover:bg-slate-50 rounded-xl border border-slate-200 flex flex-col items-center justify-center gap-1.5 text-slate-800 font-extrabold cursor-pointer transition-colors shadow-2xs"
                 >
                   <ShieldCheck className="w-5 h-5 text-[#0F8A4B]" />
@@ -480,37 +460,10 @@ export const Header: React.FC = () => {
                   }}
                   className="p-3 bg-white hover:bg-slate-50 rounded-xl border border-slate-200 flex flex-col items-center justify-center gap-1.5 text-slate-800 font-extrabold cursor-pointer transition-colors shadow-2xs"
                 >
-                  <Box className="w-5 h-5 text-blue-600" />
-                  <span>Extensões</span>
+                  <User className="w-5 h-5 text-blue-600" />
+                  <span>Meu Perfil</span>
                 </button>
               </div>
-
-              {/* Nested RBAC Role Simulator Selector (shown if clicked Segurança or switch account) */}
-              {showRbacSimulator && (
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 space-y-2 animate-in fade-in">
-                  <div className="flex items-center justify-between text-[10px] font-black uppercase text-slate-500">
-                    <span>Simular Papel RBAC</span>
-                    <button onClick={() => setShowRbacSimulator(false)} className="text-slate-400 hover:text-slate-700">Fechar</button>
-                  </div>
-                  <div className="space-y-1">
-                    {rolesList.map((r) => (
-                      <button
-                        key={r.role}
-                        onClick={() => {
-                          switchUserRole(r.role);
-                          setShowRbacSimulator(false);
-                        }}
-                        className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center justify-between ${
-                          userRole === r.role ? 'bg-[#0F8A4B] text-white' : 'hover:bg-slate-200/70 text-slate-700'
-                        }`}
-                      >
-                        <span>{r.label}</span>
-                        {userRole === r.role && <Check className="w-3.5 h-3.5" />}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               {/* 4. Options List Card */}
               <div className="p-1.5 bg-slate-50 rounded-xl border border-slate-200/80 space-y-0.5 text-xs font-extrabold text-slate-800">
@@ -558,17 +511,12 @@ export const Header: React.FC = () => {
                   <ChevronRight className="w-4 h-4 text-slate-400" />
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => setShowRbacSimulator(!showRbacSimulator)}
-                  className="w-full px-3 py-2 hover:bg-white rounded-lg flex items-center justify-between transition-colors cursor-pointer"
-                >
+                <div className="w-full px-3 py-2 rounded-lg flex items-center justify-between text-slate-500">
                   <div className="flex items-center gap-2.5">
-                    <Users className="w-4 h-4 text-slate-500" />
-                    <span>Trocar conta / Simular papel</span>
+                    <Shield className="w-4 h-4 text-slate-500" />
+                    <span>Papel e permissões gerenciados pela administração</span>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-slate-400" />
-                </button>
+                </div>
               </div>
 
               {/* 6. Footer Links */}

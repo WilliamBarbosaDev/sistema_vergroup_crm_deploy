@@ -4,7 +4,7 @@ export interface UserAvatarProps {
   name: string;
   avatarUrl?: string;
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
-  status?: 'active' | 'inactive';
+  status?: 'active' | 'inactive' | 'absent' | 'offline' | 'blocked' | 'invited';
   badgeCount?: number;
   showStatus?: boolean;
   className?: string;
@@ -45,6 +45,24 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
     xl: 'w-3.5 h-3.5 border-2',
   };
 
+  const statusColor = status === 'active'
+    ? 'bg-[#0F8A4B]'
+    : status === 'absent'
+      ? 'bg-amber-400'
+      : 'bg-slate-400';
+
+  const statusLabel = status === 'active'
+    ? 'Ativo'
+    : status === 'absent'
+      ? 'Ausente'
+      : status === 'offline'
+        ? 'Offline'
+        : status === 'inactive'
+          ? 'Inativo'
+          : status === 'invited'
+            ? 'Convidado'
+            : 'Bloqueado';
+
   return (
     <div
       onClick={onClick}
@@ -69,10 +87,8 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
       {/* Real Presence Status Dot */}
       {showStatus && status && (
         <span
-          className={`absolute bottom-0 right-0 rounded-full border-white ${statusDotSizes[size]} ${
-            status === 'active' ? 'bg-[#0F8A4B]' : 'bg-slate-400'
-          }`}
-          title={status === 'active' ? 'Ativo' : 'Inativo'}
+          className={`absolute bottom-0 right-0 rounded-full border-white ${statusDotSizes[size]} ${statusColor}`}
+          title={statusLabel}
         />
       )}
 

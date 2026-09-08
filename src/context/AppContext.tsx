@@ -34,6 +34,7 @@ import {
   OnboardingTask,
   JobExecutionLog,
   CatalogItem,
+  ImportJob,
 } from '../types';
 import {
   INITIAL_BUSINESS_UNITS,
@@ -59,6 +60,7 @@ import {
   INITIAL_AUTOMATIONS,
   INITIAL_AUDIT_LOGS,
   INITIAL_CATALOG_ITEMS,
+  INITIAL_IMPORT_JOBS,
 } from '../mock/initialData';
 
 const PROD_BASELINE_FLAG = 'VERGROUP_PROD_BASELINE_V1';
@@ -137,6 +139,8 @@ export interface AppContextType {
   currentBU: BusinessUnit;
   currentUser: User;
   setCurrentUser: (user: User) => void;
+  updateCurrentUserProfile: (updates: Partial<User>) => void;
+  requestCurrentUserEmailChange: (email: string) => void;
   userRole: UserRole;
   switchUserRole: (role: UserRole) => void;
 
@@ -161,6 +165,7 @@ export interface AppContextType {
   departments: Department[];
   teams: Team[];
   users: User[];
+  setUsers: React.Dispatch<React.SetStateAction<User[]>>;
   invites: CollaboratorInvite[];
   onboardingTasks: OnboardingTask[];
   leads: Lead[];
@@ -184,6 +189,8 @@ export interface AppContextType {
   notifications: NotificationItem[];
   catalogItems: CatalogItem[];
   setCatalogItems: React.Dispatch<React.SetStateAction<CatalogItem[]>>;
+  importJobs: ImportJob[];
+  addImportJob: (job: Omit<ImportJob, 'id' | 'createdAt' | 'updatedAt'>) => ImportJob;
 
   // Multi-company filtering helpers
   filterByBU: <T extends { businessUnitId?: string }>(items: T[]) => T[];
@@ -268,7 +275,10 @@ export interface AppContextType {
   updateUserStatus: (userId: string, newStatus: 'active' | 'suspended' | 'inactive') => void;
   reassignUserTasks: (fromUserId: string, toUserId: string) => { reassignedCount: number };
 
-  addCalendarEvent: (event: Omit<CalendarEvent, 'id'>) => void;
+  addCalendarEvent: (event: Omit<CalendarEvent, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  updateEventStatus: (eventId: string, userId: string, status: 'pending' | 'accepted' | 'declined' | 'tentative') => void;
+  checkAvailability: (userIds: string[], start: string, end: string) => 'available' | 'partial' | 'busy';
+  cancelEvent: (eventId: string) => void;
 
   sendChatMessage: (channelId: string, text: string, attachments?: { name: string; size: string; url: string }[]) => void;
   addChatReaction: (messageId: string, emoji: string) => void;
@@ -305,7 +315,13 @@ export interface AppContextType {
   toggleAutomationRule: (ruleId: string) => void;
 
   addActivity: (activity: Omit<Activity, 'id' | 'createdAt'>) => void;
-  addAuditLog: (action: AuditLog['action'], entity: string, entityId: string, details: string) => void;
+  addAuditLog: (
+    action: AuditLog['action'],
+    entity: string,
+    entityId: string,
+    details: string,
+    metadata?: { before?: Record<string, unknown>; after?: Record<string, unknown>; correlationId?: string; businessUnitId?: string }
+  ) => void;
   markNotificationRead: (id: string) => void;
   markAllNotificationsRead: () => void;
   resetAllData: () => void;
@@ -589,6 +605,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return INITIAL_CATALOG_ITEMS;
   });
 
+  const [importJobs, setImportJobs] = useState<ImportJob[]>(() => {
+    const stored = localStorage.getItem('vergroup_import_jobs');
+    if (stored) {
+      return JSON.parse(stored) as ImportJob[];
+    }
+    return INITIAL_IMPORT_JOBS;
+  });
+
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>(() => {
     const saved = localStorage.getItem(`${STORAGE_KEY}_auditLogs`);
     return saved ? JSON.parse(saved) : INITIAL_AUDIT_LOGS;
@@ -658,6 +682,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     localStorage.setItem('vergroup_catalog_items', JSON.stringify(catalogItems));
   }, [catalogItems]);
+
+  useEffect(() => {
+    localStorage.setItem('vergroup_import_jobs', JSON.stringify(importJobs));
+  }, [importJobs]);
 
   useEffect(() => {
     localStorage.setItem('vergroup_audit_logs', JSON.stringify(auditLogs));
@@ -738,16 +766,71 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addAuditLog('update', 'user_role', currentUser.id, `Simulação de perfil alterada para ${role}`);
   };
 
-  const addAuditLog = (action: AuditLog['action'], entity: string, entityId: string, details: string) => {
+  const updateCurrentUserProfile = (updates: Partial<User>) => {
+    const blockedGovernanceFields: (keyof User)[] = [
+      'role',
+      'businessUnitIds',
+      'primaryBusinessUnitId',
+      'departmentId',
+      'teamId',
+      'managerId',
+      'supervisorId',
+      'status',
+      'allowedResourceIds',
+      'isExternal',
+      'accessExpiresAt',
+      'employeeCode',
+      'jobTitle',
+    ];
+
+    const safeUpdates = { ...updates };
+    blockedGovernanceFields.forEach((field) => {
+      delete safeUpdates[field];
+    });
+
+    const nextUser = {
+      ...currentUser,
+      ...safeUpdates,
+      name: safeUpdates.name || currentUser.name,
+    };
+
+    setCurrentUser(nextUser);
+    setUsers((prev) =>
+      prev.map((u) => (u.id === currentUser.id ? { ...u, ...safeUpdates, name: nextUser.name } : u))
+    );
+
+    if (safeUpdates.avatar !== undefined) {
+      addAuditLog('update', 'User', currentUser.id, 'profile.avatar.changed');
+    }
+    if (safeUpdates.phone !== undefined || safeUpdates.whatsapp !== undefined || safeUpdates.alternatePhone !== undefined) {
+      addAuditLog('update', 'User', currentUser.id, 'profile.phone.updated');
+    }
+    addAuditLog('update', 'User', currentUser.id, 'profile.updated');
+  };
+
+  const requestCurrentUserEmailChange = (email: string) => {
+    addAuditLog('update', 'User', currentUser.id, `profile.email.change_requested | requested_email: ${email}`);
+  };
+
+  const addAuditLog = (
+    action: AuditLog['action'],
+    entity: string,
+    entityId: string,
+    details: string,
+    metadata?: { before?: Record<string, unknown>; after?: Record<string, unknown>; correlationId?: string; businessUnitId?: string }
+  ) => {
     const newLog: AuditLog = {
       id: `aud-${Date.now()}`,
-      businessUnitId: selectedBusinessUnitId === 'bu-all' ? 'bu-tech' : selectedBusinessUnitId,
+      businessUnitId: metadata?.businessUnitId || (selectedBusinessUnitId === 'bu-all' ? 'bu-tech' : selectedBusinessUnitId),
       userId: currentUser.id,
       userName: currentUser.name,
       action,
       entity,
       entityId,
       details,
+      before: metadata?.before,
+      after: metadata?.after,
+      correlationId: metadata?.correlationId || `corr-${Date.now()}`,
       ipAddress: '189.40.122.15',
       timestamp: new Date().toISOString(),
     };
@@ -1946,13 +2029,70 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // Calendar
-  const addCalendarEvent = (eventData: Omit<CalendarEvent, 'id'>) => {
+  const addCalendarEvent = (eventData: Omit<CalendarEvent, 'id' | 'createdAt' | 'updatedAt'>) => {
     const newEvent: CalendarEvent = {
       ...eventData,
       id: `evt-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
     setCalendarEvents((prev) => [...prev, newEvent]);
     addAuditLog('create', 'calendar_event', newEvent.id, `Evento "${newEvent.title}" adicionado à agenda`);
+  };
+
+  const updateEventStatus = (eventId: string, userId: string, status: 'pending' | 'accepted' | 'declined' | 'tentative') => {
+    setCalendarEvents((prev) =>
+      prev.map((evt) => {
+        if (evt.id === eventId) {
+          return {
+            ...evt,
+            updatedAt: new Date().toISOString(),
+            attendees: evt.attendees.map((att) =>
+              att.userId === userId ? { ...att, status } : att
+            ),
+          };
+        }
+        return evt;
+      })
+    );
+    addAuditLog('update', 'calendar_event', eventId, `Status de convite atualizado para ${status}`);
+  };
+
+  const checkAvailability = (userIds: string[], start: string, end: string): 'available' | 'partial' | 'busy' => {
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    let conflictCount = 0;
+
+    const relevantEvents = calendarEvents.filter(evt => evt.status === 'scheduled');
+
+    for (const userId of userIds) {
+      const hasConflict = relevantEvents.some(evt => {
+        // Check if user is organizer or accepted attendee
+        const isParticipant = evt.organizerId === userId || evt.attendees.some(a => a.userId === userId && a.status === 'accepted');
+        if (!isParticipant) return false;
+
+        const evtStart = new Date(evt.start);
+        const evtEnd = new Date(evt.end);
+        
+        // Conflict logic: overlap
+        return startDate < evtEnd && endDate > evtStart;
+      });
+
+      if (hasConflict) conflictCount++;
+    }
+
+    if (conflictCount === 0) return 'available';
+    if (conflictCount < userIds.length) return 'partial';
+    return 'busy';
+  };
+
+  const cancelEvent = (eventId: string) => {
+    setCalendarEvents((prev) =>
+      prev.map((evt) =>
+        evt.id === eventId ? { ...evt, status: 'cancelled', updatedAt: new Date().toISOString() } : evt
+      )
+    );
+    addAuditLog('update', 'calendar_event', eventId, `Evento cancelado`);
   };
 
   // Communication: Chat
@@ -2354,7 +2494,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         id: `usr-${Date.now()}`,
         name: name || invite.name || 'Novo Colaborador',
         email: invite.email || `colaborador_${Date.now()}@vergroup.com.br`,
-        avatar: `https://images.unsplash.com/photo-${1534528741775 + Math.floor(Math.random() * 1000)}?w=150&auto=format&fit=crop&q=80`,
+        avatar: '',
         role: invite.role,
         businessUnitIds: [invite.businessUnitId],
         primaryBusinessUnitId: invite.businessUnitId,
@@ -2418,7 +2558,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       id: `usr-${Date.now()}`,
       name: userData.name || 'Novo Colaborador',
       email: userData.email || '',
-      avatar: `https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80`,
+      avatar: userData.avatar || '',
       role: userData.role || 'collaborator',
       businessUnitIds: userData.businessUnitIds || [userData.primaryBusinessUnitId || selectedBusinessUnitId || 'bu-tech'],
       primaryBusinessUnitId: userData.primaryBusinessUnitId || selectedBusinessUnitId || 'bu-tech',
@@ -2517,6 +2657,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     window.location.reload();
   };
 
+  const addImportJob = (job: Omit<ImportJob, 'id' | 'createdAt' | 'updatedAt'>): ImportJob => {
+    const newJob: ImportJob = {
+      ...job,
+      id: `job-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    setImportJobs((prev) => [...prev, newJob]);
+    return newJob;
+  };
+
   const value: AppContextType = {
     isTaskCreateOpen,
     setIsTaskCreateOpen,
@@ -2534,6 +2685,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     currentBU,
     currentUser,
     setCurrentUser,
+    updateCurrentUserProfile,
+    requestCurrentUserEmailChange,
     userRole: currentUser.role,
     switchUserRole,
     isSearchOpen,
@@ -2552,6 +2705,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     departments,
     teams,
     users,
+    setUsers,
     invites,
     onboardingTasks,
     leads,
@@ -2572,6 +2726,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     auditLogs,
     catalogItems,
     setCatalogItems,
+    importJobs,
+    addImportJob,
     notifications,
     filterByBU,
     createInvite,
@@ -2641,6 +2797,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addMilestone,
     deleteMilestone,
     addCalendarEvent,
+    updateEventStatus,
+    checkAvailability,
+    cancelEvent,
     activeChatChannelId,
     setActiveChatChannelId,
     sendChatMessage,

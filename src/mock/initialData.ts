@@ -22,6 +22,7 @@ import {
   AutomationRule,
   AuditLog,
   CatalogItem,
+  ImportJob,
 } from '../types';
 
 export const INITIAL_BUSINESS_UNITS: BusinessUnit[] = [];
@@ -34,17 +35,35 @@ export const INITIAL_USERS: User[] = [
   {
     id: 'usr-william',
     name: 'William Barbosa',
+    firstName: 'William',
+    lastName: 'Barbosa',
+    displayName: 'William',
     email: 'williambdesigner@gmail.com',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    personalEmail: '',
+    avatar: '',
     role: 'superadmin',
     businessUnitIds: [],
     primaryBusinessUnitId: '',
     departmentId: '',
     jobTitle: 'Diretor de Produto & Tecnologia',
     phone: '+55 92 98282-4592',
-    city: 'Manaus, AM',
+    whatsapp: '+55 92 98282-4592',
+    alternatePhone: '',
+    emergencyContactName: '',
+    emergencyContact: '',
+    city: 'Manaus',
+    state: 'AM',
+    country: 'Brasil',
     language: 'Português (Brasil)',
+    timezone: 'America/Manaus',
     status: 'active',
+    employeeCode: 'VG-0001',
+    notificationPreferences: {
+      email: true,
+      push: true,
+      taskDigest: true,
+      meetingReminders: true,
+    },
     createdAt: '2026-01-01T08:00:00Z',
   }
 ];
@@ -86,3 +105,5 @@ export const INITIAL_AUTOMATIONS: AutomationRule[] = [];
 export const INITIAL_AUDIT_LOGS: AuditLog[] = [];
 
 export const INITIAL_CATALOG_ITEMS: CatalogItem[] = [];
+
+export const INITIAL_IMPORT_JOBS: ImportJob[] = [];

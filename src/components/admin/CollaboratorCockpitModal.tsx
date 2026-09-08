@@ -33,6 +33,7 @@ import { useApp } from '../../context/AppContext';
 import { User, Task } from '../../types';
 import { CollaboratorAiAssistant } from '../ai/CollaboratorAiAssistant';
 import { UserEditModal } from './UserEditModal';
+import { UserAvatar } from '../common/UserAvatar';
 
 interface CollaboratorCockpitModalProps {
   collaborator: User;
@@ -100,6 +101,14 @@ export const CollaboratorCockpitModal: React.FC<CollaboratorCockpitModalProps> =
   // Audit Logs timeline
   const userActivities = auditLogs.filter((a) => a.userId === collaborator.id).slice(0, 15);
 
+  const collaboratorEvents = calendarEvents
+    .filter((evt) => evt.status !== 'cancelled')
+    .filter((evt) =>
+      evt.organizerId === collaborator.id ||
+      evt.attendees?.some((attendee) => attendee.userId === collaborator.id && attendee.status !== 'declined')
+    )
+    .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
+
   // Filtered Tasks
   const filteredTasks = myTasks.filter((t) => {
     if (taskFilterStatus === 'completed') return t.status === 'completed';
@@ -157,11 +166,7 @@ export const CollaboratorCockpitModal: React.FC<CollaboratorCockpitModalProps> =
         <div className="bg-slate-900 text-white p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800">
           <div className="flex items-center gap-4">
             <div className="relative">
-              <img
-                src={collaborator.avatar}
-                alt={collaborator.name}
-                className="w-16 h-16 rounded-full object-cover border-2 border-[#0F8A4B] shadow-md"
-              />
+              <UserAvatar name={collaborator.name} avatarUrl={collaborator.avatar} size="xl" status={collaborator.status} showStatus={false} className="border-2 border-[#0F8A4B] shadow-md rounded-full" />
               <span
                 className={`absolute bottom-0 right-0 w-4 h-4 rounded-full ring-2 ring-slate-900 ${
                   collaborator.status === 'active' ? 'bg-emerald-500' : 'bg-slate-500'
@@ -498,7 +503,7 @@ export const CollaboratorCockpitModal: React.FC<CollaboratorCockpitModalProps> =
                     <span className="text-[10px] font-black text-slate-400 uppercase block">Gestor Direto</span>
                     {manager ? (
                       <div className="flex items-center gap-2.5">
-                        <img src={manager.avatar} alt={manager.name} className="w-8 h-8 rounded-full object-cover border border-slate-200" />
+                        <UserAvatar name={manager.name} avatarUrl={manager.avatar} size="sm" status={manager.status} showStatus={false} />
                         <div>
                           <p className="font-extrabold text-slate-900">{manager.name}</p>
                           <p className="text-[10px] text-slate-500 font-medium">{manager.jobTitle}</p>
@@ -514,7 +519,7 @@ export const CollaboratorCockpitModal: React.FC<CollaboratorCockpitModalProps> =
                     <span className="text-[10px] font-black text-slate-400 uppercase block">Supervisor</span>
                     {supervisor ? (
                       <div className="flex items-center gap-2.5">
-                        <img src={supervisor.avatar} alt={supervisor.name} className="w-8 h-8 rounded-full object-cover border border-slate-200" />
+                        <UserAvatar name={supervisor.name} avatarUrl={supervisor.avatar} size="sm" status={supervisor.status} showStatus={false} />
                         <div>
                           <p className="font-extrabold text-slate-900">{supervisor.name}</p>
                           <p className="text-[10px] text-slate-500 font-medium">{supervisor.jobTitle}</p>
@@ -532,7 +537,7 @@ export const CollaboratorCockpitModal: React.FC<CollaboratorCockpitModalProps> =
                       <div className="space-y-1.5">
                         {subordinates.map((sub) => (
                           <div key={sub.id} className="flex items-center gap-2">
-                            <img src={sub.avatar} alt={sub.name} className="w-6 h-6 rounded-full object-cover" />
+                            <UserAvatar name={sub.name} avatarUrl={sub.avatar} size="xs" status={sub.status} showStatus={false} />
                             <span className="font-bold text-slate-900">{sub.name}</span>
                           </div>
                         ))}
@@ -738,10 +743,22 @@ export const CollaboratorCockpitModal: React.FC<CollaboratorCockpitModalProps> =
               </div>
 
               <div className="space-y-3 text-xs">
-                {calendarEvents.length === 0 ? (
+                {collaboratorEvents.length === 0 ? (
                   <p className="text-slate-500 font-semibold p-4 text-center">Nenhum compromisso agendado para o período.</p>
                 ) : (
-                  calendarEvents.map((evt) => (
+                  collaboratorEvents.map((evt) => {
+                    const start = new Date(evt.start);
+                    const end = new Date(evt.end);
+                    const attendeeRecord = evt.attendees?.find((attendee) => attendee.userId === collaborator.id);
+                    const rsvpLabel = evt.organizerId === collaborator.id
+                      ? 'Organizador'
+                      : attendeeRecord?.status === 'accepted'
+                        ? 'Confirmado'
+                        : attendeeRecord?.status === 'tentative'
+                          ? 'Talvez'
+                          : 'Pendente';
+
+                    return (
                     <div key={evt.id} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-xl bg-emerald-50 text-[#0F8A4B] font-black flex items-center justify-center border border-emerald-200">
@@ -749,14 +766,20 @@ export const CollaboratorCockpitModal: React.FC<CollaboratorCockpitModalProps> =
                         </div>
                         <div>
                           <h4 className="font-black text-slate-900">{evt.title}</h4>
-                          <p className="text-[11px] text-slate-500 font-semibold">{evt.description}</p>
+                          <p className="text-[11px] text-slate-500 font-semibold">
+                            {evt.description || (evt.modality === 'online' ? 'Reunião online' : evt.location || 'Evento presencial')}
+                          </p>
+                          <span className="inline-flex mt-1 px-2 py-0.5 rounded-md bg-white border border-slate-200 text-[10px] font-black text-slate-500 uppercase">
+                            {rsvpLabel}
+                          </span>
                         </div>
                       </div>
                       <span className="font-mono text-slate-700 font-bold bg-white px-2.5 py-1 rounded-lg border border-slate-200">
-                        {new Date(evt.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {start.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} - {end.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>

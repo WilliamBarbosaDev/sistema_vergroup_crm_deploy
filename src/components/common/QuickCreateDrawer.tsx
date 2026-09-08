@@ -36,6 +36,7 @@ import { useApp } from '../../context/AppContext';
 import { TaskPriority } from '../../types';
 import { AiToolRegistryService } from '../../services/aiToolRegistry';
 import { DealCompanyContactSelector } from '../crm/DealCompanyContactSelector';
+import { EventForm } from '../calendar/EventForm';
 
 export const QuickCreateDrawer: React.FC = () => {
   const {
@@ -489,7 +490,39 @@ export const QuickCreateDrawer: React.FC = () => {
         } bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden animate-in zoom-in-95 duration-150`}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
+        {quickCreateType === 'event' ? (
+          <>
+            {/* Minimal Header for Event Form */}
+            <div className="p-4 border-b border-slate-200 bg-[#F5F8FA] flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white text-indigo-600 rounded-xl border border-indigo-200 shadow-2xs">
+                    <Clock className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
+                      <span>Agendar Novo Evento / Reunião Corporativa</span>
+                    </h2>
+                    <p className="text-xs text-slate-600 font-semibold mt-0.5">
+                      Unidade do Grupo: {businessUnits.find(b => b.id === activeBUId)?.tradeName || activeBUId}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setQuickCreateType(null)}
+                  className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+            {/* Event Form Body */}
+            <EventForm onClose={() => setQuickCreateType(null)} />
+          </>
+        ) : (
+          <>
+            {/* Header */}
         <div className="p-4 border-b border-slate-200 bg-[#ECF8F1] flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -1651,6 +1684,8 @@ export const QuickCreateDrawer: React.FC = () => {
             Salvar Registro CRM 2.0
           </button>
         </div>
+        </>
+        )}
       </div>
     </div>
   );

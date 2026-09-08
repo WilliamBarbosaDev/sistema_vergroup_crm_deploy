@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { ChatChannel } from '../../types';
+import { UserAvatar } from './UserAvatar';
 
 export const RightChatWidgetRail: React.FC = () => {
   const {
@@ -157,11 +158,7 @@ export const RightChatWidgetRail: React.FC = () => {
       {activeCallType && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
           <div className="bg-[#0A3429] text-white rounded-3xl p-8 max-w-md w-full shadow-2xl border border-[#197960]/50 text-center space-y-6">
-            <img
-              src={directUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
-              alt="Chamada"
-              className="w-24 h-24 rounded-full object-cover ring-4 ring-[#0F8A4B] mx-auto shadow-xl"
-            />
+            <UserAvatar name={directUser?.name || activeChannel?.name || 'Chamada'} avatarUrl={directUser?.avatar} size="xl" status={directUser?.status} className="ring-4 ring-[#0F8A4B] mx-auto shadow-xl rounded-full" />
             <div className="space-y-1">
               <h3 className="text-xl font-black text-white">{activeChannel?.name || 'Chamada Corporativa'}</h3>
               <p className="text-xs text-emerald-300 font-extrabold uppercase">Chamada em Andamento</p>
@@ -187,12 +184,7 @@ export const RightChatWidgetRail: React.FC = () => {
           <span className="text-[10px] font-mono font-black text-emerald-300 tracking-tight">
             {currentTime || '17:55'}
           </span>
-          <img
-            src={currentUser.avatar}
-            alt={currentUser.name}
-            className="w-7 h-7 rounded-full object-cover ring-2 ring-[#0F8A4B]"
-            title={`Conectado como: ${currentUser.name}`}
-          />
+          <UserAvatar name={currentUser.name} avatarUrl={currentUser.avatar} size="xs" status={currentUser.status} showStatus={false} className="ring-2 ring-[#0F8A4B] rounded-full" />
         </div>
 
         <div className="w-8 h-px bg-[#13604C]/60 my-1" />
@@ -216,18 +208,14 @@ export const RightChatWidgetRail: React.FC = () => {
               >
                 {chan.type === 'direct' && user ? (
                   <div className="relative">
-                    <img
-                      src={user.avatar}
-                      alt={user.name}
-                      className="w-9 h-9 rounded-full object-cover border border-emerald-400/40"
-                    />
+                    <UserAvatar name={user.name} avatarUrl={user.avatar} size="md" status={user.status} showStatus={false} />
                     <span
                       className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#0A3429] ${
-                        user.status === 'online'
+                        user.status === 'active'
                           ? 'bg-emerald-400'
-                          : user.status === 'busy'
-                          ? 'bg-amber-400'
-                          : 'bg-slate-400'
+                          : user.status === 'absent'
+                            ? 'bg-amber-400'
+                            : 'bg-slate-400'
                       }`}
                     />
                   </div>
@@ -251,11 +239,7 @@ export const RightChatWidgetRail: React.FC = () => {
           <div className="p-4 bg-[#0F493A] text-white flex items-center justify-between shadow-xs">
             <div className="flex items-center gap-3">
               {directUser ? (
-                <img
-                  src={directUser.avatar}
-                  alt={directUser.name}
-                  className="w-9 h-9 rounded-full object-cover ring-2 ring-emerald-400"
-                />
+                <UserAvatar name={directUser.name} avatarUrl={directUser.avatar} size="md" status={directUser.status} showStatus={false} className="ring-2 ring-emerald-400 rounded-full" />
               ) : (
                 <div className="w-9 h-9 rounded-full bg-emerald-700 text-white flex items-center justify-center font-bold">
                   <MessageSquare className="w-5 h-5" />

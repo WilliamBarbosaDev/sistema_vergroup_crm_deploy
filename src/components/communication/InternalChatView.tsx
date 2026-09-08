@@ -35,6 +35,7 @@ import { useApp } from '../../context/AppContext';
 import { User, ChatChannel } from '../../types';
 import { GroupChannelCreateModal } from './GroupChannelCreateModal';
 import { GroupChannelDetailsDrawer } from './GroupChannelDetailsDrawer';
+import { UserAvatar } from '../common/UserAvatar';
 
 export const InternalChatView: React.FC = () => {
   const {
@@ -223,11 +224,7 @@ export const InternalChatView: React.FC = () => {
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-[#0A3429] text-white rounded-3xl p-8 max-w-md w-full shadow-2xl border border-[#197960]/50 text-center space-y-6">
             <div className="relative inline-block">
-              <img
-                src={directUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
-                alt={activeChannel?.name}
-                className="w-24 h-24 rounded-full object-cover border-4 border-[#0F8A4B] shadow-xl mx-auto"
-              />
+              <UserAvatar name={directUser?.name || activeChannel?.name || 'Chamada'} avatarUrl={directUser?.avatar} size="xl" status={directUser?.status} showStatus={false} className="border-4 border-[#0F8A4B] shadow-xl mx-auto rounded-full" />
               <span className="absolute bottom-1 right-1 w-5 h-5 rounded-full bg-emerald-500 ring-4 ring-[#0A3429] animate-pulse" />
             </div>
 
@@ -267,11 +264,7 @@ export const InternalChatView: React.FC = () => {
         <div className="flex items-center gap-3">
           {activeChannel?.type === 'direct' ? (
             <div className="relative">
-              <img
-                src={directUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
-                alt={activeChannel.name}
-                className="w-10 h-10 rounded-full object-cover border border-slate-200"
-              />
+              <UserAvatar name={directUser?.name || activeChannel.name} avatarUrl={directUser?.avatar} size="md" status={directUser?.status} showStatus={false} />
               <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-white" />
             </div>
           ) : (
@@ -425,11 +418,7 @@ export const InternalChatView: React.FC = () => {
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     {chan.type === 'direct' ? (
-                      <img
-                        src={dUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
-                        alt={chan.name}
-                        className="w-8 h-8 rounded-full object-cover shrink-0 border border-slate-200"
-                      />
+                      <UserAvatar name={dUser?.name || chan.name} avatarUrl={dUser?.avatar} size="sm" status={dUser?.status} showStatus={false} />
                     ) : (
                       <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-700 border border-purple-200 flex items-center justify-center text-sm font-bold shrink-0">
                         {chan.avatarUrl || '💬'}
@@ -479,11 +468,7 @@ export const InternalChatView: React.FC = () => {
 
               return (
                 <div key={m.id} className={`flex gap-3 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
-                  <img
-                    src={sender?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
-                    alt={sender?.name}
-                    className="w-8 h-8 rounded-full object-cover shrink-0 mt-1 border border-slate-200"
-                  />
+                  <UserAvatar name={sender?.name || 'Usuario'} avatarUrl={sender?.avatar} size="sm" status={sender?.status} showStatus={false} className="mt-1" />
                   <div className={`max-w-md space-y-1 ${isMe ? 'items-end text-right' : 'items-start text-left'}`}>
                     <div className="flex items-center gap-2 px-1">
                       <span className="text-[11px] font-bold text-slate-700">{sender?.name}</span>

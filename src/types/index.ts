@@ -110,9 +110,16 @@ export interface JobExecutionLog {
 export interface User {
   id: string;
   name: string;
+  firstName?: string;
+  lastName?: string;
+  displayName?: string;
   email: string;
+  personalEmail?: string;
   avatar?: string;
+  avatarStoragePath?: string;
   role: UserRole;
+  capabilities?: string[];
+  permissionScopes?: Record<string, PermissionScope>;
   businessUnitIds: string[]; // multi-company link
   primaryBusinessUnitId: string;
   departmentId: string;
@@ -120,19 +127,36 @@ export interface User {
   teamId?: string;
   jobTitle: string;
   phone: string;
+  whatsapp?: string;
+  alternatePhone?: string;
   extensionPhone?: string;
+  emergencyContactName?: string;
   emergencyContact?: string;
   birthDate?: string;
+  gender?: string;
   language?: string;
+  timezone?: string;
+  state?: string;
+  country?: string;
+  bio?: string;
+  personalNotes?: string;
   managerId?: string;
   supervisorId?: string;
   subordinateIds?: string[];
-  status: 'active' | 'blocked' | 'invited';
+  status: 'active' | 'inactive' | 'absent' | 'offline' | 'blocked' | 'invited' | 'suspended';
   isExternal?: boolean;
   accessExpiresAt?: string;
   allowedResourceIds?: string[];
   city?: string;
   hiredAt?: string;
+  employeeCode?: string;
+  lastPasswordChangedAt?: string;
+  notificationPreferences?: {
+    email?: boolean;
+    push?: boolean;
+    taskDigest?: boolean;
+    meetingReminders?: boolean;
+  };
   createdAt: string;
 }
 
@@ -390,6 +414,21 @@ export type DealStatus = 'open' | 'won' | 'lost';
 export interface DealAdditionalContact {
   contactId: string;
   role: string; // ex: 'Decisor Financeiro', 'Patrocinador Técnico', 'Jurídico'
+}
+
+export type ImportStatus = 'preparing' | 'analyzing' | 'ready' | 'importing' | 'completed' | 'failed';
+
+export interface ImportJob {
+  id: string;
+  sourceSystem: string;
+  businessUnitId: string;
+  uploadedByUserId: string;
+  fileName: string;
+  fileSize: number; // in bytes
+  fileType: string;
+  status: ImportStatus;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface DealDocument {
@@ -783,6 +822,9 @@ export interface Project {
 }
 
 // Calendar
+export type MeetingModality = 'presential' | 'online';
+export type AttendeeStatus = 'pending' | 'accepted' | 'declined' | 'tentative';
+
 export interface CalendarEvent {
   id: string;
   businessUnitId: string;
@@ -791,13 +833,18 @@ export interface CalendarEvent {
   start: string;
   end: string;
   allDay?: boolean;
-  type: 'meeting' | 'call' | 'deadline' | 'review';
+  type: 'meeting' | 'event' | 'task' | 'reminder';
+  modality: MeetingModality;
   location?: string;
   meetingLink?: string;
   organizerId: string;
-  attendeeIds: string[];
+  attendees: { userId: string; status: AttendeeStatus }[];
+  reminders: number[]; // Array of minutes before the event to send a notification
+  status: 'scheduled' | 'cancelled';
   relatedEntityType?: 'deal' | 'client' | 'task' | 'project';
   relatedEntityId?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // Communication: Internal Chat
@@ -932,10 +979,30 @@ export interface AuditLog {
   businessUnitId?: string;
   userId: string;
   userName: string;
-  action: 'create' | 'update' | 'delete' | 'export' | 'login' | 'stage_change' | 'won_deal' | 'archive' | 'leave';
+  action:
+    | 'create'
+    | 'update'
+    | 'delete'
+    | 'export'
+    | 'login'
+    | 'stage_change'
+    | 'won_deal'
+    | 'archive'
+    | 'leave'
+    | 'permission.changed'
+    | 'role.changed'
+    | 'user.updated'
+    | 'pipeline.updated'
+    | 'catalog.updated'
+    | 'integration.updated'
+    | 'automation.updated'
+    | 'organization.updated';
   entity: string;
   entityId: string;
   details: string;
+  before?: Record<string, unknown>;
+  after?: Record<string, unknown>;
+  correlationId?: string;
   ipAddress: string;
   timestamp: string;
 }
