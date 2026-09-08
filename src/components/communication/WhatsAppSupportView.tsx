@@ -15,6 +15,8 @@ import {
   ShieldCheck,
   Building,
   MessageSquare,
+  QrCode,
+  AlertCircle,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { WhatsAppConversation } from '../../types';
@@ -34,10 +36,10 @@ export const WhatsAppSupportView: React.FC = () => {
   const [showConfigModal, setShowConfigModal] = useState(false);
 
   // Multi-tenant filtering per selected Business Unit
-  const filteredConversations = filterByBU(whatsApps);
+  const filteredConversations = filterByBU(whatsApps || []);
 
   const [activeConvId, setActiveConvId] = useState<string>(
-    filteredConversations[0]?.id || 'wpp-1'
+    filteredConversations[0]?.id || ''
   );
   const [msgInput, setMsgInput] = useState('');
 
@@ -45,6 +47,8 @@ export const WhatsAppSupportView: React.FC = () => {
   const activeConv =
     filteredConversations.find((c) => c.id === activeConvId) ||
     filteredConversations[0];
+
+  const buName = currentBU?.tradeName || currentBU?.name || 'Empresa';
 
   const quickReplies = [
     'Olá! Como posso ajudar sua empresa hoje?',
@@ -72,7 +76,7 @@ export const WhatsAppSupportView: React.FC = () => {
               </div>
               <div>
                 <h2 className="text-xs font-black text-slate-900 tracking-tight">Central WhatsApp</h2>
-                <p className="text-[10px] text-slate-500 font-semibold">{currentBU.tradeName}</p>
+                <p className="text-[10px] text-slate-500 font-semibold">{buName}</p>
               </div>
             </div>
 
@@ -89,7 +93,7 @@ export const WhatsAppSupportView: React.FC = () => {
           <div className="px-3.5 py-2 bg-emerald-50/70 border-b border-emerald-100 flex items-center justify-between text-[11px]">
             <div className="flex items-center gap-1.5 font-bold text-[#0B6B3A]">
               <Building className="w-3.5 h-3.5" />
-              <span className="truncate">{selectedBusinessUnitId === 'bu-all' ? 'Todas as Empresas' : currentBU.tradeName}</span>
+              <span className="truncate">{selectedBusinessUnitId === 'bu-all' ? 'Todas as Empresas' : buName}</span>
             </div>
             <span className="text-[10px] font-black text-[#0F8A4B] bg-white px-2 py-0.5 rounded border border-emerald-200">
               {filteredConversations.length} conversas
@@ -122,14 +126,21 @@ export const WhatsAppSupportView: React.FC = () => {
                 );
               })
             ) : (
-              <div className="p-6 text-center space-y-3 text-slate-500">
-                <MessageSquare className="w-8 h-8 mx-auto text-slate-300" />
-                <p className="text-xs font-semibold">Nenhuma conversa registrada para a empresa "{currentBU.tradeName}".</p>
+              <div className="p-6 text-center space-y-3.5 text-slate-500 my-auto">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-[#0F8A4B] flex items-center justify-center mx-auto border border-emerald-200">
+                  <PhoneCall className="w-6 h-6 text-[#0F8A4B]" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-black text-slate-900">Sem conversas ativas</h4>
+                  <p className="text-[11px] text-slate-500 font-medium mt-1 leading-relaxed">
+                    Nenhum atendimento em andamento para <strong>{buName}</strong>.
+                  </p>
+                </div>
                 <button
                   onClick={() => setShowConfigModal(true)}
-                  className="px-3 py-1.5 bg-[#0F8A4B] text-white text-xs font-bold rounded-xl shadow-xs"
+                  className="px-3.5 py-2 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white text-xs font-bold rounded-xl shadow-xs cursor-pointer transition-colors w-full"
                 >
-                  Conectar Número de WhatsApp
+                  ⚙️ Configurar API / Conectar Número
                 </button>
               </div>
             )}
@@ -150,7 +161,7 @@ export const WhatsAppSupportView: React.FC = () => {
                     <h3 className="text-xs font-black text-slate-900">{activeConv.contactName}</h3>
                     <p className="text-[10px] text-[#0F8A4B] font-mono font-bold flex items-center gap-1">
                       <ShieldCheck className="w-3 h-3 text-[#0F8A4B]" />
-                      <span>{activeConv.phone} • WhatsApp Verificado ({currentBU.tradeName})</span>
+                      <span>{activeConv.phone} • WhatsApp Verificado ({buName})</span>
                     </p>
                   </div>
                 </div>
@@ -227,7 +238,7 @@ export const WhatsAppSupportView: React.FC = () => {
                   type="text"
                   value={msgInput}
                   onChange={(e) => setMsgInput(e.target.value)}
-                  placeholder={`Digite sua mensagem no WhatsApp corporativo (${currentBU.tradeName})...`}
+                  placeholder={`Digite sua mensagem no WhatsApp corporativo (${buName})...`}
                   className="flex-1 px-3.5 py-2 border border-slate-200 rounded-xl text-xs outline-none focus:border-[#0F8A4B] font-medium"
                 />
                 <button
@@ -241,8 +252,27 @@ export const WhatsAppSupportView: React.FC = () => {
               </form>
             </>
           ) : (
-            <div className="flex-1 flex items-center justify-center p-8 text-center text-slate-400">
-              <p className="text-xs font-bold">Selecione uma conversa ao lado para iniciar o atendimento.</p>
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-4 max-w-lg mx-auto">
+              <div className="w-16 h-16 rounded-3xl bg-[#ECF8F1] text-[#0F8A4B] flex items-center justify-center border border-[#0F8A4B]/20 shadow-xs">
+                <PhoneCall className="w-8 h-8 text-[#0F8A4B]" />
+              </div>
+              <div className="space-y-1.5">
+                <h3 className="text-base font-black text-slate-900">Pronto para Produção — Central WhatsApp</h3>
+                <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                  Não há mensagens ou conversas registradas para a empresa <strong>{buName}</strong>. 
+                  Conecte o token da Meta Cloud API Oficial ou seu Gateway de API para iniciar o recebimento real de mensagens em tempo real.
+                </p>
+              </div>
+
+              <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">
+                <button
+                  onClick={() => setShowConfigModal(true)}
+                  className="px-5 py-2.5 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white text-xs font-black rounded-xl shadow-md cursor-pointer transition-all flex items-center gap-2"
+                >
+                  <Settings className="w-4 h-4" />
+                  <span>Configurar Meta API / Gateway da Empresa</span>
+                </button>
+              </div>
             </div>
           )}
         </div>

@@ -390,7 +390,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return saved ? JSON.parse(saved) : INITIAL_EMAILS;
   });
   const [whatsApps, setWhatsApps] = useState<WhatsAppConversation[]>(() => {
-    const saved = localStorage.getItem(`${STORAGE_KEY}_whatsapps`);
+    const saved = localStorage.getItem(`${STORAGE_KEY}_whatsapps_v2`);
     return saved ? JSON.parse(saved) : INITIAL_WHATSAPP_CONVERSATIONS;
   });
   const [automations, setAutomations] = useState<AutomationRule[]>(() => {
@@ -476,7 +476,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem(`${STORAGE_KEY}_activities`, JSON.stringify(activities));
     localStorage.setItem(`${STORAGE_KEY}_auditLogs`, JSON.stringify(auditLogs));
     localStorage.setItem(`${STORAGE_KEY}_emails`, JSON.stringify(emails));
-    localStorage.setItem(`${STORAGE_KEY}_whatsApps`, JSON.stringify(whatsApps));
+    localStorage.setItem(`${STORAGE_KEY}_whatsapps_v2`, JSON.stringify(whatsApps));
     localStorage.setItem(`${STORAGE_KEY}_chatMessages`, JSON.stringify(chatMessages));
   }, [users, departments, teams, invites, onboardingTasks, leads, contacts, companies, deals, tasks, projects, clientAccounts, activities, auditLogs, emails, whatsApps, chatMessages]);
 
