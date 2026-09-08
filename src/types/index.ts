@@ -557,16 +557,41 @@ export interface TaskDependencyDetail {
   dependencyType: 'finish_to_start' | 'start_to_start' | 'finish_to_finish';
 }
 
+export interface TaskRecurrenceRule {
+  frequency: 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'monthly_custom' | 'yearly';
+  interval?: number; // e.g. a cada X dias/semanas/meses
+  weekDays?: number[]; // e.g. [1, 5] (segunda e sexta)
+  monthDay?: number; // e.g. dia 10 do mês
+  dueTime?: string; // e.g. "17:00"
+  generateDaysAhead?: number; // dias de antecedência para geração
+  competenceRule?: 'same_month' | 'previous_month' | 'next_month';
+  endCondition?: 'never' | 'after_occurrences' | 'on_date';
+  maxOccurrences?: number;
+  endDate?: string;
+  nextExecutionDate?: string;
+  summaryLabel?: string; // e.g. "🔄 Repete mensalmente todo dia 10"
+}
+
 export interface TaskTemplate {
   id: string;
   businessUnitId?: string;
   departmentId?: string;
+  category?: 'accounting' | 'fiscal' | 'hr' | 'sales' | 'legal' | 'general' | 'custom';
   title: string;
   description?: string;
   defaultPriority: TaskPriority;
   defaultSlaHours: number;
+  estimatedHours?: number;
   checklistItems: string[];
   tags: string[];
+  recurrenceRule?: TaskRecurrenceRule;
+  requireCompletionSummary?: boolean;
+  assignedUserId?: string;
+  ownerUserId?: string;
+  participantIds?: string[];
+  observerIds?: string[];
+  taskContext?: 'client' | 'internal';
+  icon?: string;
   createdByUserId: string;
   createdAt: string;
 }
@@ -658,6 +683,7 @@ export interface Task {
     uploadedAt: string;
   }[];
   recurrence?: 'none' | 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'custom';
+  recurrenceRule?: TaskRecurrenceRule;
   dependencies?: {
     id: string;
     targetTaskId: string;

@@ -14,9 +14,16 @@ import {
   Paperclip,
   Mail,
   ArrowRight,
+  Sparkles,
+  Layers,
+  RotateCcw,
+  Bot,
+  Bookmark,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { TaskPriority, TaskStatus, ChecklistItem } from '../../types';
+import { TaskPriority, TaskStatus, ChecklistItem, TaskRecurrenceRule } from '../../types';
+import { TaskAiAssistantModal } from './TaskAiAssistantModal';
+import { ParsedTaskAiResult } from '../../services/taskAiService';
 
 export const TaskCreateWorkspace: React.FC = () => {
   const {
@@ -30,11 +37,23 @@ export const TaskCreateWorkspace: React.FC = () => {
     contacts,
     deals,
     tasks,
+    taskTemplates,
+    addTaskTemplate,
     users,
     currentUser,
     addTask,
     setSelectedTaskId,
   } = useApp();
+
+  // AI Modal State
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState('');
+
+  // Recurrence State
+  const [recurrenceFrequency, setRecurrenceFrequency] = useState<'none' | 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'custom'>('none');
+  const [recurrenceMonthDay, setRecurrenceMonthDay] = useState<number>(10);
+  const [recurrenceGenerateDaysAhead, setRecurrenceGenerateDaysAhead] = useState<number>(5);
+  const [estimatedHours, setEstimatedHours] = useState<number>(2);
 
   if (!isTaskCreateOpen) return null;
 
@@ -158,6 +177,93 @@ export const TaskCreateWorkspace: React.FC = () => {
     setMentionSearch('');
   };
 
+  // Template Selection Handler
+  const handleSelectTemplate = (templateId: string) => {
+    setSelectedTemplateId(templateId);
+    if (!templateId) return;
+
+    const tmpl = taskTemplates.find((t) => t.id === templateId);
+    if (!tmpl) return;
+
+    setTitle(tmpl.title);
+    if (tmpl.description) setDescription(tmpl.description);
+    setPriority(tmpl.defaultPriority);
+    if (tmpl.estimatedHours) setEstimatedHours(tmpl.estimatedHours);
+    if (tmpl.requireCompletionSummary) setRequireCompletionSummary(true);
+
+    if (tmpl.checklistItems && tmpl.checklistItems.length > 0) {
+      setChecklistItems(
+        tmpl.checklistItems.map((itemText, idx) => ({
+          id: `chk-${Date.now()}-${idx}`,
+          text: itemText,
+          completed: false,
+        }))
+      );
+    }
+
+    if (tmpl.tags && tmpl.tags.length > 0) {
+      setTags(tmpl.tags);
+    }
+
+    if (tmpl.recurrenceRule) {
+      setRecurrenceFrequency(tmpl.recurrenceRule.frequency as any);
+      if (tmpl.recurrenceRule.monthDay) setRecurrenceMonthDay(tmpl.recurrenceRule.monthDay);
+      if (tmpl.recurrenceRule.generateDaysAhead) setRecurrenceGenerateDaysAhead(tmpl.recurrenceRule.generateDaysAhead);
+    }
+  };
+
+  // AI Prompt Result Handler
+  const handleApplyAiResult = (result: ParsedTaskAiResult) => {
+    setTitle(result.title);
+    setDescription(result.description);
+    setPriority(result.priority);
+    setEstimatedHours(result.estimatedHours);
+    if (result.checklistItems && result.checklistItems.length > 0) {
+      setChecklistItems(
+        result.checklistItems.map((itemText, idx) => ({
+          id: `chk-ai-${Date.now()}-${idx}`,
+          text: itemText,
+          completed: false,
+        }))
+      );
+    }
+    if (result.tags && result.tags.length > 0) {
+      setTags(result.tags);
+    }
+    if (result.isRecurrent && result.recurrenceRule) {
+      setRecurrenceFrequency(result.recurrenceRule.frequency as any);
+      if (result.recurrenceRule.monthDay) setRecurrenceMonthDay(result.recurrenceRule.monthDay);
+    }
+  };
+
+  // Save Current Form as Template Handler
+  const handleSaveAsTemplate = () => {
+    if (!title.trim()) {
+      alert('⚠️ Informe um título para salvar o modelo de tarefa.');
+      return;
+    }
+
+    addTaskTemplate({
+      title: title.trim(),
+      description: description.trim(),
+      defaultPriority: priority,
+      defaultSlaHours: priority === 'urgent' ? 24 : priority === 'high' ? 48 : 72,
+      estimatedHours,
+      checklistItems: checklistItems.map((c) => c.text),
+      tags,
+      recurrenceRule: recurrenceFrequency !== 'none' ? {
+        frequency: recurrenceFrequency,
+        monthDay: recurrenceMonthDay,
+        generateDaysAhead: recurrenceGenerateDaysAhead,
+        summaryLabel: `🔄 Repete ${recurrenceFrequency} todo dia ${recurrenceMonthDay}`,
+      } : undefined,
+      businessUnitId: buId || activeBUId,
+      createdByUserId: currentUser.id,
+    });
+
+    alert(`✅ Modelo "${title}" salvo com sucesso!`);
+  };
+
   // Form Submit Handler
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -200,6 +306,14 @@ export const TaskCreateWorkspace: React.FC = () => {
         uploadedByUserId: currentUser.id,
         uploadedAt: new Date().toISOString(),
       })),
+      estimatedHours,
+      recurrence: recurrenceFrequency,
+      recurrenceRule: recurrenceFrequency !== 'none' ? {
+        frequency: recurrenceFrequency,
+        monthDay: recurrenceMonthDay,
+        generateDaysAhead: recurrenceGenerateDaysAhead,
+        summaryLabel: `🔄 Repete ${recurrenceFrequency} todo dia ${recurrenceMonthDay}`,
+      } : undefined,
       tags,
     };
 
@@ -294,6 +408,53 @@ export const TaskCreateWorkspace: React.FC = () => {
           
           {/* LEFT COLUMN (65% / lg:col-span-7) — CONFIGURAÇÃO E DADOS DA TAREFA */}
           <div className="lg:col-span-7 space-y-4">
+
+            {/* PAINEL DE MODELO DE TAREFA & GERADOR DE IA */}
+            <div className="p-3.5 bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-950 rounded-2xl border border-slate-700 text-white flex flex-wrap items-center justify-between gap-2 shadow-md">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-[#0F8A4B] rounded-xl text-white">
+                  <Bot className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-black tracking-tight">Modelo Padrão & Gerador com IA</h4>
+                  <p className="text-[10px] text-slate-300 font-semibold">Carregue um modelo pré-definido ou crie via comando inteligente</p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <select
+                  value={selectedTemplateId}
+                  onChange={(e) => handleSelectTemplate(e.target.value)}
+                  className="px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-xl font-bold text-xs text-white outline-none focus:border-emerald-400 cursor-pointer"
+                >
+                  <option value="">📋 Selecionar Modelo Padrão...</option>
+                  {taskTemplates.map((tmpl) => (
+                    <option key={tmpl.id} value={tmpl.id}>
+                      {tmpl.icon || '📋'} {tmpl.title} ({tmpl.category || 'Geral'})
+                    </option>
+                  ))}
+                </select>
+
+                <button
+                  type="button"
+                  onClick={() => setIsAiModalOpen(true)}
+                  className="px-3.5 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black text-xs rounded-xl shadow-xs flex items-center gap-1.5 cursor-pointer transition-all"
+                >
+                  <Sparkles className="w-4 h-4 fill-slate-950" />
+                  🤖 Criar com IA
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleSaveAsTemplate}
+                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl border border-slate-700 flex items-center gap-1 cursor-pointer"
+                  title="Salvar campos atuais como modelo reusable"
+                >
+                  <Bookmark className="w-3.5 h-3.5 text-amber-400" />
+                  Salvar Modelo
+                </button>
+              </div>
+            </div>
             
             {/* CAMPO 1: NOME DA TAREFA (EM DESTAQUE NO TOPO) */}
             <div className="bg-slate-50 p-4.5 rounded-2xl border border-slate-200 shadow-2xs space-y-2">
@@ -309,6 +470,85 @@ export const TaskCreateWorkspace: React.FC = () => {
                 placeholder="Ex: Enviar documentação fiscal referente à competência 08/2026..."
                 className="w-full px-4 py-3 border border-slate-300 rounded-xl bg-white focus:border-[#0F8A4B] focus:ring-2 focus:ring-[#0F8A4B]/20 outline-none font-bold text-sm text-slate-900"
               />
+            </div>
+
+            {/* SEÇÃO RECORRÊNCIA DA TAREFA (CONFIGURAÇÃO VISUAL & CLARA) */}
+            <div className="bg-slate-50 p-4.5 rounded-2xl border border-slate-200 space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                  <RotateCcw className="w-4 h-4 text-[#0F8A4B]" />
+                  <span>Configuração de Recorrência & Repetição Automatizada</span>
+                </label>
+
+                {recurrenceFrequency !== 'none' && (
+                  <span className="px-2.5 py-1 bg-emerald-100 text-[#0F8A4B] font-extrabold text-[10px] rounded-lg border border-emerald-300">
+                    🔄 RECORRÊNCIA ATIVA
+                  </span>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {[
+                  { id: 'none', label: 'Pontual (Sem Repetição)' },
+                  { id: 'daily', label: 'Diária' },
+                  { id: 'weekly', label: 'Semanal' },
+                  { id: 'monthly', label: 'Mensal' },
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setRecurrenceFrequency(item.id as any)}
+                    className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                      recurrenceFrequency === item.id
+                        ? 'bg-emerald-50 border-[#0F8A4B] text-[#0F8A4B] shadow-2xs'
+                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100'
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+
+              {recurrenceFrequency !== 'none' && (
+                <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-2 animate-in fade-in duration-150">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <div className="space-y-1">
+                      <label className="font-extrabold text-slate-800 text-[10px] uppercase">Dia de Vencimento do Mês</label>
+                      <select
+                        value={recurrenceMonthDay}
+                        onChange={(e) => setRecurrenceMonthDay(Number(e.target.value))}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-[#0F8A4B] font-bold text-slate-900 bg-slate-50"
+                      >
+                        {Array.from({ length: 31 }, (_, i) => (
+                          <option key={i + 1} value={i + 1}>
+                            Dia {i + 1} do mês
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="font-extrabold text-slate-800 text-[10px] uppercase">Gerar com Antecedência</label>
+                      <select
+                        value={recurrenceGenerateDaysAhead}
+                        onChange={(e) => setRecurrenceGenerateDaysAhead(Number(e.target.value))}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-[#0F8A4B] font-bold text-slate-900 bg-slate-50"
+                      >
+                        <option value={1}>1 dia antes</option>
+                        <option value={3}>3 dias antes</option>
+                        <option value={5}>5 dias antes</option>
+                        <option value={7}>7 dias antes</option>
+                        <option value={10}>10 dias antes</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-950 font-bold flex items-center justify-between">
+                    <span>Resumo: 🔄 Repete {recurrenceFrequency} todo dia {recurrenceMonthDay} com competência automática</span>
+                    <span className="text-[10px] font-black text-[#0F8A4B] uppercase">Supervisor Worker Ativo</span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* CAMPO 2 & TOOLBAR: DESCRIÇÃO DETALHADA E RECURSOS */}
@@ -775,6 +1015,13 @@ export const TaskCreateWorkspace: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {isAiModalOpen && (
+        <TaskAiAssistantModal
+          onClose={() => setIsAiModalOpen(false)}
+          onApplyToForm={handleApplyAiResult}
+        />
+      )}
     </div>
   );
 };

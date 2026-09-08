@@ -39,6 +39,7 @@ import { useApp } from '../../context/AppContext';
 import { Task, TaskPriority, TaskStatus } from '../../types';
 import { TaskOperationalDrawer } from './TaskOperationalDrawer';
 import { TaskTemplateModal } from './TaskTemplateModal';
+import { TaskAiAssistantModal } from './TaskAiAssistantModal';
 import { Tabs } from '../ui/vercel-tabs';
 
 export const TasksView: React.FC = () => {
@@ -69,6 +70,7 @@ export const TasksView: React.FC = () => {
   const [selectedAssignee, setSelectedAssignee] = useState<string>('all');
   const [selectedTaskDrawerId, setSelectedTaskDrawerId] = useState<string | null>(null);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [showTeamRisksModal, setShowTeamRisksModal] = useState(false);
 
   // ADVANCED FILTER STATE (ESTILO BITRIX24)
@@ -294,7 +296,15 @@ export const TasksView: React.FC = () => {
             className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 text-slate-800 rounded-xl text-xs font-extrabold border border-slate-200 shadow-2xs cursor-pointer"
           >
             <Layers className="w-3.5 h-3.5 text-[#0F8A4B]" />
-            <span>Por Modelo</span>
+            <span>📋 Modelos & Recorrência</span>
+          </button>
+
+          <button
+            onClick={() => setIsAiModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black shadow-md cursor-pointer transition-all border border-slate-700"
+          >
+            <Sparkles className="w-4 h-4 text-emerald-400" />
+            <span>🤖 Criar com IA</span>
           </button>
 
           <button
@@ -302,7 +312,7 @@ export const TasksView: React.FC = () => {
             className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-[#0F493A] to-[#13604C] hover:from-[#13604C] hover:to-[#0F493A] text-white rounded-xl text-xs font-black shadow-md cursor-pointer transition-all border border-[#197960]/50"
           >
             <Sparkles className="w-4 h-4 text-amber-400" />
-            <span>⚡ VER AI — Riscos da Equipe</span>
+            <span>⚡ VER AI — Riscos</span>
           </button>
 
           <button
@@ -691,6 +701,13 @@ export const TasksView: React.FC = () => {
         <TaskOperationalDrawer
           taskId={selectedTaskDrawerId}
           onClose={() => setSelectedTaskDrawerId(null)}
+        />
+      )}
+
+      {/* AI ASSISTANT MODAL */}
+      {isAiModalOpen && (
+        <TaskAiAssistantModal
+          onClose={() => setIsAiModalOpen(false)}
         />
       )}
 

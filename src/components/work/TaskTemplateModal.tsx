@@ -1,40 +1,51 @@
 import React, { useState } from 'react';
-import { X, CheckSquare, Sparkles, Calendar, Layers, Clock, Building2 } from 'lucide-react';
+import { X, CheckSquare, Sparkles, Calendar, Layers, Clock, Building2, Plus, Bot, RotateCcw } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { TaskPriority } from '../../types';
+import { TaskPriority, TaskTemplate } from '../../types';
+import { TaskAiAssistantModal } from './TaskAiAssistantModal';
+import { ParsedTaskAiResult } from '../../services/taskAiService';
 
 interface TaskTemplateModalProps {
   onClose: () => void;
 }
 
 export const TaskTemplateModal: React.FC<TaskTemplateModalProps> = ({ onClose }) => {
-  const { businessUnits, departments, users, addTask, selectedBusinessUnitId } = useApp();
+  const { taskTemplates, addTask, addTaskTemplate, users, currentUser, selectedBusinessUnitId } = useApp();
 
   const [mode, setMode] = useState<'template' | 'recurrent'>('template');
-  const [selectedTemplate, setSelectedTemplate] = useState<string>('simples_nacional');
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>(taskTemplates[0]?.id || '');
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
 
-  const [title, setTitle] = useState('Apuração Simples Nacional');
-  const [description, setDescription] = useState('Conferência de notas fiscais, cálculo de PGDAS-D e emissão de guia de recolhimento.');
-  const [priority, setPriority] = useState<TaskPriority>('high');
-  const [competenceMonth, setCompetenceMonth] = useState<number>(8);
+  // Form Fields
+  const selectedTemplate = taskTemplates.find((t) => t.id === selectedTemplateId) || taskTemplates[0];
+
+  const [title, setTitle] = useState(selectedTemplate?.title || 'Apuração Simples Nacional');
+  const [description, setDescription] = useState(selectedTemplate?.description || 'Conferência de notas fiscais, cálculo de PGDAS-D e emissão de guia de recolhimento.');
+  const [priority, setPriority] = useState<TaskPriority>(selectedTemplate?.defaultPriority || 'high');
+  const [competenceMonth, setCompetenceMonth] = useState<number>(new Date().getMonth() + 1);
   const [competenceYear, setCompetenceYear] = useState<number>(2026);
   const [assignedUserId, setAssignedUserId] = useState<string>(users[0]?.id || '');
-  const [recurrence, setRecurrence] = useState<'daily' | 'weekly' | 'biweekly' | 'monthly'>('monthly');
+  const [recurrence, setRecurrence] = useState<'none' | 'daily' | 'weekly' | 'biweekly' | 'monthly'>('monthly');
 
-  const handleTemplateSelect = (templateKey: string) => {
-    setSelectedTemplate(templateKey);
-    if (templateKey === 'simples_nacional') {
-      setTitle('Apuração Simples Nacional');
-      setDescription('Conferência de notas fiscais, cálculo de PGDAS-D e emissão de guia de recolhimento.');
-      setPriority('high');
-    } else if (templateKey === 'fechamento_contabil') {
-      setTitle('Fechamento Contábil Mensal');
-      setDescription('Validação de balancete, conciliação bancária e lançamentos patrimoniais.');
-      setPriority('urgent');
-    } else if (templateKey === 'onboarding_cliente') {
-      setTitle('Onboarding & Solicitação de Documentos');
-      setDescription('Checklist inicial de entrada de cliente, coleta de acessos e certidões.');
-      setPriority('medium');
+  const handleTemplateSelect = (templateId: string) => {
+    setSelectedTemplateId(templateId);
+    const tmpl = taskTemplates.find((t) => t.id === templateId);
+    if (tmpl) {
+      setTitle(tmpl.title);
+      if (tmpl.description) setDescription(tmpl.description);
+      setPriority(tmpl.defaultPriority);
+      if (tmpl.recurrenceRule?.frequency) {
+        setRecurrence(tmpl.recurrenceRule.frequency as any);
+      }
+    }
+  };
+
+  const handleApplyAiResult = (result: ParsedTaskAiResult) => {
+    setTitle(result.title);
+    setDescription(result.description);
+    setPriority(result.priority);
+    if (result.isRecurrent && result.recurrenceRule) {
+      setRecurrence(result.recurrenceRule.frequency as any);
     }
   };
 
@@ -42,21 +53,30 @@ export const TaskTemplateModal: React.FC<TaskTemplateModalProps> = ({ onClose })
     e.preventDefault();
 
     addTask({
-      title: `${title} — ${String(competenceMonth).padStart(2, '0')}/${competenceYear}`,
+      title: `${title} — Competência ${String(competenceMonth).padStart(2, '0')}/${competenceYear}`,
       description,
-      businessUnitId: selectedBusinessUnitId || 'bu-tech',
+      businessUnitId: selectedBusinessUnitId === 'bu-all' ? 'bu-tech' : selectedBusinessUnitId,
       assignedUserId: assignedUserId || users[0]?.id || '',
+      creatorId: currentUser.id,
       priority,
       status: 'pending',
       dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
       competenceMonth,
       competenceYear,
       recurrence: mode === 'recurrent' ? recurrence : 'none',
-      checklist: [
-        { id: `c-1`, text: 'Coletar documentos e extratos', completed: false },
-        { id: `c-2`, text: 'Conferir apuração e alíquota', completed: false },
-        { id: `c-3`, text: 'Emitir relatório de fechamento', completed: false },
-      ],
+      checklist: (selectedTemplate?.checklistItems || [
+        'Conferir extratos e documentos fiscais',
+        'Executar apuração e alíquota efetiva',
+        'Emitir relatório e guia de recolhimento',
+      ]).map((text, idx) => ({
+        id: `c-tmpl-${Date.now()}-${idx}`,
+        text,
+        completed: false,
+      })),
+      participantIds: [currentUser.id],
+      observerIds: [currentUser.id],
+      tags: selectedTemplate?.tags || ['VERGROUP', 'Modelo'],
+      confirmedInternal: true,
     });
 
     onClose();
@@ -64,17 +84,17 @@ export const TaskTemplateModal: React.FC<TaskTemplateModalProps> = ({ onClose })
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-2xs flex items-center justify-center p-4 font-sans animate-in fade-in duration-150 select-none">
-      <div className="w-full max-w-xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col">
+      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
         
         {/* Header */}
         <div className="p-4 bg-slate-900 text-white flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-[#0F8A4B] rounded-xl text-white">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-[#0F8A4B] rounded-xl text-white">
               <Layers className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-sm font-black tracking-tight">Criar Tarefa por Modelo / Recorrência</h3>
-              <p className="text-xs text-slate-300 font-semibold">Gere demandas operacionais padronizadas com competência</p>
+              <h3 className="text-sm font-black tracking-tight">Galeria de Modelos & Recorrência de Tarefas</h3>
+              <p className="text-xs text-slate-300 font-semibold">Gere demandas padronizadas com competência e agendamento automático</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 text-slate-400 hover:text-white rounded-xl cursor-pointer">
@@ -82,54 +102,66 @@ export const TaskTemplateModal: React.FC<TaskTemplateModalProps> = ({ onClose })
           </button>
         </div>
 
-        {/* Mode Selector */}
-        <div className="p-3 bg-slate-100 border-b border-slate-200 flex gap-2">
+        {/* Mode Selector & AI Action */}
+        <div className="p-3 bg-slate-100 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setMode('template')}
+              className={`px-4 py-2 text-xs font-black rounded-xl transition-all cursor-pointer ${
+                mode === 'template' ? 'bg-white text-[#0F8A4B] shadow-2xs border border-slate-200' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              📋 Por Modelo de Tarefa
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode('recurrent')}
+              className={`px-4 py-2 text-xs font-black rounded-xl transition-all cursor-pointer ${
+                mode === 'recurrent' ? 'bg-white text-[#0F8A4B] shadow-2xs border border-slate-200' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              🔄 Por Recorrência & Competência
+            </button>
+          </div>
+
           <button
-            onClick={() => setMode('template')}
-            className={`flex-1 py-2 text-xs font-black rounded-xl transition-all cursor-pointer ${
-              mode === 'template' ? 'bg-white text-[#0F8A4B] shadow-2xs border border-slate-200' : 'text-slate-600 hover:text-slate-900'
-            }`}
+            type="button"
+            onClick={() => setIsAiModalOpen(true)}
+            className="px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl font-black text-xs shadow-sm flex items-center gap-1.5 cursor-pointer transition-all"
           >
-            📋 Por Modelo de Tarefa
-          </button>
-          <button
-            onClick={() => setMode('recurrent')}
-            className={`flex-1 py-2 text-xs font-black rounded-xl transition-all cursor-pointer ${
-              mode === 'recurrent' ? 'bg-white text-[#0F8A4B] shadow-2xs border border-slate-200' : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            🔄 Por Recorrência & Competência
+            <Sparkles className="w-4 h-4" />
+            <span>🤖 Gerar com IA</span>
           </button>
         </div>
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-5 space-y-4 overflow-y-auto max-h-[70vh] text-xs">
           
-          {mode === 'template' && (
-            <div className="space-y-2">
-              <label className="font-extrabold text-slate-900 uppercase text-[10px]">Selecione um Modelo Modelo Padrão</label>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                {[
-                  { id: 'simples_nacional', label: 'Simples Nacional' },
-                  { id: 'fechamento_contabil', label: 'Fechamento Contábil' },
-                  { id: 'onboarding_cliente', label: 'Onboarding Cliente' },
-                ].map((tmp) => (
-                  <button
-                    key={tmp.id}
-                    type="button"
-                    onClick={() => handleTemplateSelect(tmp.id)}
-                    className={`p-3 rounded-xl border font-bold text-left transition-all cursor-pointer ${
-                      selectedTemplate === tmp.id
-                        ? 'bg-emerald-50 border-[#0F8A4B] text-[#0F8A4B]'
-                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-                    }`}
-                  >
-                    {tmp.label}
-                  </button>
-                ))}
-              </div>
+          {/* Template Gallery Picker */}
+          <div className="space-y-2">
+            <label className="font-extrabold text-slate-900 uppercase text-[10px]">Selecione um Modelo Salvo no Sistema</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {taskTemplates.map((tmp) => (
+                <button
+                  key={tmp.id}
+                  type="button"
+                  onClick={() => handleTemplateSelect(tmp.id)}
+                  className={`p-3 rounded-xl border font-bold text-left transition-all cursor-pointer flex items-start gap-2.5 ${
+                    selectedTemplateId === tmp.id
+                      ? 'bg-emerald-50 border-[#0F8A4B] text-[#0F8A4B] shadow-xs'
+                      : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  <span className="text-lg">{tmp.icon || '📋'}</span>
+                  <div>
+                    <div className="font-extrabold text-slate-900 text-xs">{tmp.title}</div>
+                    <div className="text-[10px] text-slate-500 font-semibold mt-0.5 line-clamp-1">{tmp.description}</div>
+                  </div>
+                </button>
+              ))}
             </div>
-          )}
+          </div>
 
           <div className="space-y-1">
             <label className="font-extrabold text-slate-900 uppercase text-[10px]">Título da Tarefa</label>
@@ -173,7 +205,7 @@ export const TaskTemplateModal: React.FC<TaskTemplateModalProps> = ({ onClose })
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="font-extrabold text-slate-900 uppercase text-[10px]">Responsável</label>
+              <label className="font-extrabold text-slate-900 uppercase text-[10px]">Responsável Executor</label>
               <select
                 value={assignedUserId}
                 onChange={(e) => setAssignedUserId(e.target.value)}
@@ -200,6 +232,26 @@ export const TaskTemplateModal: React.FC<TaskTemplateModalProps> = ({ onClose })
             </div>
           </div>
 
+          {mode === 'recurrent' && (
+            <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-extrabold text-emerald-950 text-[10px] uppercase">Recorrência do Agendamento</span>
+                <span className="text-[10px] font-black text-[#0F8A4B]">ATIVADO</span>
+              </div>
+
+              <select
+                value={recurrence}
+                onChange={(e) => setRecurrence(e.target.value as any)}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-[#0F8A4B] font-semibold text-slate-900 bg-white"
+              >
+                <option value="daily">Diária (Todo dia de trabalho)</option>
+                <option value="weekly">Semanal (Toda semana)</option>
+                <option value="biweekly">Quinzenal (A cada 15 dias)</option>
+                <option value="monthly">Mensal (Todo dia 10 do mês)</option>
+              </select>
+            </div>
+          )}
+
           <div className="pt-2 border-t border-slate-100 flex justify-end gap-2">
             <button
               type="button"
@@ -210,14 +262,22 @@ export const TaskTemplateModal: React.FC<TaskTemplateModalProps> = ({ onClose })
             </button>
             <button
               type="submit"
-              className="px-5 py-2 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white rounded-xl font-black shadow-md cursor-pointer"
+              className="px-5 py-2 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white rounded-xl font-black shadow-md cursor-pointer flex items-center gap-1.5"
             >
-              Criar Tarefa por Modelo
+              <Plus className="w-4 h-4" />
+              <span>Gerar Tarefa por Modelo</span>
             </button>
           </div>
         </form>
 
       </div>
+
+      {isAiModalOpen && (
+        <TaskAiAssistantModal
+          onClose={() => setIsAiModalOpen(false)}
+          onApplyToForm={handleApplyAiResult}
+        />
+      )}
     </div>
   );
 };

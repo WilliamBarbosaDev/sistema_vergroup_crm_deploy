@@ -18,6 +18,7 @@ import {
   ClientAccount,
   ClientAccountStage,
   Task,
+  TaskTemplate,
   Project,
   CalendarEvent,
   ChatChannel,
@@ -237,6 +238,11 @@ export interface AppContextType {
   addTimeSpent: (taskId: string, additionalHours: number) => void;
   addTaskComment: (taskId: string, content: string) => void;
 
+  taskTemplates: TaskTemplate[];
+  addTaskTemplate: (template: Omit<TaskTemplate, 'id' | 'createdAt'>) => void;
+  updateTaskTemplate: (id: string, updates: Partial<TaskTemplate>) => void;
+  deleteTaskTemplate: (id: string) => void;
+
   addProject: (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateProject: (id: string, updates: Partial<Project>) => void;
   deleteProject: (id: string) => void;
@@ -416,6 +422,118 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const saved = localStorage.getItem(`${STORAGE_KEY}_tasks`);
     return saved ? JSON.parse(saved) : INITIAL_TASKS;
   });
+  const [taskTemplates, setTaskTemplates] = useState<TaskTemplate[]>(() => {
+    const saved = localStorage.getItem(`${STORAGE_KEY}_taskTemplates`);
+    return saved ? JSON.parse(saved) : [
+      {
+        id: 'tmpl-simples-nacional',
+        businessUnitId: 'bu-tech',
+        category: 'fiscal',
+        title: 'Apuração Simples Nacional',
+        description: 'Conferência de notas fiscais emitidas/recebidas, cálculo de PGDAS-D e transmissão de guia DAM de recolhimento.',
+        defaultPriority: 'high',
+        defaultSlaHours: 48,
+        estimatedHours: 3,
+        checklistItems: [
+          'Coletar e baixar extratos fiscais do mês de competência',
+          'Conferir notas fiscais emitidas no sistema governamental',
+          'Calcular apuração e alíquota efetiva PGDAS-D',
+          'Emitir guia de recolhimento DAM com código de barras',
+          'Enviar guia e comprovante de transmissão para o cliente',
+        ],
+        tags: ['FISCAL', 'Simples Nacional', 'Recorrente'],
+        recurrenceRule: {
+          frequency: 'monthly',
+          monthDay: 10,
+          dueTime: '17:00',
+          generateDaysAhead: 5,
+          competenceRule: 'same_month',
+          summaryLabel: '🔄 Repete mensalmente todo dia 10',
+        },
+        requireCompletionSummary: true,
+        icon: '📊',
+        createdByUserId: 'usr-admin',
+        createdAt: new Date().toISOString(),
+      },
+      {
+        id: 'tmpl-fechamento-contabil',
+        businessUnitId: 'bu-tech',
+        category: 'accounting',
+        title: 'Fechamento Contábil Mensal',
+        description: 'Conciliação de extratos bancários, validação patrimonial e emissão de balancete de verificação para a diretoria.',
+        defaultPriority: 'urgent',
+        defaultSlaHours: 72,
+        estimatedHours: 6,
+        checklistItems: [
+          'Solicitar extratos bancários e comprovantes de movimentação',
+          'Executar conciliação de contas de ativo e passivo',
+          'Lançar provisões e depreciações patrimoniais',
+          'Emitir balancete de verificação e DRE gerencial',
+          'Arquivar documentos em prontuário eletrônico',
+        ],
+        tags: ['CONTÁBIL', 'Balancete', 'Mensal'],
+        recurrenceRule: {
+          frequency: 'monthly',
+          monthDay: 20,
+          dueTime: '18:00',
+          generateDaysAhead: 7,
+          competenceRule: 'same_month',
+          summaryLabel: '🔄 Repete mensalmente todo dia 20',
+        },
+        requireCompletionSummary: true,
+        icon: '📑',
+        createdByUserId: 'usr-admin',
+        createdAt: new Date().toISOString(),
+      },
+      {
+        id: 'tmpl-onboarding-cliente',
+        businessUnitId: 'bu-tech',
+        category: 'general',
+        title: 'Onboarding & Certidões do Cliente',
+        description: 'Recepção de novo cliente, solicitação de certidões negativas e emissão de credenciais de acesso no CRM.',
+        defaultPriority: 'medium',
+        defaultSlaHours: 24,
+        estimatedHours: 2,
+        checklistItems: [
+          'Coletar contrato social e documento dos sócios',
+          'Emitir CND Federal, Estadual e Municipal',
+          'Configurar acesso ao CRM e sistemas contábeis',
+          'Agendar reunião de boas-vindas com a diretoria',
+        ],
+        tags: ['ONBOARDING', 'Cliente Novo'],
+        icon: '🚀',
+        createdByUserId: 'usr-admin',
+        createdAt: new Date().toISOString(),
+      },
+      {
+        id: 'tmpl-relatorio-crm',
+        businessUnitId: 'bu-tech',
+        category: 'sales',
+        title: 'Relatório Semanal de Performance Comercial',
+        description: 'Consolidação de leads qualificados, negócios ganhos/perdidos e projeção de receita do grupo.',
+        defaultPriority: 'high',
+        defaultSlaHours: 24,
+        estimatedHours: 1.5,
+        checklistItems: [
+          'Atualizar estágios de todos os negócios no CRM',
+          'Mapear motivos de perdas de negócios na semana',
+          'Consolidar projeção de vendas no dashboard',
+          'Enviar relatório executivo para a diretoria',
+        ],
+        tags: ['VENDAS', 'CRM', 'Semanal'],
+        recurrenceRule: {
+          frequency: 'weekly',
+          weekDays: [5],
+          dueTime: '17:00',
+          generateDaysAhead: 1,
+          summaryLabel: '🔄 Repete toda sexta-feira às 17:00',
+        },
+        icon: '📈',
+        createdByUserId: 'usr-admin',
+        createdAt: new Date().toISOString(),
+      },
+    ];
+  });
   const [projects, setProjects] = useState<Project[]>(() => {
     const saved = localStorage.getItem(`${STORAGE_KEY}_projects`);
     return saved ? JSON.parse(saved) : INITIAL_PROJECTS;
@@ -519,6 +637,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem(`${STORAGE_KEY}_companies`, JSON.stringify(companies));
     localStorage.setItem(`${STORAGE_KEY}_deals`, JSON.stringify(deals));
     localStorage.setItem(`${STORAGE_KEY}_tasks`, JSON.stringify(tasks));
+    localStorage.setItem(`${STORAGE_KEY}_taskTemplates`, JSON.stringify(taskTemplates));
     localStorage.setItem(`${STORAGE_KEY}_projects`, JSON.stringify(projects));
     localStorage.setItem(`${STORAGE_KEY}_clientAccounts`, JSON.stringify(clientAccounts));
     localStorage.setItem(`${STORAGE_KEY}_activities`, JSON.stringify(activities));
@@ -526,7 +645,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem(`${STORAGE_KEY}_emails`, JSON.stringify(emails));
     localStorage.setItem(`${STORAGE_KEY}_whatsapps_v2`, JSON.stringify(whatsApps));
     localStorage.setItem(`${STORAGE_KEY}_chatMessages`, JSON.stringify(chatMessages));
-  }, [users, departments, teams, invites, onboardingTasks, leads, contacts, companies, deals, tasks, projects, clientAccounts, activities, auditLogs, emails, whatsApps, chatMessages]);
+  }, [users, departments, teams, invites, onboardingTasks, leads, contacts, companies, deals, tasks, taskTemplates, projects, clientAccounts, activities, auditLogs, emails, whatsApps, chatMessages]);
 
   // Real-time 1-second Stopwatch Timer Ticker for Active Task Timers
   useEffect(() => {
@@ -1675,6 +1794,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addAuditLog('create', 'task_comment', taskId, `Comentário adicionado à tarefa`);
   };
 
+  const addTaskTemplate = (templateData: Omit<TaskTemplate, 'id' | 'createdAt'>) => {
+    const newTemplate: TaskTemplate = {
+      ...templateData,
+      id: `tmpl-${Date.now()}`,
+      createdByUserId: currentUser.id,
+      createdAt: new Date().toISOString(),
+    };
+    setTaskTemplates((prev) => [newTemplate, ...prev]);
+    addAuditLog('create', 'task_template', newTemplate.id, `Modelo de tarefa "${newTemplate.title}" criado com sucesso`);
+  };
+
+  const updateTaskTemplate = (id: string, updates: Partial<TaskTemplate>) => {
+    setTaskTemplates((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, ...updates } : t))
+    );
+    addAuditLog('update', 'task_template', id, `Modelo de tarefa atualizado`);
+  };
+
+  const deleteTaskTemplate = (id: string) => {
+    setTaskTemplates((prev) => prev.filter((t) => t.id !== id));
+    addAuditLog('delete', 'task_template', id, `Modelo de tarefa removido`);
+  };
+
   // Projects
   const addProject = (projectData: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>) => {
     const newProj: Project = {
@@ -2447,6 +2589,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     toggleTaskTimer,
     addTimeSpent,
     addTaskComment,
+    taskTemplates,
+    addTaskTemplate,
+    updateTaskTemplate,
+    deleteTaskTemplate,
     addProject,
     updateProject,
     deleteProject,
