@@ -31,8 +31,10 @@ export interface BusinessUnit {
 export interface Department {
   id: string;
   businessUnitId: string;
+  parentDepartmentId?: string;
   name: string;
   leaderId?: string;
+  description?: string;
 }
 
 export interface Team {
@@ -865,4 +867,40 @@ export interface AuditLog {
   details: string;
   ipAddress: string;
   timestamp: string;
+}
+
+// Permission Engine & Hierarchy Types (VERGROUP Core)
+export type PermissionScope = 
+  | 'own' 
+  | 'participating' 
+  | 'team' 
+  | 'department' 
+  | 'department_and_below' 
+  | 'managed_users' 
+  | 'business_unit' 
+  | 'multi_bu' 
+  | 'all';
+
+export type PermissionDecision = 'ALLOW' | 'DENY' | 'CUSTOM';
+
+export interface PermissionCapabilityRule {
+  id: string;
+  module: string;
+  capability: string;
+  actionName: string;
+  defaultScope: PermissionScope;
+  allowedScopes: PermissionScope[];
+  description: string;
+}
+
+export interface PermissionExplainResult {
+  decision: PermissionDecision;
+  capability: string;
+  scope: PermissionScope;
+  source: string;
+  resolvedHierarchyPath: string;
+  organizationalMatch: boolean;
+  businessUnitMatch: boolean;
+  reason: string;
+  targetCountEstimate?: number;
 }
