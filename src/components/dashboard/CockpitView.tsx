@@ -47,6 +47,27 @@ export const CockpitView: React.FC = () => {
 
   const hotDeals = openDeals.filter((d) => d.value >= 50000).slice(0, 4);
 
+  const now = new Date();
+  const myTasks = filteredTasks.filter((t) => 
+    t.assignedUserId === currentUser.id && 
+    t.status !== 'completed' && 
+    t.status !== 'cancelled'
+  );
+
+  const myOverdueTasks = myTasks
+    .filter((t) => new Date(t.dueDate) < now)
+    .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+
+  const myPendingTasks = myTasks
+    .filter((t) => new Date(t.dueDate) >= now)
+    .sort((a, b) => {
+      if (a.priority === 'urgent' && b.priority !== 'urgent') return -1;
+      if (b.priority === 'urgent' && a.priority !== 'urgent') return 1;
+      if (a.priority === 'high' && b.priority !== 'high') return -1;
+      if (b.priority === 'high' && a.priority !== 'high') return 1;
+      return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+    });
+
   return (
     <div id="cockpit-view" className="p-4 md:p-6 max-w-7xl mx-auto space-y-6 select-none font-sans">
       
@@ -288,6 +309,105 @@ export const CockpitView: React.FC = () => {
                 </span>
               </div>
             ))}
+          </div>
+        </div>
+
+      </div>
+
+      {/* 5. USER OPERATIONAL TASKS (PENDING & OVERDUE) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        {/* Overdue Tasks Section */}
+        <div className="bg-white rounded-xl border border-[#E2E6EA] p-5 space-y-4">
+          <div className="flex items-center justify-between border-b border-[#E2E6EA] pb-3">
+            <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+              <Clock className="w-4 h-4 text-rose-600" />
+              <span>Tarefas Atrasadas ({myOverdueTasks.length})</span>
+            </h2>
+            <button
+              onClick={() => setCurrentTab('work-tasks')}
+              className="text-xs text-[#0F8A4B] font-semibold hover:underline cursor-pointer"
+            >
+              Ver todas as atrasadas →
+            </button>
+          </div>
+
+          <div className="space-y-2">
+            {myOverdueTasks.length === 0 ? (
+              <p className="text-xs text-slate-500 py-2">Nenhuma tarefa atrasada.</p>
+            ) : (
+              myOverdueTasks.slice(0, 5).map((task) => (
+                <div
+                  key={task.id}
+                  className="p-3 bg-rose-50 border border-rose-200 rounded-lg flex items-center justify-between text-xs"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <button
+                      onClick={() => toggleTaskStatus(task.id)}
+                      className="p-1 rounded-md text-slate-400 hover:text-[#0F8A4B] cursor-pointer"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                    </button>
+                    <div>
+                      <h3 className="font-semibold text-slate-900 hover:text-[#0F8A4B] cursor-pointer" onClick={() => { setSelectedTaskId(task.id); setCurrentTab('work-tasks'); }}>
+                        {task.protocolNumber ? `${task.protocolNumber} ` : ''}{task.title}
+                      </h3>
+                      <span className="text-[11px] text-rose-600 font-medium">Prazo venceu em: {new Date(task.dueDate).toLocaleDateString('pt-BR')}</span>
+                    </div>
+                  </div>
+                  <span className="px-2 py-0.5 bg-rose-100 text-rose-700 text-[10px] font-semibold rounded border border-rose-200">
+                    Atrasada
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Pending Tasks Section */}
+        <div className="bg-white rounded-xl border border-[#E2E6EA] p-5 space-y-4">
+          <div className="flex items-center justify-between border-b border-[#E2E6EA] pb-3">
+            <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+              <CheckSquare className="w-4 h-4 text-[#0F8A4B]" />
+              <span>Tarefas Pendentes ({myPendingTasks.length})</span>
+            </h2>
+            <button
+              onClick={() => setCurrentTab('work-tasks')}
+              className="text-xs text-[#0F8A4B] font-semibold hover:underline cursor-pointer"
+            >
+              Ver todas as pendentes →
+            </button>
+          </div>
+
+          <div className="space-y-2">
+            {myPendingTasks.length === 0 ? (
+              <p className="text-xs text-slate-500 py-2">Nenhuma tarefa pendente no momento.</p>
+            ) : (
+              myPendingTasks.slice(0, 5).map((task) => (
+                <div
+                  key={task.id}
+                  className="p-3 bg-[#F5F7F8] border border-[#E2E6EA] rounded-lg flex items-center justify-between text-xs"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <button
+                      onClick={() => toggleTaskStatus(task.id)}
+                      className="p-1 rounded-md text-slate-400 hover:text-[#0F8A4B] cursor-pointer"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                    </button>
+                    <div>
+                      <h3 className="font-semibold text-slate-900 hover:text-[#0F8A4B] cursor-pointer" onClick={() => { setSelectedTaskId(task.id); setCurrentTab('work-tasks'); }}>
+                        {task.protocolNumber ? `${task.protocolNumber} ` : ''}{task.title}
+                      </h3>
+                      <span className="text-[11px] text-slate-500 font-normal">Prazo: {new Date(task.dueDate).toLocaleDateString('pt-BR')}</span>
+                    </div>
+                  </div>
+                  <span className={`px-2 py-0.5 text-[10px] font-semibold rounded border ${task.priority === 'urgent' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-slate-100 text-slate-600 border-slate-200'}`}>
+                    {task.priority === 'urgent' ? 'Urgente' : task.priority === 'high' ? 'Alta' : 'Normal'}
+                  </span>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
