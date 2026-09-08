@@ -25,7 +25,6 @@ import { AnalyticsView } from './components/management/AnalyticsView';
 import { AutomationsView } from './components/management/AutomationsView';
 import { AuditView } from './components/management/AuditView';
 import { AdminView } from './components/admin/AdminView';
-import { FiscalModuleView } from './components/modules/fiscal/FiscalModuleView';
 
 import { TaskCreateWorkspace } from './components/work/TaskCreateWorkspace';
 
@@ -38,8 +37,6 @@ const MainLayout: React.FC = () => {
 
   const renderContent = () => {
     switch (currentTab) {
-      case 'mod-fiscal':
-        return <FiscalModuleView />;
       case 'cockpit':
         return <CockpitView />;
       case 'crm-deals':

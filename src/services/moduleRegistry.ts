@@ -32,28 +32,6 @@ export interface ModuleDefinition {
 
 export const INITIAL_REGISTERED_MODULES: ModuleDefinition[] = [
   {
-    id: 'fiscal',
-    name: 'Módulo Fiscal & Tributário',
-    description: 'Apuração mensal de impostos, DAS, SPED, obrigações acessórias e enquadramento tributário.',
-    version: '1.0.0',
-    icon: 'FileSpreadsheet',
-    enabledByDefault: true,
-    allowedBusinessUnitIds: ['*'],
-    requiredCapabilities: ['fiscal.read'],
-    navigation: [
-      {
-        id: 'nav-fiscal-main',
-        label: 'Gestão Fiscal & Tributária',
-        iconName: 'FileSpreadsheet',
-        tabId: 'mod-fiscal',
-        requiredCapability: 'fiscal.read',
-      },
-    ],
-    eventsSubscribed: ['client.stage.changed', 'deal.won'],
-    eventsPublished: ['fiscal.routine.generated', 'fiscal.closing.completed'],
-    aiTools: ['fiscal.audit_tax_regime', 'fiscal.check_deadlines'],
-  },
-  {
     id: 'finance',
     name: 'Módulo Financeiro & Faturamento',
     description: 'Gestão de contas a pagar/receber, conciliação bancária e fluxo de caixa.',

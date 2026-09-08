@@ -75,7 +75,6 @@ export type NavigationTab =
   | 'mgmt-automations'
   | 'mgmt-audit'
   | 'admin-org'
-  | 'mod-fiscal'
   | 'mod-finance'
   | 'mod-hr'
   | (string & {});
