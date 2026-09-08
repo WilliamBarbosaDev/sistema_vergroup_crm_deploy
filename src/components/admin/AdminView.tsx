@@ -31,6 +31,7 @@ import {
   Plus,
   X,
   FileCheck,
+  PhoneCall,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { UserRole, CollaboratorInvite, User, Pipeline, BusinessUnit } from '../../types';
