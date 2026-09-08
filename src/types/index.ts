@@ -749,12 +749,18 @@ export interface ChatMessage {
 
 export interface ChatChannel {
   id: string;
-  businessUnitId?: string; // or global
+  businessUnitId?: string; // or global 'bu-all'
   name: string;
-  type: 'channel' | 'direct' | 'contextual';
+  type: 'channel' | 'direct' | 'contextual' | 'group';
   description?: string;
   isPrivate?: boolean;
+  privacy?: 'private' | 'business_unit';
   memberIds: string[];
+  adminIds?: string[]; // IDs dos Administradores do Grupo (gestão de membros/configurações do grupo)
+  avatarUrl?: string;
+  status?: 'active' | 'archived';
+  createdById?: string;
+  createdAt?: string;
   unreadCount?: number;
   lastMessage?: string;
   lastMessageAt?: string;
@@ -861,7 +867,7 @@ export interface AuditLog {
   businessUnitId?: string;
   userId: string;
   userName: string;
-  action: 'create' | 'update' | 'delete' | 'export' | 'login' | 'stage_change' | 'won_deal';
+  action: 'create' | 'update' | 'delete' | 'export' | 'login' | 'stage_change' | 'won_deal' | 'archive' | 'leave';
   entity: string;
   entityId: string;
   details: string;

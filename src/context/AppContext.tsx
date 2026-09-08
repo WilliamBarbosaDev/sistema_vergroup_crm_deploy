@@ -253,6 +253,22 @@ export interface AppContextType {
   sendChatMessage: (channelId: string, text: string, attachments?: { name: string; size: string; url: string }[]) => void;
   addChatReaction: (messageId: string, emoji: string) => void;
   getOrCreateDirectChannel: (targetUserId: string) => string;
+  createGroupChannel: (data: {
+    name: string;
+    description?: string;
+    businessUnitId: string;
+    privacy: 'private' | 'business_unit';
+    memberIds: string[];
+    adminIds?: string[];
+    avatarUrl?: string;
+  }) => ChatChannel;
+  updateGroupChannel: (channelId: string, updates: Partial<ChatChannel>) => void;
+  addGroupMember: (channelId: string, userId: string) => void;
+  removeGroupMember: (channelId: string, userId: string) => void;
+  promoteGroupAdmin: (channelId: string, userId: string) => void;
+  demoteGroupAdmin: (channelId: string, userId: string) => void;
+  archiveGroupChannel: (channelId: string) => void;
+  leaveGroupChannel: (channelId: string) => void;
   previousTab: string;
   setPreviousTab: (tab: string) => void;
 
@@ -1824,6 +1840,115 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return newChan.id;
   };
 
+  const createGroupChannel = (data: {
+    name: string;
+    description?: string;
+    businessUnitId: string;
+    privacy: 'private' | 'business_unit';
+    memberIds: string[];
+    adminIds?: string[];
+    avatarUrl?: string;
+  }): ChatChannel => {
+    const finalMembers = Array.from(new Set([currentUser.id, ...data.memberIds]));
+    const finalAdmins = Array.from(new Set([currentUser.id, ...(data.adminIds || [])]));
+
+    const newGroup: ChatChannel = {
+      id: `grp-${Date.now()}`,
+      name: data.name.trim(),
+      description: data.description?.trim() || undefined,
+      type: 'group',
+      businessUnitId: data.businessUnitId || selectedBusinessUnitId,
+      privacy: data.privacy || 'private',
+      isPrivate: data.privacy === 'private',
+      memberIds: finalMembers,
+      adminIds: finalAdmins,
+      avatarUrl: data.avatarUrl || undefined,
+      status: 'active',
+      createdById: currentUser.id,
+      createdAt: new Date().toISOString(),
+      unreadCount: 0,
+      lastMessage: `Grupo criado por ${currentUser.name}`,
+      lastMessageAt: new Date().toISOString(),
+    };
+
+    setChatChannels((prev) => [newGroup, ...prev]);
+    setActiveChatChannelId(newGroup.id);
+    addAuditLog('create', 'chat_group', newGroup.id, `Grupo de conversa "${newGroup.name}" criado (${finalMembers.length} membros)`);
+    return newGroup;
+  };
+
+  const updateGroupChannel = (channelId: string, updates: Partial<ChatChannel>) => {
+    setChatChannels((prev) =>
+      prev.map((c) => (c.id === channelId ? { ...c, ...updates } : c))
+    );
+    addAuditLog('update', 'chat_group', channelId, `Grupo de conversa atualizado`);
+  };
+
+  const addGroupMember = (channelId: string, userId: string) => {
+    const targetUser = users.find((u) => u.id === userId);
+    setChatChannels((prev) =>
+      prev.map((c) => {
+        if (c.id !== channelId) return c;
+        if (c.memberIds.includes(userId)) return c;
+        return { ...c, memberIds: [...c.memberIds, userId] };
+      })
+    );
+    addAuditLog('update', 'chat_group', channelId, `Adicionado membro "${targetUser?.name || userId}" ao grupo`);
+  };
+
+  const removeGroupMember = (channelId: string, userId: string) => {
+    const targetUser = users.find((u) => u.id === userId);
+    setChatChannels((prev) =>
+      prev.map((c) => {
+        if (c.id !== channelId) return c;
+        const updatedMembers = c.memberIds.filter((id) => id !== userId);
+        const updatedAdmins = (c.adminIds || []).filter((id) => id !== userId);
+        return { ...c, memberIds: updatedMembers, adminIds: updatedAdmins };
+      })
+    );
+    addAuditLog('update', 'chat_group', channelId, `Removido membro "${targetUser?.name || userId}" do grupo`);
+  };
+
+  const promoteGroupAdmin = (channelId: string, userId: string) => {
+    const targetUser = users.find((u) => u.id === userId);
+    setChatChannels((prev) =>
+      prev.map((c) => {
+        if (c.id !== channelId) return c;
+        const admins = c.adminIds || [];
+        if (admins.includes(userId)) return c;
+        return { ...c, adminIds: [...admins, userId] };
+      })
+    );
+    addAuditLog('update', 'chat_group', channelId, `Promovido "${targetUser?.name || userId}" a Administrador do Grupo`);
+  };
+
+  const demoteGroupAdmin = (channelId: string, userId: string) => {
+    const targetUser = users.find((u) => u.id === userId);
+    setChatChannels((prev) =>
+      prev.map((c) => {
+        if (c.id !== channelId) return c;
+        const admins = c.adminIds || [];
+        if (admins.length <= 1 && admins.includes(userId)) {
+          alert('⚠️ O grupo deve manter pelo menos um Administrador.');
+          return c;
+        }
+        return { ...c, adminIds: admins.filter((id) => id !== userId) };
+      })
+    );
+    addAuditLog('update', 'chat_group', channelId, `Removida função administrativa de "${targetUser?.name || userId}" no grupo`);
+  };
+
+  const archiveGroupChannel = (channelId: string) => {
+    setChatChannels((prev) =>
+      prev.map((c) => (c.id === channelId ? { ...c, status: 'archived' } : c))
+    );
+    addAuditLog('archive', 'chat_group', channelId, `Grupo arquivado`);
+  };
+
+  const leaveGroupChannel = (channelId: string) => {
+    removeGroupMember(channelId, currentUser.id);
+  };
+
   // Communication: Email
   const sendEmail = (toEmail: string, subject: string, body: string, relatedDealId?: string, relatedProjectId?: string, relatedTaskId?: string) => {
     const newEmail: EmailMessage = {
@@ -2334,6 +2459,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     sendChatMessage,
     addChatReaction,
     getOrCreateDirectChannel,
+    createGroupChannel,
+    updateGroupChannel,
+    addGroupMember,
+    removeGroupMember,
+    promoteGroupAdmin,
+    demoteGroupAdmin,
+    archiveGroupChannel,
+    leaveGroupChannel,
     previousTab,
     setPreviousTab,
     emailAccountConfig,

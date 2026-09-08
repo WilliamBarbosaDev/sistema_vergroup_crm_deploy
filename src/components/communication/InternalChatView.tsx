@@ -27,14 +27,20 @@ import {
   MoreVertical,
   CheckCheck,
   ArrowLeft,
+  Settings,
+  ShieldCheck,
+  Crown,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { User, ChatChannel } from '../../types';
+import { GroupChannelCreateModal } from './GroupChannelCreateModal';
+import { GroupChannelDetailsDrawer } from './GroupChannelDetailsDrawer';
 
 export const InternalChatView: React.FC = () => {
   const {
     users,
     currentUser,
+    businessUnits,
     chatChannels,
     chatMessages,
     activeChatChannelId,
@@ -50,6 +56,13 @@ export const InternalChatView: React.FC = () => {
   const [isSearchActive, setIsSearchActive] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showMentionMenu, setShowMentionMenu] = useState(false);
+  const [mentionFilter, setMentionFilter] = useState('');
+
+  // Group Management Modals
+  const [isGroupCreateOpen, setIsGroupCreateOpen] = useState(false);
+  const [isGroupDetailsOpen, setIsGroupDetailsOpen] = useState(false);
+  const [editingGroupData, setEditingGroupData] = useState<ChatChannel | null>(null);
+  const [chatFilterTab, setChatFilterTab] = useState<'all' | 'direct' | 'groups'>('all');
   
   // Voice Recording state
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
@@ -64,31 +77,44 @@ export const InternalChatView: React.FC = () => {
   const [attachedFile, setAttachedFile] = useState<{ name: string; size: string; type: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isSystemAdmin = ['superadmin', 'company_admin', 'director', 'manager'].includes(currentUser.role);
+
+  // Filter channels based on RLS, BU scope and Group privacy
+  const visibleChannels = chatChannels.filter((c) => {
+    if (c.type === 'group') {
+      if (c.status === 'archived' && !isSystemAdmin) return false;
+      if (c.privacy === 'private') {
+        return c.memberIds.includes(currentUser.id) || isSystemAdmin;
+      }
+      const isBuMatch = !c.businessUnitId || c.businessUnitId === 'bu-all' || c.businessUnitId === currentUser.primaryBusinessUnitId;
+      return isBuMatch || c.memberIds.includes(currentUser.id) || isSystemAdmin;
+    }
+    return true;
+  });
+
+  const directChannels = visibleChannels.filter((c) => c.type === 'direct');
+  const groupChannels = visibleChannels.filter((c) => c.type === 'group' || c.type === 'channel');
+
+  const displayedChannels = chatFilterTab === 'direct'
+    ? directChannels
+    : chatFilterTab === 'groups'
+    ? groupChannels
+    : visibleChannels;
 
   // Default active channel fallback
-  const currentChannelId = activeChatChannelId || chatChannels[0]?.id || 'chan-1';
-  const activeChannel = chatChannels.find((c) => c.id === currentChannelId) || chatChannels[0];
+  const currentChannelId = activeChatChannelId || visibleChannels[0]?.id || 'chan-1';
+  const activeChannel = visibleChannels.find((c) => c.id === currentChannelId) || visibleChannels[0];
 
   const getTabLabel = (tab: string) => {
     switch (tab) {
-      case 'work-projects':
-        return 'Gestão de Projetos';
-      case 'crm-deals':
-        return 'Pipeline de CRM';
-      case 'crm-leads':
-        return 'Gestão de Leads';
-      case 'work-tasks':
-        return 'Central de Tarefas';
-      case 'crm-companies':
-        return 'Empresas & Clientes';
-      case 'crm-contacts':
-        return 'Contatos';
-      case 'cockpit':
-        return 'Cockpit Visão Geral';
-      case 'mod-fiscal':
-        return 'Módulo Fiscal';
-      default:
-        return 'Módulo Anterior';
+      case 'work-projects': return 'Gestão de Projetos';
+      case 'crm-deals': return 'Pipeline de CRM';
+      case 'crm-leads': return 'Gestão de Leads';
+      case 'work-tasks': return 'Central de Tarefas';
+      case 'crm-companies': return 'Empresas & Clientes';
+      case 'crm-contacts': return 'Contatos';
+      case 'cockpit': return 'Cockpit Visão Geral';
+      default: return 'Módulo Anterior';
     }
   };
 
@@ -156,10 +182,6 @@ export const InternalChatView: React.FC = () => {
     }
   };
 
-  const insertEmoji = (emoji: string) => {
-    setInputText((prev) => prev + emoji);
-  };
-
   const formatTime = (totalSec: number) => {
     const min = Math.floor(totalSec / 60);
     const sec = totalSec % 60;
@@ -178,6 +200,10 @@ export const InternalChatView: React.FC = () => {
   const filteredMessages = searchQuery
     ? channelMessages.filter((m) => m.text.toLowerCase().includes(searchQuery.toLowerCase()))
     : channelMessages;
+
+  const activeGroupMembers = activeChannel?.type === 'group'
+    ? users.filter((u) => activeChannel.memberIds.includes(u.id))
+    : [];
 
   const emojiList = ['😊', '😂', '😍', '👍', '🎉', '🚀', '❤️', '👏', '🔥', '✅', '💼', '📁', '💡', '📊', '⚡', '🙏'];
 
@@ -249,34 +275,57 @@ export const InternalChatView: React.FC = () => {
               <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-white" />
             </div>
           ) : (
-            <div className="w-10 h-10 rounded-full bg-[#ECF8F1] text-[#0F8A4B] flex items-center justify-center font-black">
-              <Users className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-2xl bg-[#ECF8F1] text-[#0F8A4B] border border-[#0F8A4B]/20 flex items-center justify-center text-xl shadow-2xs">
+              {activeChannel?.avatarUrl || '💬'}
             </div>
           )}
 
           <div>
             <h2 className="text-sm font-black text-[#17212B] flex items-center gap-2">
               <span>{activeChannel?.name || 'Canal Geral'}</span>
-              <span className="text-[10px] font-mono bg-emerald-100 text-[#0F8A4B] px-2 py-0.5 rounded font-extrabold uppercase">
-                {activeChannel?.type === 'direct' ? 'Direto' : 'Grupo'}
+              <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-extrabold uppercase ${
+                activeChannel?.type === 'group'
+                  ? 'bg-purple-50 text-purple-700 border border-purple-200'
+                  : 'bg-emerald-100 text-[#0F8A4B]'
+              }`}>
+                {activeChannel?.type === 'group' ? 'Grupo' : activeChannel?.type === 'direct' ? 'Direto' : 'Canal'}
               </span>
+              {activeChannel?.type === 'group' && (
+                <span className="text-[10px] text-slate-500 font-bold bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                  {activeChannel.memberIds.length} membros
+                </span>
+              )}
             </h2>
             <p className="text-[11px] text-[#5F6B76] font-semibold">
-              {directUser?.jobTitle || 'Ativo agora no sistema VERGROUP'}
+              {activeChannel?.type === 'direct'
+                ? directUser?.jobTitle || 'Ativo agora no sistema VERGROUP'
+                : activeChannel?.description || `Grupo oficial (${activeChannel?.memberIds.length || 0} integrantes)`}
             </p>
           </div>
         </div>
 
-        {/* Action Buttons Header & Return Button */}
-        <div className="flex items-center gap-3">
-          {/* Prominent Return Button to Previous Tab Context */}
+        {/* Action Buttons Header */}
+        <div className="flex items-center gap-2.5">
+          {/* Group Details Button for Group Channels */}
+          {activeChannel?.type === 'group' && (
+            <button
+              onClick={() => setIsGroupDetailsOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+              title="Ver Integrantes e Configurações do Grupo"
+            >
+              <Settings className="w-4 h-4 text-[#0F8A4B]" />
+              <span>Detalhes do Grupo</span>
+            </button>
+          )}
+
+          {/* Return Button to Previous Tab Context */}
           <button
             onClick={() => setCurrentTab(previousTab || 'cockpit')}
             className="flex items-center gap-2 px-3.5 py-1.5 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white rounded-xl text-xs font-black shadow-md cursor-pointer transition-all"
             title={`Voltar para ${getTabLabel(previousTab)}`}
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Voltar para {getTabLabel(previousTab)}</span>
+            <span>Voltar</span>
           </button>
 
           {/* Search Toggle */}
@@ -288,22 +337,6 @@ export const InternalChatView: React.FC = () => {
             title="Buscar Mensagens"
           >
             <Search className="w-4 h-4" />
-          </button>
-
-          <button
-            onClick={() => setActiveCallType('audio')}
-            className="p-2 text-[#5F6B76] hover:text-[#0F8A4B] hover:bg-[#F7F9FA] rounded-xl transition-colors cursor-pointer"
-            title="Iniciar Chamada de Voz"
-          >
-            <Phone className="w-4 h-4" />
-          </button>
-
-          <button
-            onClick={() => setActiveCallType('video')}
-            className="p-2 text-[#5F6B76] hover:text-[#0F8A4B] hover:bg-[#F7F9FA] rounded-xl transition-colors cursor-pointer"
-            title="Iniciar Chamada de Vídeo HD"
-          >
-            <Video className="w-4 h-4" />
           </button>
         </div>
       </div>
@@ -330,12 +363,55 @@ export const InternalChatView: React.FC = () => {
       <div className="flex-1 flex overflow-hidden">
         
         {/* LEFT CHANNEL LIST */}
-        <div className="w-64 bg-white border-r border-[#DDE3E8] flex flex-col shrink-0">
-          <div className="p-3 border-b border-[#DDE3E8] text-xs font-bold text-slate-700">
-            Conversas & Grupos
+        <div className="w-72 bg-white border-r border-[#DDE3E8] flex flex-col shrink-0">
+          <div className="p-3 border-b border-[#DDE3E8] flex items-center justify-between">
+            <h3 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">Conversas & Grupos</h3>
+            {isSystemAdmin && (
+              <button
+                onClick={() => {
+                  setEditingGroupData(null);
+                  setIsGroupCreateOpen(true);
+                }}
+                className="flex items-center gap-1 px-2.5 py-1 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white rounded-lg text-[11px] font-bold transition-colors cursor-pointer shadow-xs"
+                title="Criar Novo Grupo de Conversa"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ Novo Grupo</span>
+              </button>
+            )}
           </div>
-          <div className="flex-1 overflow-y-auto p-2 space-y-1">
-            {chatChannels.map((chan) => {
+
+          {/* Filter Pills */}
+          <div className="flex items-center p-2 bg-slate-50 border-b border-slate-200 text-[11px] font-bold gap-1">
+            <button
+              onClick={() => setChatFilterTab('all')}
+              className={`flex-1 py-1 rounded-md transition-all cursor-pointer text-center ${
+                chatFilterTab === 'all' ? 'bg-white shadow-2xs text-[#0F8A4B]' : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              Todos ({visibleChannels.length})
+            </button>
+            <button
+              onClick={() => setChatFilterTab('direct')}
+              className={`flex-1 py-1 rounded-md transition-all cursor-pointer text-center ${
+                chatFilterTab === 'direct' ? 'bg-white shadow-2xs text-[#0F8A4B]' : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              Diretas ({directChannels.length})
+            </button>
+            <button
+              onClick={() => setChatFilterTab('groups')}
+              className={`flex-1 py-1 rounded-md transition-all cursor-pointer text-center ${
+                chatFilterTab === 'groups' ? 'bg-white shadow-2xs text-[#0F8A4B]' : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              Grupos ({groupChannels.length})
+            </button>
+          </div>
+
+          {/* Channels List */}
+          <div className="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
+            {displayedChannels.map((chan) => {
               const dUser = getDirectUser(chan);
               const isActive = chan.id === currentChannelId;
 
@@ -344,31 +420,59 @@ export const InternalChatView: React.FC = () => {
                   key={chan.id}
                   onClick={() => setActiveChatChannelId(chan.id)}
                   className={`p-2.5 rounded-xl cursor-pointer flex items-center justify-between transition-colors ${
-                    isActive ? 'bg-[#ECF8F1] border border-[#0F8A4B]/20' : 'hover:bg-slate-50'
+                    isActive ? 'bg-[#ECF8F1] border border-[#0F8A4B]/20 shadow-2xs' : 'hover:bg-slate-50'
                   }`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <img
-                      src={dUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
-                      alt={chan.name}
-                      className="w-8 h-8 rounded-full object-cover shrink-0"
-                    />
+                    {chan.type === 'direct' ? (
+                      <img
+                        src={dUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
+                        alt={chan.name}
+                        className="w-8 h-8 rounded-full object-cover shrink-0 border border-slate-200"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-700 border border-purple-200 flex items-center justify-center text-sm font-bold shrink-0">
+                        {chan.avatarUrl || '💬'}
+                      </div>
+                    )}
+
                     <div className="min-w-0">
-                      <p className={`text-xs truncate ${isActive ? 'font-black text-[#0F8A4B]' : 'font-bold text-slate-800'}`}>
-                        {chan.name}
+                      <p className={`text-xs truncate flex items-center gap-1.5 ${isActive ? 'font-black text-[#0F8A4B]' : 'font-bold text-slate-800'}`}>
+                        <span className="truncate">{chan.name}</span>
+                        {chan.type === 'group' && (
+                          <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-bold shrink-0">
+                            {chan.memberIds.length}m
+                          </span>
+                        )}
                       </p>
-                      <p className="text-[10px] text-slate-500 truncate">{chan.lastMessage}</p>
+                      <p className="text-[10px] text-slate-500 truncate font-medium">
+                        {chan.lastMessage || 'Nenhuma mensagem recente'}
+                      </p>
                     </div>
                   </div>
                 </div>
               );
             })}
+
+            {chatFilterTab === 'groups' && groupChannels.length === 0 && (
+              <div className="p-6 text-center space-y-2">
+                <p className="text-xs text-slate-500 font-medium">Nenhum grupo de conversa criado ainda.</p>
+                {isSystemAdmin && (
+                  <button
+                    onClick={() => setIsGroupCreateOpen(true)}
+                    className="btn-primary text-xs bg-[#0F8A4B] text-white px-3 py-1.5 rounded-lg font-bold"
+                  >
+                    + Criar Primeiro Grupo
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
         {/* MAIN MESSAGES CANVAS */}
         <div className="flex-1 flex flex-col justify-between overflow-hidden bg-slate-50">
-          <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
             {filteredMessages.map((m) => {
               const isMe = m.senderId === currentUser.id;
               const sender = users.find((u) => u.id === m.senderId);
@@ -405,23 +509,46 @@ export const InternalChatView: React.FC = () => {
           </div>
 
           {/* INPUT BAR */}
-          <form onSubmit={handleSendMessage} className="p-4 bg-white border-t border-slate-200 flex items-center gap-3">
+          <form onSubmit={handleSendMessage} className="p-4 bg-white border-t border-slate-200 flex items-center gap-3 relative">
             <input
               type="text"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              placeholder={`Escrever mensagem para ${activeChannel?.name}...`}
+              placeholder={`Escrever mensagem para ${activeChannel?.name || 'conversa'}...`}
               className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-[#0F8A4B]"
             />
             <button
               type="submit"
-              className="p-2.5 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white rounded-xl font-bold cursor-pointer transition-colors shadow-md"
+              className="p-2.5 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white rounded-xl font-bold cursor-pointer transition-colors shadow-md flex items-center justify-center shrink-0"
             >
               <Send className="w-4 h-4" />
             </button>
           </form>
         </div>
       </div>
+
+      {/* GROUP CREATE / EDIT MODAL */}
+      <GroupChannelCreateModal
+        isOpen={isGroupCreateOpen}
+        onClose={() => {
+          setIsGroupCreateOpen(false);
+          setEditingGroupData(null);
+        }}
+        initialGroupData={editingGroupData}
+      />
+
+      {/* GROUP DETAILS DRAWER */}
+      {activeChannel && activeChannel.type === 'group' && (
+        <GroupChannelDetailsDrawer
+          isOpen={isGroupDetailsOpen}
+          onClose={() => setIsGroupDetailsOpen(false)}
+          channel={activeChannel}
+          onEditGroup={() => {
+            setEditingGroupData(activeChannel);
+            setIsGroupCreateOpen(true);
+          }}
+        />
+      )}
     </div>
   );
 };
