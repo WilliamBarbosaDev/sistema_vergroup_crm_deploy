@@ -261,25 +261,37 @@ export const TasksView: React.FC = () => {
     <div id="tasks-view" className="p-4 md:p-6 max-w-full space-y-4 font-sans select-none">
       
       {/* 1. TOP SUB-HEADER BAR */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#0F8A4B] text-white flex items-center justify-center font-black text-sm shadow-md">
-            <CheckSquare className="w-5 h-5" />
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+        {/* Row 1: Title + Nova Tarefa */}
+        <div className="px-4 pt-4 pb-3 flex items-center justify-between gap-4 border-b border-slate-100">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-[#0F8A4B] text-white flex items-center justify-center font-black text-sm shadow-md shrink-0">
+              <CheckSquare className="w-5 h-5" />
+            </div>
+            <div className="min-w-0">
+              <h1 className="text-base font-black text-slate-900 tracking-tight flex items-center gap-2 flex-wrap">
+                <span>Central Operacional de Execução</span>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-[#0B6B3A] font-bold shrink-0">
+                  {displayedTasks.length} demandas
+                </span>
+              </h1>
+              <p className="text-xs text-slate-500 font-semibold mt-0.5 truncate">
+                Gestão de prazos, SLA corporativo, arquivamento visual de concluídas e apontamento de tempo real
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-base font-black text-slate-900 tracking-tight flex items-center gap-2">
-              <span>Central Operacional de Execução (Work)</span>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-[#0B6B3A] font-bold">
-                {displayedTasks.length} demandas
-              </span>
-            </h1>
-            <p className="text-xs text-slate-500 font-semibold mt-0.5">
-              Gestão de prazos, SLA corporativo, arquivamento visual de concluídas e apontamento de tempo real
-            </p>
-          </div>
+
+          <button
+            onClick={() => openTaskCreate()}
+            className="flex items-center gap-1.5 px-4 py-2 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white rounded-xl text-xs font-black shadow-md cursor-pointer transition-colors shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Nova Tarefa</span>
+          </button>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
+        {/* Row 2: Tabs + Action Buttons */}
+        <div className="px-4 py-2.5 flex items-center gap-2 overflow-x-auto">
           <Tabs
             tabs={[
               { id: 'list', label: 'Lista' },
@@ -291,36 +303,30 @@ export const TasksView: React.FC = () => {
             onTabChange={(id) => setViewMode(id as any)}
           />
 
+          <div className="w-px h-5 bg-slate-200 mx-1 shrink-0" />
+
           <button
             onClick={() => setIsTemplateModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 text-slate-800 rounded-xl text-xs font-extrabold border border-slate-200 shadow-2xs cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold border border-slate-200 shadow-xs cursor-pointer shrink-0 transition-colors"
           >
             <Layers className="w-3.5 h-3.5 text-[#0F8A4B]" />
-            <span>📋 Modelos & Recorrência</span>
+            <span>Modelos & Recorrência</span>
           </button>
 
           <button
             onClick={() => setIsAiModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black shadow-md cursor-pointer transition-all border border-slate-700"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer shrink-0 transition-all border border-slate-700"
           >
-            <Sparkles className="w-4 h-4 text-emerald-400" />
-            <span>🤖 Criar com IA</span>
+            <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Criar com IA</span>
           </button>
 
           <button
             onClick={() => setShowTeamRisksModal(true)}
-            className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-[#0F493A] to-[#13604C] hover:from-[#13604C] hover:to-[#0F493A] text-white rounded-xl text-xs font-black shadow-md cursor-pointer transition-all border border-[#197960]/50"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-[#0F493A] to-[#13604C] hover:from-[#13604C] hover:to-[#0F493A] text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer shrink-0 transition-all border border-[#197960]/50"
           >
-            <Sparkles className="w-4 h-4 text-amber-400" />
-            <span>⚡ VER AI — Riscos</span>
-          </button>
-
-          <button
-            onClick={() => openTaskCreate()}
-            className="flex items-center gap-1.5 px-4 py-2 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white rounded-xl text-xs font-black shadow-md cursor-pointer transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Nova Tarefa</span>
+            <Zap className="w-3.5 h-3.5 text-amber-400" />
+            <span>VER AI — Riscos</span>
           </button>
         </div>
       </div>

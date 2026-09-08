@@ -293,11 +293,13 @@ export interface Contact {
 export interface Company {
   id: string;
   businessUnitId: string;
+  parentCompanyId?: string; // ID da Empresa Holding / Matriz / Empresa do Grupo pai
   corporateName: string; // Razão Social
   tradeName: string; // Nome Fantasia
   cnpj: string;
   segment: string;
   size: 'micro' | 'small' | 'medium' | 'large' | 'enterprise';
+  plan?: string; // Plano da Empresa (ex: Enterprise, Corp, BPO Premium, etc.)
   email: string;
   phone: string;
   website?: string;

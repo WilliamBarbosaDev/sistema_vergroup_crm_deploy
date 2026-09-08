@@ -209,15 +209,29 @@ export const QuickCreateDrawer: React.FC = () => {
   const [compCnpj, setCompCnpj] = useState('');
   const [compSegment, setCompSegment] = useState('Tecnologia e Serviços');
   const [compSize, setCompSize] = useState<'micro' | 'small' | 'medium' | 'large' | 'enterprise'>('medium');
+  const [compPlan, setCompPlan] = useState('Plano Corp / Enterprise');
+  const [compParentCompanyId, setCompParentCompanyId] = useState('');
+  const [compBUId, setCompBUId] = useState(activeBUId);
   const [compEmail, setCompEmail] = useState('');
   const [compPhone, setCompPhone] = useState('');
   const [compWebsite, setCompWebsite] = useState('');
   const [compStateReg, setCompStateReg] = useState('');
   const [compMuniReg, setCompMuniReg] = useState('');
   const [compCnae, setCompCnae] = useState('');
+  const [compOpeningDate, setCompOpeningDate] = useState('');
+  const [compLegalNature, setCompLegalNature] = useState('Sociedade Empresária Limitada (LTDA)');
   const [compRevenue, setCompRevenue] = useState('150000');
   const [compChannel, setCompChannel] = useState('Outbound / Comercial');
+  const [compAssignedUserId, setCompAssignedUserId] = useState(users[0]?.id || 'usr-william');
   const [compNotes, setCompNotes] = useState('');
+  const [compAddress, setCompAddress] = useState({
+    street: '',
+    number: '',
+    neighborhood: '',
+    city: '',
+    state: '',
+    zipCode: '',
+  });
 
   const activePipeline = pipelines.find((p) => p.id === (quickCreateType === 'lead' ? leadPipelineId : dealPipelineId)) || pipelines[0];
 
@@ -433,29 +447,41 @@ export const QuickCreateDrawer: React.FC = () => {
       return;
     } else if (quickCreateType === 'company') {
       if (!compTradeName.trim()) {
-        alert('⚠️ Preencha o Nome Fantasia / Razão Social da Empresa.');
+        alert('⚠️ Preencha o Nome Fantasia da Empresa.');
         return;
       }
       addCompany({
-        businessUnitId: activeBUId,
+        businessUnitId: compBUId || activeBUId,
+        parentCompanyId: compParentCompanyId || undefined,
         tradeName: compTradeName.trim(),
         corporateName: compCorpName.trim() || `${compTradeName.trim()} S.A.`,
         cnpj: compCnpj.trim() || '00.000.000/0001-00',
         segment: compSegment,
         size: compSize,
+        plan: compPlan,
         email: compEmail.trim() || `contato@${compTradeName.toLowerCase().replace(/\s+/g, '')}.com.br`,
         phone: compPhone.trim() || '+55 11 3000-0000',
         website: compWebsite.trim() || undefined,
         stateRegistration: compStateReg.trim() || undefined,
         municipalRegistration: compMuniReg.trim() || undefined,
+        openingDate: compOpeningDate || undefined,
+        legalNature: compLegalNature || undefined,
         cnaePrimary: compCnae.trim() || undefined,
         approximateRevenue: Number(compRevenue) || undefined,
         acquisitionChannel: compChannel || undefined,
         commercialNotes: compNotes.trim() || undefined,
-        assignedUserId: users[0]?.id || 'usr-william',
+        assignedUserId: compAssignedUserId || users[0]?.id || 'usr-william',
+        address: (compAddress.street || compAddress.city) ? {
+          street: compAddress.street,
+          number: compAddress.number,
+          neighborhood: compAddress.neighborhood,
+          city: compAddress.city,
+          state: compAddress.state,
+          zipCode: compAddress.zipCode,
+        } : undefined,
         status: 'active',
         healthScore: 'green',
-        tags: ['Novo Cliente CRM 2.0'],
+        tags: ['Novo Cliente CRM 2.0', compPlan],
       });
       alert(`🎉 Empresa "${compTradeName.trim()}" cadastrada com sucesso no CRM!`);
       setCompTradeName('');
@@ -463,7 +489,9 @@ export const QuickCreateDrawer: React.FC = () => {
       setCompCnpj('');
       setCompEmail('');
       setCompPhone('');
+      setCompWebsite('');
       setCompNotes('');
+      setCompParentCompanyId('');
       setQuickCreateType(null);
       return;
     }
@@ -1408,6 +1436,370 @@ export const QuickCreateDrawer: React.FC = () => {
                     </p>
                   </div>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* COMPANY FORM — CADASTRO COMPLETO DE EMPRESA (CRM 2.0) */}
+          {quickCreateType === 'company' && (
+            <div className="space-y-5">
+              {/* BLOCO 1: UNIDADE DO GRUPO (BU), EMPRESA MÃE & PLANO CONTRATADO */}
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
+                <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2 border-b border-slate-200/80 pb-2">
+                  <Building2 className="w-4 h-4 text-[#0F8A4B]" />
+                  1. Estrutura de Grupo, Unidade (BU) & Plano Contratado
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-slate-800 font-bold mb-1">Empresa do Grupo (BU Responsável) *</label>
+                    <select
+                      value={compBUId}
+                      onChange={(e) => setCompBUId(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-bold text-xs text-[#0F8A4B]"
+                    >
+                      {businessUnits.map((bu) => (
+                        <option key={bu.id} value={bu.id}>
+                          🏢 {bu.tradeName || bu.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-800 font-bold mb-1">Empresa Mãe / Grupo Pertencente</label>
+                    <select
+                      value={compParentCompanyId}
+                      onChange={(e) => setCompParentCompanyId(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold text-xs text-slate-800"
+                    >
+                      <option value="">Nenhuma — Empresa Matriz Independente</option>
+                      {companies.map((comp) => (
+                        <option key={comp.id} value={comp.id}>
+                          🏢 Matriz: {comp.tradeName} ({comp.cnpj})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-800 font-bold mb-1">Plano Selecionado da Empresa *</label>
+                    <select
+                      value={compPlan}
+                      onChange={(e) => setCompPlan(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-black text-xs text-indigo-900"
+                    >
+                      <option value="Plano Enterprise / Custom">Plano Enterprise / Custom</option>
+                      <option value="Plano Corp / Growth">Plano Corp / Growth</option>
+                      <option value="Plano BPO Contábil Gold">Plano BPO Contábil Gold</option>
+                      <option value="Plano BPO Financeiro Premium">Plano BPO Financeiro Premium</option>
+                      <option value="Plano SaaS Essential">Plano SaaS Essential</option>
+                      <option value="Plano Startup / Entrada">Plano Startup / Entrada</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* BLOCO 2: DADOS FISCAIS & IDENTIFICAÇÃO BÁSICA */}
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
+                <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2 border-b border-slate-200/80 pb-2">
+                  <FileCheck className="w-4 h-4 text-[#0F8A4B]" />
+                  2. Identificação da Empresa & Dados Fiscais (CNPJ)
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-slate-800 font-bold mb-1">Nome Fantasia *</label>
+                    <input
+                      type="text"
+                      required
+                      value={compTradeName}
+                      onChange={(e) => setCompTradeName(e.target.value)}
+                      placeholder="Ex: VerContábil Soluções"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-bold text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-800 font-bold mb-1">Razão Social</label>
+                    <input
+                      type="text"
+                      value={compCorpName}
+                      onChange={(e) => setCompCorpName(e.target.value)}
+                      placeholder="Ex: VerContábil Serviços Contábeis LTDA"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-800 font-bold mb-1">CNPJ</label>
+                    <input
+                      type="text"
+                      value={compCnpj}
+                      onChange={(e) => setCompCnpj(e.target.value)}
+                      placeholder="00.000.000/0001-00"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-mono font-bold text-xs text-slate-900"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                  <div>
+                    <label className="block text-slate-800 font-bold mb-1">Inscrição Estadual (IE)</label>
+                    <input
+                      type="text"
+                      value={compStateReg}
+                      onChange={(e) => setCompStateReg(e.target.value)}
+                      placeholder="Ex: 123.456.789.110"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-mono text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-800 font-bold mb-1">Inscrição Municipal (IM)</label>
+                    <input
+                      type="text"
+                      value={compMuniReg}
+                      onChange={(e) => setCompMuniReg(e.target.value)}
+                      placeholder="Ex: 987654-0"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-mono text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-800 font-bold mb-1">CNAE Principal</label>
+                    <input
+                      type="text"
+                      value={compCnae}
+                      onChange={(e) => setCompCnae(e.target.value)}
+                      placeholder="Ex: 6920-6/01"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-mono text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-800 font-bold mb-1">Data de Abertura</label>
+                    <input
+                      type="date"
+                      value={compOpeningDate}
+                      onChange={(e) => setCompOpeningDate(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold text-xs"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* BLOCO 3: PERFIL COMERCIAL, PORTE & FATURAMENTO */}
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
+                <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2 border-b border-slate-200/80 pb-2">
+                  <Target className="w-4 h-4 text-[#0F8A4B]" />
+                  3. Perfil Comercial, Segmento & Faturamento Estimado
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-slate-800 font-bold mb-1">Segmento de Atuação *</label>
+                    <select
+                      value={compSegment}
+                      onChange={(e) => setCompSegment(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-bold text-xs"
+                    >
+                      <option value="Tecnologia e Serviços">Tecnologia e Serviços</option>
+                      <option value="Contabilidade e BPO">Contabilidade e BPO</option>
+                      <option value="Saúde & Clínicas">Saúde & Clínicas</option>
+                      <option value="Comércio & Varejo">Comércio & Varejo</option>
+                      <option value="Indústria & Manufatura">Indústria & Manufatura</option>
+                      <option value="Imobiliário & Construção">Imobiliário & Construção</option>
+                      <option value="Advocacia & Jurídico">Advocacia & Jurídico</option>
+                      <option value="Educação & Cursos">Educação & Cursos</option>
+                      <option value="Outros">Outros Segmentos</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-800 font-bold mb-1">Porte da Empresa *</label>
+                    <select
+                      value={compSize}
+                      onChange={(e) => setCompSize(e.target.value as any)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-bold text-xs"
+                    >
+                      <option value="micro">Microempresa (até R$ 360k/ano)</option>
+                      <option value="small">Pequena (até R$ 4.8M/ano)</option>
+                      <option value="medium">Média (até R$ 30M/ano)</option>
+                      <option value="large">Grande Porte (até R$ 300M/ano)</option>
+                      <option value="enterprise">Enterprise (Acima de R$ 300M/ano)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-800 font-bold mb-1">Faturamento Estimado (R$/mês)</label>
+                    <input
+                      type="number"
+                      value={compRevenue}
+                      onChange={(e) => setCompRevenue(e.target.value)}
+                      placeholder="150000"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-mono font-bold text-xs text-[#0F8A4B]"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-800 font-bold mb-1">Canal de Aquisição / Origem</label>
+                    <select
+                      value={compChannel}
+                      onChange={(e) => setCompChannel(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold text-xs"
+                    >
+                      <option value="Outbound / Comercial">Outbound / SDR Comercial</option>
+                      <option value="Indicação de Cliente">Indicação de Cliente Existente</option>
+                      <option value="Inbound Web / Form">Inbound Web / Formulário</option>
+                      <option value="WhatsApp Direct">WhatsApp Direct</option>
+                      <option value="Eventos & Networking">Eventos & Networking</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-800 font-bold mb-1">Responsável Comercial / Account Manager *</label>
+                    <select
+                      value={compAssignedUserId}
+                      onChange={(e) => setCompAssignedUserId(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-bold text-xs"
+                    >
+                      {users.map((u) => (
+                        <option key={u.id} value={u.id}>
+                          👤 {u.name} ({u.jobTitle})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* BLOCO 4: CANAIS DE CONTATO CORPORATIVO */}
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
+                <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2 border-b border-slate-200/80 pb-2">
+                  <PhoneCall className="w-4 h-4 text-[#0F8A4B]" />
+                  4. Contato Corporativo & Portal
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-slate-800 font-bold mb-1">E-mail Corporativo</label>
+                    <input
+                      type="email"
+                      value={compEmail}
+                      onChange={(e) => setCompEmail(e.target.value)}
+                      placeholder="contato@empresa.com.br"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-800 font-bold mb-1">Telefone Principal</label>
+                    <input
+                      type="text"
+                      value={compPhone}
+                      onChange={(e) => setCompPhone(e.target.value)}
+                      placeholder="+55 11 3000-0000"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-mono text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-800 font-bold mb-1">Website / Portal</label>
+                    <input
+                      type="text"
+                      value={compWebsite}
+                      onChange={(e) => setCompWebsite(e.target.value)}
+                      placeholder="https://empresa.com.br"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold text-xs"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* BLOCO 5: ENDEREÇO DA SEDE CORPORATIVA */}
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
+                <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2 border-b border-slate-200/80 pb-2">
+                  <MapPin className="w-4 h-4 text-[#0F8A4B]" />
+                  5. Endereço da Sede / Matriz
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-slate-800 font-bold mb-1">CEP</label>
+                    <input
+                      type="text"
+                      value={compAddress.zipCode}
+                      onChange={(e) => setCompAddress({ ...compAddress, zipCode: e.target.value })}
+                      placeholder="01000-000"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-mono text-xs"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-slate-800 font-bold mb-1">Logradouro / Av. / Rua</label>
+                    <input
+                      type="text"
+                      value={compAddress.street}
+                      onChange={(e) => setCompAddress({ ...compAddress, street: e.target.value })}
+                      placeholder="Av. Paulista"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold text-xs"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-slate-800 font-bold mb-1">Número</label>
+                    <input
+                      type="text"
+                      value={compAddress.number}
+                      onChange={(e) => setCompAddress({ ...compAddress, number: e.target.value })}
+                      placeholder="1000, Cj 50"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-800 font-bold mb-1">Cidade</label>
+                    <input
+                      type="text"
+                      value={compAddress.city}
+                      onChange={(e) => setCompAddress({ ...compAddress, city: e.target.value })}
+                      placeholder="São Paulo"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-800 font-bold mb-1">Estado (UF)</label>
+                    <input
+                      type="text"
+                      value={compAddress.state}
+                      onChange={(e) => setCompAddress({ ...compAddress, state: e.target.value })}
+                      placeholder="SP"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-bold text-xs uppercase"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* BLOCO 6: OBSERVAÇÕES & PREMISSAS COMERCIAIS */}
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
+                <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2 border-b border-slate-200/80 pb-2">
+                  <MessageSquare className="w-4 h-4 text-[#0F8A4B]" />
+                  6. Observações Fiscais & Notas Comerciais
+                </h3>
+
+                <textarea
+                  rows={3}
+                  value={compNotes}
+                  onChange={(e) => setCompNotes(e.target.value)}
+                  placeholder="Registrar condições especiais de faturamento, demandas de conformidade fiscal ou detalhes da conta..."
+                  className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl bg-white focus:border-[#0F8A4B] outline-none font-semibold text-xs resize-none"
+                />
               </div>
             </div>
           )}
