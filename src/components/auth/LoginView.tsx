@@ -33,7 +33,6 @@ export const LoginView: React.FC = () => {
     return localStorage.getItem('vergroup_login_author_title') || 'CEO & Founder | VERGROUP Holding';
   });
 
-  const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const [tempBgUrl, setTempBgUrl] = useState(bgImageUrl);
   const [tempQuote, setTempQuote] = useState(quoteText);
   const [tempAuthorName, setTempAuthorName] = useState(authorName);
@@ -80,8 +79,6 @@ export const LoginView: React.FC = () => {
     localStorage.setItem('vergroup_login_quote_text', tempQuote);
     localStorage.setItem('vergroup_login_author_name', tempAuthorName);
     localStorage.setItem('vergroup_login_author_title', tempAuthorTitle);
-
-    setIsConfigModalOpen(false);
   };
 
   return (
@@ -99,16 +96,6 @@ export const LoginView: React.FC = () => {
         {/* Top Header: Logo + Config Button */}
         <div className="relative z-10 flex items-center justify-between">
           <VerGroupLogo variant="white" size="lg" showSubtitle />
-
-          {/* Administrable Image Trigger */}
-          <button
-            onClick={() => setIsConfigModalOpen(true)}
-            title="Configurar imagem e destaque da tela de login"
-            className="flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition cursor-pointer hover:scale-105"
-          >
-            <Settings className="w-4 h-4 text-emerald-300" />
-            <span className="hidden sm:inline">Personalizar Tela</span>
-          </button>
         </div>
 
         {/* Center/Bottom Overlay: Testimonial & Quote */}
@@ -301,84 +288,6 @@ export const LoginView: React.FC = () => {
 
         </div>
       </div>
-
-      {/* CONFIGURATION MODAL (FOR MANAGING LOGIN IMAGE & QUOTE) */}
-      {isConfigModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl space-y-5 border border-slate-200">
-            <div className="flex items-center justify-between border-b pb-3">
-              <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
-                <Settings className="w-5 h-5 text-[#0F8A4B]" /> Personalizar Tela de Login
-              </h3>
-              <button
-                onClick={() => setIsConfigModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 font-bold text-sm"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="space-y-4 text-xs font-bold text-slate-700">
-              <div>
-                <label className="block mb-1">URL da Imagem de Fundo</label>
-                <input
-                  type="url"
-                  value={tempBgUrl}
-                  onChange={(e) => setTempBgUrl(e.target.value)}
-                  placeholder="https://images.unsplash.com/..."
-                  className="w-full p-2.5 rounded-xl border border-slate-200 font-medium text-xs bg-slate-50 focus:bg-white focus:outline-none focus:border-[#0F8A4B]"
-                />
-              </div>
-
-              <div>
-                <label className="block mb-1">Citação / Frase de Destaque</label>
-                <textarea
-                  rows={3}
-                  value={tempQuote}
-                  onChange={(e) => setTempQuote(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 font-medium text-xs bg-slate-50 focus:bg-white focus:outline-none focus:border-[#0F8A4B]"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block mb-1">Nome do Autor</label>
-                  <input
-                    type="text"
-                    value={tempAuthorName}
-                    onChange={(e) => setTempAuthorName(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 font-medium text-xs bg-slate-50 focus:bg-white focus:outline-none focus:border-[#0F8A4B]"
-                  />
-                </div>
-                <div>
-                  <label className="block mb-1">Cargo / Título</label>
-                  <input
-                    type="text"
-                    value={tempAuthorTitle}
-                    onChange={(e) => setTempAuthorTitle(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 font-medium text-xs bg-slate-50 focus:bg-white focus:outline-none focus:border-[#0F8A4B]"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-3 pt-3 border-t">
-              <button
-                onClick={() => setIsConfigModalOpen(false)}
-                className="px-4 py-2 rounded-xl text-slate-600 font-bold hover:bg-slate-100 text-xs cursor-pointer"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleSaveConfig}
-                className="px-5 py-2 rounded-xl bg-[#0F8A4B] text-white font-extrabold hover:bg-[#0B6B3A] text-xs cursor-pointer flex items-center gap-1.5 shadow-md"
-              >
-                <Check className="w-4 h-4" /> Salvar Configuração
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

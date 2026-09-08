@@ -402,6 +402,43 @@ export interface DealDocument {
   url?: string;
 }
 
+export type CatalogBillingType = 'unique' | 'monthly' | 'yearly' | 'custom';
+
+export interface CatalogItem {
+  id: string;
+  businessUnitId: string;
+  type: 'product' | 'service';
+  name: string;
+  sku?: string;
+  category: string;
+  price: number;
+  currency: string;
+  billingType: CatalogBillingType;
+  billingUnit?: string;
+  shortDescription?: string;
+  fullDescription?: string;
+  internalNotes?: string;
+  status: 'active' | 'inactive';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DealItem {
+  id: string;
+  catalogItemId: string;
+  name: string;
+  basePrice: number;
+  negotiatedPrice: number;
+  quantity: number;
+  discount: number;
+  subtotal: number;
+  billingType: CatalogBillingType;
+  addedAt: string;
+  addedByUserId: string;
+  notes?: string;
+}
+
+
 export interface Deal {
   id: string;
   businessUnitId: string;
@@ -409,6 +446,7 @@ export interface Deal {
   stageId: string;
   title: string;
   value: number;
+  items?: DealItem[];
   contactId?: string;
   additionalContacts?: DealAdditionalContact[];
   companyId?: string;
@@ -505,6 +543,7 @@ export interface ClientAccount {
   accountManagerId: string;
   operationalLeadId: string;
   activeServices: string[];
+  contractedItems?: DealItem[];
   monthlyValue: number;
   healthScore: 'green' | 'yellow' | 'red';
   healthReason?: string;

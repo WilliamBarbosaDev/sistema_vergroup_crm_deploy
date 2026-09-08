@@ -29,9 +29,13 @@ import {
   Share2,
   ChevronRight,
   TrendingUp,
+  CreditCard,
+  Percent,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { DealDocument } from '../../types';
+import { DealDocument, DealItem } from '../../types';
+import { DealLossReasonModal } from './DealLossReasonModal';
+import { DealCatalogSelector } from './DealCatalogSelector';
 
 type DealDrawerTab = 'overview' | 'timeline' | 'tasks' | 'comms' | 'documents' | 'project' | 'contacts';
 
@@ -56,6 +60,7 @@ export const DealDetailDrawer: React.FC = () => {
     addDealDocument,
     linkContactToDeal,
     unlinkContactFromDeal,
+    updateDeal,
     openTaskCreate,
     addTask,
     toggleTaskStatus,
@@ -91,6 +96,8 @@ export const DealDetailDrawer: React.FC = () => {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [docName, setDocName] = useState('');
   const [docType, setDocType] = useState<DealDocument['type']>('proposal');
+
+  const [isCatalogSelectorOpen, setIsCatalogSelectorOpen] = useState(false);
 
   if (!selectedDealId) return null;
 
@@ -202,6 +209,34 @@ export const DealDetailDrawer: React.FC = () => {
     });
     setDocName('');
     setShowUploadModal(false);
+  };
+
+  const handleAddCatalogItem = (newItem: Omit<DealItem, 'id' | 'addedAt'>) => {
+    const item: DealItem = {
+      ...newItem,
+      id: `di-${Date.now()}`,
+      addedAt: new Date().toISOString(),
+    };
+    const currentItems = deal.items || [];
+    const updatedItems = [...currentItems, item];
+    
+    // Auto-sum value if desired (opcional, pode ser manual)
+    const newTotal = updatedItems.reduce((acc, curr) => acc + curr.subtotal, 0);
+    
+    updateDeal(deal.id, { 
+      items: updatedItems,
+      value: newTotal // Update deal total sum automatically
+    });
+    setIsCatalogSelectorOpen(false);
+  };
+
+  const handleRemoveCatalogItem = (itemId: string) => {
+    const updatedItems = (deal.items || []).filter((i) => i.id !== itemId);
+    const newTotal = updatedItems.reduce((acc, curr) => acc + curr.subtotal, 0);
+    updateDeal(deal.id, { 
+      items: updatedItems,
+      value: newTotal
+    });
   };
 
   // Filter activities
@@ -451,6 +486,62 @@ export const DealDetailDrawer: React.FC = () => {
                       <span>Data de Entrada no CRM:</span>
                       <strong className="text-slate-900 font-extrabold">{new Date(deal.createdAt).toLocaleDateString('pt-BR')}</strong>
                     </div>
+                  </div>
+                </div>
+
+                {/* PRODUTOS E SERVIÇOS (CATÁLOGO OFICIAL) */}
+                <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-4 hover:shadow-sm transition-shadow">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <Package className="w-4 h-4 text-emerald-600" />
+                      <span>Produtos & Serviços</span>
+                    </span>
+                    <button
+                      onClick={() => setIsCatalogSelectorOpen(true)}
+                      className="px-3 py-1.5 bg-emerald-50 text-[#0F8A4B] font-bold text-xs rounded-lg hover:bg-emerald-100 transition flex items-center gap-1"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Adicionar
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    {(!deal.items || deal.items.length === 0) ? (
+                      <div className="p-6 bg-slate-50 border border-dashed border-slate-300 rounded-xl flex flex-col items-center justify-center text-center">
+                        <Package className="w-8 h-8 text-slate-300 mb-2" />
+                        <p className="text-xs font-bold text-slate-600">Cesta de Produtos Vazia</p>
+                        <p className="text-[10px] text-slate-400 font-medium max-w-[200px] mt-1">
+                          Vincule itens do catálogo oficial para compor o valor do negócio.
+                        </p>
+                      </div>
+                    ) : (
+                      deal.items.map((item) => (
+                        <div key={item.id} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 group relative">
+                          <div className="flex-1">
+                            <h4 className="text-sm font-black text-slate-900 leading-tight">{item.name}</h4>
+                            {item.notes && <p className="text-[10px] text-slate-500 font-medium mt-0.5">{item.notes}</p>}
+                            <div className="flex items-center gap-3 mt-1.5 text-[11px] font-bold text-slate-500">
+                              <span className="flex items-center gap-1"><CreditCard className="w-3 h-3 text-slate-400" /> Base: R$ {item.basePrice.toLocaleString('pt-BR')}</span>
+                              {item.discount > 0 && <span className="flex items-center gap-1 text-emerald-600"><Percent className="w-3 h-3 text-emerald-500" /> {item.discount}% desc.</span>}
+                              <span className="bg-slate-200/60 px-1.5 rounded text-slate-700">Qtd: {item.quantity}</span>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto">
+                            <div className="text-left sm:text-right">
+                              <span className="text-xs font-bold text-slate-400 block mb-0.5">Subtotal</span>
+                              <span className="text-sm font-black text-[#0F8A4B]">R$ {item.subtotal.toLocaleString('pt-BR')}</span>
+                            </div>
+                            <button
+                              onClick={() => handleRemoveCatalogItem(item.id)}
+                              className="w-7 h-7 flex items-center justify-center bg-white border border-slate-200 text-rose-500 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-50"
+                              title="Remover Item"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
 
@@ -1441,6 +1532,12 @@ export const DealDetailDrawer: React.FC = () => {
           </div>
         )}
       </div>
+      <DealCatalogSelector
+        isOpen={isCatalogSelectorOpen}
+        onClose={() => setIsCatalogSelectorOpen(false)}
+        businessUnitId={deal.businessUnitId}
+        onSelect={handleAddCatalogItem}
+      />
     </div>
   );
 };

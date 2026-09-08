@@ -33,6 +33,7 @@ import {
   CollaboratorInvite,
   OnboardingTask,
   JobExecutionLog,
+  CatalogItem,
 } from '../types';
 import {
   INITIAL_BUSINESS_UNITS,
@@ -57,7 +58,18 @@ import {
   INITIAL_WHATSAPP_CONVERSATIONS,
   INITIAL_AUTOMATIONS,
   INITIAL_AUDIT_LOGS,
+  INITIAL_CATALOG_ITEMS,
 } from '../mock/initialData';
+
+const PROD_BASELINE_FLAG = 'VERGROUP_PROD_BASELINE_V1';
+if (typeof window !== 'undefined') {
+  if (!localStorage.getItem(PROD_BASELINE_FLAG)) {
+    localStorage.clear();
+    localStorage.setItem(PROD_BASELINE_FLAG, 'true');
+    window.location.reload();
+  }
+}
+
 
 export type NavigationTab = 
   | 'cockpit'
@@ -170,6 +182,8 @@ export interface AppContextType {
   automations: AutomationRule[];
   auditLogs: AuditLog[];
   notifications: NotificationItem[];
+  catalogItems: CatalogItem[];
+  setCatalogItems: React.Dispatch<React.SetStateAction<CatalogItem[]>>;
 
   // Multi-company filtering helpers
   filterByBU: <T extends { businessUnitId?: string }>(items: T[]) => T[];
@@ -560,9 +574,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return saved ? JSON.parse(saved) : INITIAL_WHATSAPP_CONVERSATIONS;
   });
   const [automations, setAutomations] = useState<AutomationRule[]>(() => {
-    const saved = localStorage.getItem(`${STORAGE_KEY}_automations`);
-    return saved ? JSON.parse(saved) : INITIAL_AUTOMATIONS;
+    const stored = localStorage.getItem('vergroup_automations');
+    if (stored) {
+      return JSON.parse(stored) as AutomationRule[];
+    }
+    return INITIAL_AUTOMATIONS;
   });
+
+  const [catalogItems, setCatalogItems] = useState<CatalogItem[]>(() => {
+    const stored = localStorage.getItem('vergroup_catalog_items');
+    if (stored) {
+      return JSON.parse(stored) as CatalogItem[];
+    }
+    return INITIAL_CATALOG_ITEMS;
+  });
+
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>(() => {
     const saved = localStorage.getItem(`${STORAGE_KEY}_auditLogs`);
     return saved ? JSON.parse(saved) : INITIAL_AUDIT_LOGS;
@@ -625,6 +651,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     },
   ]);
 
+  useEffect(() => {
+    localStorage.setItem('vergroup_automations', JSON.stringify(automations));
+  }, [automations]);
+
+  useEffect(() => {
+    localStorage.setItem('vergroup_catalog_items', JSON.stringify(catalogItems));
+  }, [catalogItems]);
+
+  useEffect(() => {
+    localStorage.setItem('vergroup_audit_logs', JSON.stringify(auditLogs));
+  }, [auditLogs]);
+
   // Sync to localStorage
   useEffect(() => {
     localStorage.setItem(`${STORAGE_KEY}_users`, JSON.stringify(users));
@@ -682,7 +720,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const currentBU = businessUnits.find((b) => b.id === selectedBusinessUnitId) || businessUnits[0];
+  const DEFAULT_EMPTY_BU: BusinessUnit = { id: 'empty-bu', name: 'Nenhuma Empresa', code: 'EMP', color: '#64748B' };
+  const currentBU = businessUnits.find((b) => b.id === selectedBusinessUnitId) || businessUnits[0] || DEFAULT_EMPTY_BU;
 
   // Multi-company filtering helper
   const filterByBU = <T extends { businessUnitId?: string }>(items: T[]): T[] => {
@@ -2531,6 +2570,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     whatsApps,
     automations,
     auditLogs,
+    catalogItems,
+    setCatalogItems,
     notifications,
     filterByBU,
     createInvite,

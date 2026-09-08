@@ -55,11 +55,10 @@ export const TaskCreateWorkspace: React.FC = () => {
   const [recurrenceGenerateDaysAhead, setRecurrenceGenerateDaysAhead] = useState<number>(5);
   const [estimatedHours, setEstimatedHours] = useState<number>(2);
 
-  if (!isTaskCreateOpen) return null;
-
   // Resolve BU ID
   const activeBUId = taskCreateContext?.businessUnitId || (selectedBusinessUnitId === 'bu-all' ? 'bu-tech' : selectedBusinessUnitId);
-  const currentBU = businessUnits.find((b) => b.id === activeBUId) || businessUnits[0];
+  const DEFAULT_EMPTY_BU = { id: 'empty-bu', name: 'Nenhuma Empresa', code: 'EMP', color: '#64748B' };
+  const currentBU = businessUnits.find((b) => b.id === activeBUId) || businessUnits[0] || DEFAULT_EMPTY_BU;
 
   // Resolve context defaults
   const initialProjectId = taskCreateContext?.projectId || '';
@@ -330,6 +329,8 @@ export const TaskCreateWorkspace: React.FC = () => {
       }
     }, 100);
   };
+
+  if (!isTaskCreateOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-2xs flex items-center justify-center p-4 animate-in fade-in duration-150 font-sans select-none">

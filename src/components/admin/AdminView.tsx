@@ -42,6 +42,7 @@ import { StayCloudConfigModal } from './StayCloudConfigModal';
 import { WhatsAppConfigModal } from './WhatsAppConfigModal';
 import { PipelineModal } from './PipelineModal';
 import { PipelineStageConfigModal } from './PipelineStageConfigModal';
+import { CatalogTab } from './CatalogTab';
 import { Tabs } from '../ui/vercel-tabs';
 import { PermissionEngineService, CAPABILITIES_REGISTRY } from '../../services/permissionEngine';
 import { PermissionScope } from '../../types';
@@ -56,6 +57,7 @@ export const AdminView: React.FC = () => {
     pipelines,
     deals,
     tasks,
+    catalogItems,
     currentUser,
     switchUserRole,
     revokeInvite,
@@ -70,7 +72,7 @@ export const AdminView: React.FC = () => {
 
   const isSuperadmin = currentUser.role === 'superadmin' || currentUser.isSuperadmin;
 
-  const [activeTab, setActiveTab] = useState<'users' | 'invites' | 'organogram' | 'units' | 'matrix' | 'pipelines'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'invites' | 'organogram' | 'units' | 'matrix' | 'pipelines' | 'catalog'>('users');
   const [showInviteModal, setShowInviteModal] = useState<boolean>(false);
   const [showStayCloudModal, setShowStayCloudModal] = useState<boolean>(false);
   const [showWppModal, setShowWppModal] = useState<boolean>(false);
@@ -247,6 +249,7 @@ export const AdminView: React.FC = () => {
               { id: 'units', label: 'Empresas (BUs)', badge: businessUnits.length },
               { id: 'matrix', label: 'Matriz de Permissões' },
               { id: 'pipelines', label: 'Pipelines & Funis', badge: pipelines.length },
+              { id: 'catalog', label: 'Produtos & Serviços', badge: catalogItems.length },
             ]}
             activeTab={activeTab}
             onTabChange={(id) => setActiveTab(id as any)}
@@ -1092,6 +1095,13 @@ export const AdminView: React.FC = () => {
               })}
             </div>
           )}
+        </div>
+      )}
+
+      {/* TAB 7: CATÁLOGO */}
+      {activeTab === 'catalog' && (
+        <div className="space-y-4">
+          <CatalogTab />
         </div>
       )}
 

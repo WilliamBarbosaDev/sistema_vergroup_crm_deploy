@@ -17,14 +17,14 @@ export const TaskTemplateModal: React.FC<TaskTemplateModalProps> = ({ onClose })
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
 
   // Form Fields
-  const selectedTemplate = taskTemplates.find((t) => t.id === selectedTemplateId) || taskTemplates[0];
+  const selectedTemplate = taskTemplates.find((t) => t.id === selectedTemplateId) || taskTemplates[0] || null;
 
   const [title, setTitle] = useState(selectedTemplate?.title || 'Apuração Simples Nacional');
   const [description, setDescription] = useState(selectedTemplate?.description || 'Conferência de notas fiscais, cálculo de PGDAS-D e emissão de guia de recolhimento.');
   const [priority, setPriority] = useState<TaskPriority>(selectedTemplate?.defaultPriority || 'high');
   const [competenceMonth, setCompetenceMonth] = useState<number>(new Date().getMonth() + 1);
   const [competenceYear, setCompetenceYear] = useState<number>(2026);
-  const [assignedUserId, setAssignedUserId] = useState<string>(users[0]?.id || '');
+  const [assignedUserId, setAssignedUserId] = useState<string>(users[0]?.id || currentUser.id);
   const [recurrence, setRecurrence] = useState<'none' | 'daily' | 'weekly' | 'biweekly' | 'monthly'>('monthly');
 
   const handleTemplateSelect = (templateId: string) => {
@@ -56,7 +56,7 @@ export const TaskTemplateModal: React.FC<TaskTemplateModalProps> = ({ onClose })
       title: `${title} — Competência ${String(competenceMonth).padStart(2, '0')}/${competenceYear}`,
       description,
       businessUnitId: selectedBusinessUnitId === 'bu-all' ? 'bu-tech' : selectedBusinessUnitId,
-      assignedUserId: assignedUserId || users[0]?.id || '',
+      assignedUserId: assignedUserId || users[0]?.id || currentUser.id,
       creatorId: currentUser.id,
       priority,
       status: 'pending',
