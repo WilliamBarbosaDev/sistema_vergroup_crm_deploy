@@ -31,42 +31,42 @@ export const INITIAL_DEPARTMENTS: Department[] = [];
 
 export const INITIAL_TEAMS: Team[] = [];
 
-export const INITIAL_USERS: User[] = [
-  {
-    id: 'usr-william',
-    name: 'William Barbosa',
-    firstName: 'William',
-    lastName: 'Barbosa',
-    displayName: 'William',
-    email: 'williambdesigner@gmail.com',
-    personalEmail: '',
-    avatar: '',
-    role: 'superadmin',
-    businessUnitIds: [],
-    primaryBusinessUnitId: '',
-    departmentId: '',
-    jobTitle: 'Diretor de Produto & Tecnologia',
-    phone: '+55 92 98282-4592',
-    whatsapp: '+55 92 98282-4592',
-    alternatePhone: '',
-    emergencyContactName: '',
-    emergencyContact: '',
-    city: 'Manaus',
-    state: 'AM',
-    country: 'Brasil',
-    language: 'Português (Brasil)',
-    timezone: 'America/Manaus',
-    status: 'active',
-    employeeCode: 'VG-0001',
-    notificationPreferences: {
-      email: true,
-      push: true,
-      taskDigest: true,
-      meetingReminders: true,
-    },
-    createdAt: '2026-01-01T08:00:00Z',
-  }
-];
+export const EMPTY_USER: User = {
+  id: '',
+  name: '',
+  firstName: '',
+  lastName: '',
+  displayName: '',
+  email: '',
+  personalEmail: '',
+  avatar: '',
+  role: 'superadmin',
+  businessUnitIds: [],
+  primaryBusinessUnitId: '',
+  departmentId: '',
+  jobTitle: '',
+  phone: '',
+  whatsapp: '',
+  alternatePhone: '',
+  emergencyContactName: '',
+  emergencyContact: '',
+  city: '',
+  state: '',
+  country: '',
+  language: '',
+  timezone: '',
+  status: 'inactive',
+  employeeCode: '',
+  notificationPreferences: {
+    email: false,
+    push: false,
+    taskDigest: false,
+    meetingReminders: false,
+  },
+  createdAt: '',
+};
+
+export const INITIAL_USERS: User[] = [];
 
 export const INITIAL_INVITES: CollaboratorInvite[] = [];
 

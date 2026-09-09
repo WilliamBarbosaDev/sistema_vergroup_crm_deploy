@@ -63,6 +63,7 @@ import {
   INITIAL_AUDIT_LOGS,
   INITIAL_CATALOG_ITEMS,
   INITIAL_IMPORT_JOBS,
+  EMPTY_USER,
 } from '../mock/initialData';
 
 const PROD_BASELINE_FLAG = 'VERGROUP_PROD_BASELINE_V1';
@@ -351,7 +352,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [selectedBusinessUnitId, setSelectedBusinessUnitId] = useState<string>('bu-all');
   
   // Active User & RBAC
-  const [currentUser, setCurrentUser] = useState<User>(INITIAL_USERS[0]); // William (superadmin)
+  const [currentUser, setCurrentUser] = useState<User>(EMPTY_USER);
 
   const login = (email: string, password?: string): boolean => {
     const found = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
