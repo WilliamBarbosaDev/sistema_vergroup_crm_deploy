@@ -204,7 +204,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
   const fieldInputClass = 'w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:border-[#0F8A4B] focus:ring-2 focus:ring-[#0F8A4B]/10 disabled:bg-slate-50 disabled:text-slate-700 transition-all';
 
   return (
-    <div className="fixed inset-0 z-60 bg-black/60 backdrop-blur-2xs flex justify-end animate-in fade-in duration-200 font-sans select-none">
+    <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-2xs flex justify-end animate-in fade-in duration-200 font-sans select-none">
       
       {/* Right drawer panel (ficha de colaborador premium) */}
       <div className="w-full max-w-5xl h-full bg-[#F4F6F8] shadow-2xl flex flex-col overflow-hidden border-l border-slate-200 card-elevated">
