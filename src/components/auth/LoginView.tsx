@@ -104,6 +104,12 @@ export const LoginView: React.FC = () => {
       setIsBootstrapping(false);
       return;
     }
+
+    // Simula o processamento do hash (remover em produção real)
+    setTimeout(() => {
+      setIsBootstrapping(false);
+      window.location.reload(); // Força recarregar a página para atualizar a interface
+    }, 1500);
   };
 
   return (
