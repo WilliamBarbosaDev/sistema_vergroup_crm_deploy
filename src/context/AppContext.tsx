@@ -194,7 +194,7 @@ export interface AppContextType {
   importJobs: ImportJob[];
   addImportJob: (job: Omit<ImportJob, 'id' | 'createdAt' | 'updatedAt'>) => ImportJob;
 
-  // CRM Mode & Sales Tunneling Engine (Bitrix24 Grade)
+  // CRM mode and sales routing engine
   crmMode: CrmMode;
   setCrmMode: (mode: CrmMode) => void;
   salesTunnels: SalesTunnel[];
@@ -632,7 +632,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem(`${STORAGE_KEY}_crmMode`, crmMode);
   }, [crmMode]);
 
-  // Sales Tunnels (Bitrix24 Tunneling Engine)
+  // Sales tunnels
   const [salesTunnels, setSalesTunnels] = useState<SalesTunnel[]>(() => {
     const saved = localStorage.getItem(`${STORAGE_KEY}_salesTunnels`);
     return saved ? JSON.parse(saved) : [
@@ -1192,7 +1192,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       description: `Alteração realizada por ${currentUser.name}`,
     });
 
-    // Execute Sales Tunneling triggers (Bitrix24 Tunneling Engine)
+    // Execute sales routing triggers
     const matchingTunnels = salesTunnels.filter(
       (t) => t.active && t.sourcePipelineId === deal.pipelineId && t.sourceStageId === targetStageId
     );

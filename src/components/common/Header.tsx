@@ -57,7 +57,7 @@ export const Header: React.FC = () => {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isAIAgentCenterOpen, setIsAIAgentCenterOpen] = useState(false);
 
-  // Active Work Timer State (Bitrix24 Timecard)
+  // Active work timer state
   const [isWorking, setIsWorking] = useState<boolean>(true);
   const [isPaused, setIsPaused] = useState<boolean>(false);
   const [secondsWorked, setSecondsWorked] = useState<number>(16156); // ~ 04:29:16
@@ -115,7 +115,7 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header id="vergroup-topbar" className="h-14 bg-white border-b border-[#E2E6EA] px-4 md:px-6 flex items-center justify-between sticky top-0 z-30 font-sans select-none">
+    <header id="vergroup-topbar" className="h-14 md:h-16 bg-white/90 backdrop-blur-md border-b border-[#E2E6EA] px-4 md:px-6 flex items-center justify-between sticky top-0 z-30 font-sans select-none shadow-[0_1px_0_rgba(15,23,42,0.03)]">
       {/* Left: Company Switcher */}
       <div className="flex items-center gap-4">
         {/* Multi-Company Dropdown */}
@@ -123,7 +123,7 @@ export const Header: React.FC = () => {
           <button
             id="company-switcher-btn"
             onClick={() => setIsBUDropdownOpen(!isBUDropdownOpen)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold bg-[#F7F9FA] hover:bg-[#EAEFF3] border border-[#DDE3E8] transition-colors cursor-pointer text-[#17212B]"
+            className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold bg-[#F7F9FA] hover:bg-[#EEF2F5] border border-[#DDE3E8] transition-colors cursor-pointer text-[#17212B] shadow-xs"
             title="Alternar Unidade do Grupo"
           >
             <Building2 className="w-4 h-4 text-[#0F8A4B]" />
@@ -172,7 +172,7 @@ export const Header: React.FC = () => {
         <button
           id="global-search-trigger-btn"
           onClick={() => setIsSearchOpen(true)}
-          className="w-full flex items-center justify-between px-3 py-1.5 text-xs text-[#5F6B76] bg-[#F7F9FA] hover:bg-[#EAEFF3] border border-[#DDE3E8] rounded-xl transition-colors cursor-pointer group"
+          className="w-full flex items-center justify-between px-3 py-2 text-xs text-[#5F6B76] bg-[#F7F9FA] hover:bg-[#EEF2F5] border border-[#DDE3E8] rounded-xl transition-colors cursor-pointer group shadow-xs"
         >
           <div className="flex items-center gap-2 font-medium">
             <Search className="w-3.5 h-3.5 text-[#5F6B76] group-hover:text-[#0F8A4B]" />
@@ -189,7 +189,7 @@ export const Header: React.FC = () => {
         {/* Mobile Search Icon */}
         <button
           onClick={() => setIsSearchOpen(true)}
-          className="p-2 text-[#5F6B76] hover:text-[#17212B] hover:bg-[#F7F9FA] rounded-xl lg:hidden cursor-pointer"
+          className="p-2.5 text-[#5F6B76] hover:text-[#17212B] hover:bg-[#F7F9FA] rounded-xl lg:hidden cursor-pointer"
           title="Buscar"
         >
           <Search className="w-4 h-4" />
@@ -199,7 +199,7 @@ export const Header: React.FC = () => {
         <button
           id="ver-ai-agents-btn"
           onClick={() => setIsAIAgentCenterOpen(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-[#ECF8F1] hover:bg-emerald-100 border border-[#0F8A4B]/30 text-[#0B6B3A] rounded-lg text-xs font-semibold cursor-pointer transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 bg-[#ECF8F1] hover:bg-emerald-100 border border-[#0F8A4B]/30 text-[#0B6B3A] rounded-xl text-xs font-semibold cursor-pointer transition-colors shadow-xs"
           title="Centro de Agentes de Inteligência Artificial VER AI"
         >
           <Sparkles className="w-3.5 h-3.5 text-[#0F8A4B]" />
@@ -211,7 +211,7 @@ export const Header: React.FC = () => {
           <button
             id="quick-create-btn"
             onClick={() => setIsQuickCreateOpen(!isQuickCreateOpen)}
-            className="flex items-center gap-1.5 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white px-3.5 py-1.5 rounded-xl text-xs font-black shadow-xs transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white px-3.5 py-2 rounded-xl text-xs font-black shadow-sm transition-colors cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Novo</span>
@@ -219,7 +219,7 @@ export const Header: React.FC = () => {
           </button>
 
           {isQuickCreateOpen && (
-            <div className="absolute right-0 mt-1.5 w-48 bg-white rounded-xl shadow-xl border border-[#DDE3E8] py-1 z-50 animate-in fade-in duration-100">
+            <div className="absolute right-0 mt-1.5 w-48 bg-white rounded-xl shadow-xl border border-[#DDE3E8] py-1 z-50 animate-in fade-in duration-100 card-elevated">
               <div className="px-3 py-1.5 border-b border-[#DDE3E8] bg-[#F7F9FA]">
                 <p className="text-[10px] font-black text-[#5F6B76] uppercase">Criação Rápida</p>
               </div>
@@ -349,13 +349,13 @@ export const Header: React.FC = () => {
           )}
         </div>
 
-        {/* LOGGED-IN USER PILL & BITRIX24 PROFILE DROPDOWN CARD */}
+        {/* Logged-in user pill and profile dropdown card */}
         <div className="relative" ref={roleDropdownRef}>
           {/* Top Bar Pill Button matching User Reference */}
           <button
             id="user-profile-role-btn"
             onClick={() => setIsRoleDropdownOpen(!isRoleDropdownOpen)}
-            className="flex items-center gap-2 px-2.5 py-1 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl transition-all shadow-2xs cursor-pointer"
+            className="flex items-center gap-2 px-2.5 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl transition-all shadow-2xs cursor-pointer"
             title="Perfil e Controle de Ponto"
           >
             <UserAvatar name={currentUser.name} avatarUrl={currentUser.avatar} size="xs" status={currentUser.status} showStatus={false} />
@@ -368,9 +368,9 @@ export const Header: React.FC = () => {
             <Shield className="w-3.5 h-3.5 text-slate-400" />
           </button>
 
-          {/* BITRIX24 PROFILE POPUP CARD MATCHING REFERENCE 3 */}
+          {/* Profile popup card */}
           {isRoleDropdownOpen && (
-            <div className="absolute right-0 mt-2 w-84 bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 space-y-3.5 font-sans z-50 animate-in fade-in zoom-in-95 duration-150">
+            <div className="absolute right-0 mt-2 w-84 bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 space-y-3.5 font-sans z-50 animate-in fade-in zoom-in-95 duration-150 card-elevated">
               
               {/* 1. Header Row: Avatar + Name + Title */}
               <div

@@ -116,16 +116,16 @@ export const Sidebar: React.FC = () => {
   return (
     <aside
       id="vergroup-sidebar"
-      className={`bg-white border-r border-[#E2E6EA] flex flex-col justify-between shrink-0 transition-all duration-200 select-none z-20 ${
+      className={`bg-white/90 backdrop-blur-md border-r border-[#E2E6EA] flex flex-col justify-between shrink-0 transition-all duration-200 select-none z-20 shadow-[1px_0_0_rgba(15,23,42,0.03)] ${
         isCollapsed ? 'w-16' : 'w-60'
       }`}
     >
       {/* Top Logo Banner */}
-      <div className="p-3 border-b border-[#E2E6EA] flex items-center justify-between bg-white">
+      <div className="p-3 border-b border-[#E2E6EA] flex items-center justify-between bg-white/80">
         {!isCollapsed ? (
           <img src={greenLogoAsset} alt="VERGROUP Logo" className="h-8 w-auto object-contain shrink-0" />
         ) : (
-          <div className="w-8 h-8 rounded-lg bg-[#0F8A4B] text-white flex items-center justify-center font-bold text-sm font-display">
+          <div className="w-8 h-8 rounded-xl bg-[#0F8A4B] text-white flex items-center justify-center font-bold text-sm font-display shadow-sm">
             V
           </div>
         )}
@@ -136,7 +136,7 @@ export const Sidebar: React.FC = () => {
         {navigationGroups.map((group) => (
           <div key={group.title} className="space-y-0.5">
             {!isCollapsed && (
-              <p className="px-3 py-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+              <p className="px-3 py-1 text-[11px] font-semibold text-slate-400 uppercase tracking-[0.18em]">
                 {group.title}
               </p>
             )}
@@ -149,7 +149,7 @@ export const Sidebar: React.FC = () => {
                   id={`nav-${item.id}`}
                   onClick={() => setCurrentTab(item.id)}
                   title={isCollapsed ? item.label : undefined}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all cursor-pointer group ${
+                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs transition-all cursor-pointer group ${
                     isActive
                       ? 'bg-[#ECF8F1] text-[#0B6B3A] font-semibold border-l-2 border-[#0F8A4B]'
                       : 'text-slate-700 hover:bg-[#F5F7F8] hover:text-[#0B6B3A] font-medium'
@@ -167,7 +167,7 @@ export const Sidebar: React.FC = () => {
 
                   {!isCollapsed && item.badge !== undefined && item.badge > 0 && (
                     <span
-                      className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold text-white ${
+                      className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold text-white ${
                         item.badgeColor || 'bg-[#0F8A4B]'
                       }`}
                     >
@@ -182,10 +182,10 @@ export const Sidebar: React.FC = () => {
       </div>
 
       {/* Collapse Toggle Button */}
-      <div className="p-2 border-t border-[#E2E6EA] flex justify-end bg-white">
+      <div className="p-2 border-t border-[#E2E6EA] flex justify-end bg-white/80">
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-[#F5F7F8] transition-colors cursor-pointer"
+          className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-[#F5F7F8] transition-colors cursor-pointer"
           title={isCollapsed ? 'Expandir Menu' : 'Recolher Menu'}
         >
           {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}

@@ -409,7 +409,7 @@ export const TaskOperationalDrawer: React.FC<TaskOperationalDrawerProps> = ({ ta
           </div>
         </div>
 
-        {/* NAVEGAÇÃO INTERNA — TABS COMPREENSIVAS (VISUAL CLEAN BITRIX24) */}
+        {/* Navegação interna — tabs compreensivas com visual clean */}
         <div className="bg-[#FDFCE8] border-b border-[#FDFBE2] px-5 flex items-center gap-1 overflow-x-auto shrink-0 font-sans">
           {[
             { id: 'overview', label: 'Visão Geral' },

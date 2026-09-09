@@ -174,9 +174,9 @@ export const RightChatWidgetRail: React.FC = () => {
         </div>
       )}
 
-      {/* BITRIX24 FLOATING RIGHT RAIL WIDGET (VERGROUP BRAND GREEN PALETTE) */}
+      {/* Floating right rail widget (VERGROUP brand green palette) */}
       <aside
-        id="bitrix-right-chat-rail"
+        id="right-chat-widget-rail"
         className="fixed right-0 top-0 bottom-0 w-16 bg-[#0A3429] text-emerald-100 flex flex-col items-center py-3 space-y-3 z-40 border-l border-[#13604C]/60 shadow-2xl font-sans overflow-y-auto custom-scrollbar select-none"
       >
         {/* Top Clock */}

@@ -42,8 +42,8 @@ export const ImportsTab: React.FC = () => {
             <Database className="w-6 h-6 text-blue-600" />
             Importação de Dados
           </h2>
-          <p className="text-sm font-medium text-slate-500 mt-1">
-            Utilize esta área para importar dados de sistemas externos (ex: Bitrix24) para o VERGROUP.
+          <p className="section-muted mt-1 max-w-2xl">
+            Importe bases externas com rastreabilidade, contexto por unidade de negócio e sem sobrescrever registros existentes.
           </p>
         </div>
         
@@ -58,21 +58,21 @@ export const ImportsTab: React.FC = () => {
       <div className="p-4 bg-amber-50 rounded-xl border border-amber-200 flex gap-3">
         <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
         <div className="text-[11px] text-amber-800 font-medium leading-relaxed">
-          <strong className="block mb-1 text-xs">Módulo em Configuração (Staging)</strong>
-          Nesta etapa, o assistente permite apenas o envio (upload) dos backups exportados do Bitrix24. O sistema irá registrar o arquivo e seu contexto (Business Unit) para futuras análises e mapeamentos de dados. Nenhuma entidade real do CRM será sobrescrita.
+          <strong className="block mb-1 text-xs">Modo seguro de importação</strong>
+          Nesta etapa, o assistente registra apenas o arquivo enviado e o contexto da unidade de negócio. Nenhum dado operacional é alterado até a etapa final.
         </div>
       </div>
 
       {/* Filters & Actions */}
-      <div className="bg-white p-4 rounded-2xl shadow-xs border border-slate-200 flex flex-col md:flex-row gap-4 items-center justify-between">
-        <div className="relative w-full md:w-96">
+      <div className="surface-card p-4 flex flex-col md:flex-row gap-4 items-center justify-between">
+        <div className="relative w-full md:w-96 input-shell px-3">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             placeholder="Buscar arquivo ou origem..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium"
+            className="w-full pl-10 pr-4 py-2 bg-transparent border-0 text-sm focus:outline-none transition-all font-medium"
           />
         </div>
         <div className="flex gap-2 w-full md:w-auto">
@@ -83,7 +83,7 @@ export const ImportsTab: React.FC = () => {
       </div>
 
       {/* Data Table */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
+      <div className="surface-card-strong overflow-hidden">
         {importJobs.length === 0 ? (
           <div className="p-12 text-center flex flex-col items-center justify-center">
             <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mb-4 border border-slate-100 shadow-inner">
@@ -91,7 +91,7 @@ export const ImportsTab: React.FC = () => {
             </div>
             <h3 className="text-sm font-black text-slate-900 mb-1">Nenhuma importação realizada</h3>
             <p className="text-xs font-medium text-slate-500 max-w-sm mb-6">
-              O histórico de uploads e migrações aparecerá aqui. Clique em "Nova Importação" para iniciar o envio de um backup.
+              O histórico de importações aparecerá aqui. Clique em "Nova Importação" para iniciar o envio de um arquivo.
             </p>
             <button
               onClick={() => setIsWizardOpen(true)}

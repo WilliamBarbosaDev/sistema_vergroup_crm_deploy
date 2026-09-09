@@ -45,6 +45,7 @@ import { PipelineStageConfigModal } from './PipelineStageConfigModal';
 import { CatalogTab } from './CatalogTab';
 import { ImportsTab } from './ImportsTab';
 import { AdminGovernanceTab } from './AdminGovernanceTab';
+import { WebFormsTab } from './WebFormsTab';
 import { Tabs } from '../ui/vercel-tabs';
 import { PermissionEngineService, CAPABILITIES_REGISTRY } from '../../services/permissionEngine';
 import { PermissionScope } from '../../types';
@@ -65,6 +66,7 @@ export const AdminView: React.FC = () => {
     addSalesTunnel,
     deleteSalesTunnel,
     currentUser,
+    addLead,
     switchUserRole,
     revokeInvite,
     resendInvite,
@@ -78,7 +80,7 @@ export const AdminView: React.FC = () => {
 
   const isSuperadmin = currentUser.role === 'superadmin' || currentUser.isSuperadmin;
 
-  const [activeTab, setActiveTab] = useState<'users' | 'invites' | 'organogram' | 'units' | 'matrix' | 'governance' | 'pipelines' | 'catalog' | 'imports'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'invites' | 'organogram' | 'units' | 'matrix' | 'governance' | 'pipelines' | 'webforms' | 'catalog' | 'imports'>('users');
   const [showInviteModal, setShowInviteModal] = useState<boolean>(false);
   const [showStayCloudModal, setShowStayCloudModal] = useState<boolean>(false);
   const [showWppModal, setShowWppModal] = useState<boolean>(false);
@@ -87,7 +89,7 @@ export const AdminView: React.FC = () => {
   const [showStageConfigModal, setShowStageConfigModal] = useState<boolean>(false);
   const [pipelineForStageConfig, setPipelineForStageConfig] = useState<Pipeline | null>(null);
 
-  // Sales Tunneling States (Bitrix24 Tunneling Engine)
+  // Sales tunneling states
   const [showTunnelModal, setShowTunnelModal] = useState<boolean>(false);
   const [tunName, setTunName] = useState<string>('');
   const [tunSourcePipeId, setTunSourcePipeId] = useState<string>('');
@@ -1106,7 +1108,7 @@ export const AdminView: React.FC = () => {
             </div>
           )}
 
-          {/* SEÇÃO TÚNEIS DE VENDAS (BITRIX24 SALES TUNNELING ENGINE) */}
+          {/* Seção de túneis de vendas */}
           <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-4 shadow-2xs">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-100 pb-3">
               <div>

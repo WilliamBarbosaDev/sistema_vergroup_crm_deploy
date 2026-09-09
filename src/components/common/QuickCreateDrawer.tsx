@@ -138,7 +138,7 @@ export const QuickCreateDrawer: React.FC = () => {
   const [projEndDate, setProjEndDate] = useState(new Date(Date.now() + 60 * 86400000).toISOString().split('T')[0]);
   const [projBudget, setProjBudget] = useState('100000');
 
-  // 4. Contact (Ficha Ampla & Completa CRM 2.0 - Estilo Bitrix24)
+  // 4. Contact (ficha ampla e completa de CRM)
   const [contactSalutation, setContactSalutation] = useState('Não selecionado');
   const [contactFirstName, setContactFirstName] = useState('');
   const [contactLastName, setContactLastName] = useState('');
@@ -952,7 +952,7 @@ export const QuickCreateDrawer: React.FC = () => {
             </>
           )}
 
-          {/* CONTACT FORM — FICHA AMPLA CRM 2.0 (LAYOUT EM 2 GRANDES COLUNAS ESTILO BITRIX24) */}
+          {/* CONTACT FORM — ficha ampla CRM em duas colunas */}
           {quickCreateType === 'contact' && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
               {/* COLUNA ESQUERDA (65% / lg:col-span-7) — FORMULÁRIO DE DADOS COMPLETO */}
@@ -1056,7 +1056,7 @@ export const QuickCreateDrawer: React.FC = () => {
                   </div>
                 </div>
 
-                {/* BLOCO 2: MÚLTIPLOS TELEFONES E E-MAILS (PADRÃO BITRIX24) */}
+                {/* BLOCO 2: múltiplos telefones e e-mails */}
                 <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-4">
                   <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2 border-b border-slate-200/80 pb-2">
                     <PhoneCall className="w-4 h-4 text-[#0F8A4B]" />
@@ -1390,7 +1390,7 @@ export const QuickCreateDrawer: React.FC = () => {
                 </div>
               </div>
 
-              {/* COLUNA DIREITA (35% / lg:col-span-5) — CENTRAL DE ATIVIDADES E COMUNICAÇÃO (ESTILO BITRIX24) */}
+              {/* COLUNA DIREITA (35% / lg:col-span-5) — central de atividades e comunicação */}
               <div className="lg:col-span-5 space-y-4 sticky top-0">
                 <div className="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
                   

@@ -33,6 +33,7 @@ import {
   ChevronRight,
   Video,
   MessageSquare,
+  Loader2,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { UserAvatar } from './UserAvatar';
@@ -59,7 +60,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState<string>('geral');
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [avatarError, setAvatarError] = useState('');
+  const [saveError, setSaveError] = useState('');
   const [savedMessage, setSavedMessage] = useState('');
 
   const [draft, setDraft] = useState(() => ({
@@ -99,6 +102,21 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
     setDraft((prev) => ({ ...prev, [field]: value }));
   };
 
+  const formatPhoneValue = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 13);
+
+    if (!digits) return '';
+    if (digits.length <= 2) return `(${digits}`;
+    if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+    if (digits.length <= 11) return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+
+    return `+${digits.slice(0, 2)} (${digits.slice(2, 4)}) ${digits.slice(4, 9)}-${digits.slice(9)}`;
+  };
+
+  const handlePhoneChange = (field: 'phone' | 'workPhone' | 'emergencyContact', value: string) => {
+    updateDraft(field, formatPhoneValue(value));
+  };
+
   const handleAvatarSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     setAvatarError('');
@@ -122,33 +140,50 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
   };
 
   const handleSave = () => {
-    const fullName = `${draft.firstName.trim()} ${draft.lastName.trim()}`.trim() || draft.name;
-    updateCurrentUserProfile({
-      firstName: draft.firstName.trim(),
-      lastName: draft.lastName.trim(),
-      name: fullName,
-      displayName: draft.displayName.trim() || fullName,
-      birthDate: draft.birthDate,
-      gender: draft.gender,
-      city: draft.city.trim(),
-      state: draft.state.trim(),
-      country: draft.country.trim(),
-      language: draft.language,
-      timezone: draft.timezone,
-      phone: draft.phone.trim(),
-      workPhone: draft.workPhone.trim(),
-      extensionPhone: draft.extensionPhone.trim(),
-      whatsapp: draft.whatsapp.trim(),
-      emergencyContactName: draft.emergencyContactName.trim(),
-      emergencyContact: draft.emergencyContact.trim(),
-      website: draft.website.trim(),
-      teamsAccount: draft.teamsAccount.trim(),
-      zoomAccount: draft.zoomAccount.trim(),
-      avatar: draft.avatar,
-    });
-    setIsEditing(false);
-    setSavedMessage('🎉 Dados do perfil atualizados com sucesso!');
-    window.setTimeout(() => setSavedMessage(''), 3000);
+    const firstName = draft.firstName.trim();
+    const lastName = draft.lastName.trim();
+
+    if (!firstName || !lastName) {
+      setSaveError('Nome e sobrenome são obrigatórios.');
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveError('');
+
+    try {
+      const fullName = `${firstName} ${lastName}`.trim();
+      updateCurrentUserProfile({
+        firstName,
+        lastName,
+        name: fullName,
+        displayName: draft.displayName.trim() || fullName,
+        birthDate: draft.birthDate,
+        gender: draft.gender,
+        city: draft.city.trim(),
+        state: draft.state.trim(),
+        country: draft.country.trim(),
+        language: draft.language,
+        timezone: draft.timezone,
+        phone: draft.phone.trim(),
+        workPhone: draft.workPhone.trim(),
+        extensionPhone: draft.extensionPhone.trim(),
+        whatsapp: draft.whatsapp.trim(),
+        emergencyContactName: draft.emergencyContactName.trim(),
+        emergencyContact: draft.emergencyContact.trim(),
+        website: draft.website.trim(),
+        teamsAccount: draft.teamsAccount.trim(),
+        zoomAccount: draft.zoomAccount.trim(),
+        avatar: draft.avatar,
+      });
+      setIsEditing(false);
+      setSavedMessage('🎉 Dados do perfil atualizados com sucesso!');
+      window.setTimeout(() => setSavedMessage(''), 3000);
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Erro ao salvar o perfil.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const topTabs = [
@@ -171,8 +206,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
   return (
     <div className="fixed inset-0 z-60 bg-black/60 backdrop-blur-2xs flex justify-end animate-in fade-in duration-200 font-sans select-none">
       
-      {/* Right Drawer Panel (Ficha de Colaborador Estilo Bitrix24 Premium) */}
-      <div className="w-full max-w-5xl h-full bg-[#F4F6F8] shadow-2xl flex flex-col overflow-hidden border-l border-slate-200">
+      {/* Right drawer panel (ficha de colaborador premium) */}
+      <div className="w-full max-w-5xl h-full bg-[#F4F6F8] shadow-2xl flex flex-col overflow-hidden border-l border-slate-200 card-elevated">
         
         {/* TOP HEADER CORPORATIVO */}
         <div className="bg-slate-900 text-white px-6 py-4 flex flex-col gap-3 shrink-0 border-b border-slate-800">
@@ -214,7 +249,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
                 className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors border border-slate-700 cursor-pointer"
               >
                 <ShoppingBag className="w-3.5 h-3.5 text-amber-400" />
-                <span className="hidden md:inline">Bitrix24.Market</span>
+                <span className="hidden md:inline">Marketplace</span>
               </button>
 
               <button

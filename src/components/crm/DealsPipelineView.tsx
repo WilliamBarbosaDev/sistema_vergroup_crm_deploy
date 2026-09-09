@@ -284,7 +284,7 @@ export const DealsPipelineView: React.FC = () => {
             </select>
           </div>
 
-          {/* Selector de Modo CRM (Bitrix24 Grade: Com Leads vs Sem Leads) */}
+          {/* Selector de modo CRM: com leads vs sem leads */}
           <button
             type="button"
             onClick={() => setCrmMode(crmMode === 'with_leads' ? 'without_leads' : 'with_leads')}

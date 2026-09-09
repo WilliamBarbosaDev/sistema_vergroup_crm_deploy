@@ -11,7 +11,7 @@ export const ImportWizardModal: React.FC<ImportWizardModalProps> = ({ isOpen, on
   const { businessUnits, currentUser, addImportJob, addAuditLog } = useApp();
   
   const [step, setStep] = useState(1);
-  const [source, setSource] = useState('bitrix24');
+  const [source, setSource] = useState('legacy_crm');
   const [businessUnitId, setBusinessUnitId] = useState('');
   const [fileName, setFileName] = useState('');
   const [fileSize, setFileSize] = useState(0);
@@ -57,10 +57,10 @@ export const ImportWizardModal: React.FC<ImportWizardModalProps> = ({ isOpen, on
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-2xs flex items-center justify-center p-4 font-sans animate-in fade-in duration-150 select-none">
       <div 
-        className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]"
+        className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh] card-elevated"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex-none p-5 bg-slate-900 border-b border-slate-800 flex items-center justify-between">
+        <div className="flex-none p-5 bg-gradient-to-r from-slate-950 to-slate-900 border-b border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-blue-600 rounded-xl text-white shadow-inner shadow-blue-400/20">
               <Upload className="w-5 h-5" />
@@ -70,7 +70,7 @@ export const ImportWizardModal: React.FC<ImportWizardModalProps> = ({ isOpen, on
                 Assistente de Importação
               </h2>
               <p className="text-xs text-slate-300 font-medium mt-0.5">
-                Prepare os dados externos para análise e mapeamento.
+                Prepare a origem, o destino e o arquivo com rastreabilidade.
               </p>
             </div>
           </div>
@@ -113,25 +113,25 @@ export const ImportWizardModal: React.FC<ImportWizardModalProps> = ({ isOpen, on
           {/* STEP 1: SOURCE */}
           {step === 1 && (
             <div className="space-y-4 animate-in slide-in-from-right-4 duration-300">
-              <h3 className="text-sm font-black text-slate-900">Selecione o Sistema de Origem</h3>
+              <h3 className="text-sm font-black text-slate-900">Selecione o sistema de origem</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <label className={`cursor-pointer border-2 rounded-xl p-4 flex flex-col items-center gap-3 transition-all ${
-                  source === 'bitrix24' ? 'border-blue-500 bg-blue-50' : 'border-slate-200 bg-white hover:border-blue-300'
+                  source === 'legacy_crm' ? 'border-blue-500 bg-blue-50' : 'border-slate-200 bg-white hover:border-blue-300'
                 }`}>
                   <input 
                     type="radio" 
                     name="source" 
-                    value="bitrix24" 
-                    checked={source === 'bitrix24'} 
-                    onChange={() => setSource('bitrix24')} 
+                    value="legacy_crm" 
+                    checked={source === 'legacy_crm'} 
+                    onChange={() => setSource('legacy_crm')} 
                     className="sr-only" 
                   />
                   <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 font-black text-xl shadow-inner">
-                    B24
+                    CRM
                   </div>
                   <div className="text-center">
-                    <div className="font-bold text-slate-900 text-sm">Bitrix24</div>
-                    <div className="text-[10px] text-slate-500 font-medium">Backup Padrão (CSV/ZIP)</div>
+                    <div className="font-bold text-slate-900 text-sm">Sistema legado</div>
+                    <div className="text-[10px] text-slate-500 font-medium">Backup padrão em CSV ou ZIP</div>
                   </div>
                 </label>
                 
@@ -151,9 +151,9 @@ export const ImportWizardModal: React.FC<ImportWizardModalProps> = ({ isOpen, on
           {/* STEP 2: BUSINESS UNIT DESTINATION */}
           {step === 2 && (
             <div className="space-y-4 animate-in slide-in-from-right-4 duration-300">
-              <h3 className="text-sm font-black text-slate-900">Selecione a Unidade de Negócio (Destino)</h3>
+              <h3 className="text-sm font-black text-slate-900">Selecione a unidade de negócio de destino</h3>
               <p className="text-xs text-slate-500 font-medium mb-4">
-                Os dados importados serão isolados nesta BU. Certifique-se de escolher a empresa correta para evitar vazamento de dados via RLS.
+                Os dados importados serão isolados nesta BU. Escolha a empresa correta para manter a segregação dos dados.
               </p>
 
               <div className="grid grid-cols-1 gap-3">

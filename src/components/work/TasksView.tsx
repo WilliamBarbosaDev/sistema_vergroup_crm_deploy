@@ -73,7 +73,7 @@ export const TasksView: React.FC = () => {
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [showTeamRisksModal, setShowTeamRisksModal] = useState(false);
 
-  // ADVANCED FILTER STATE (ESTILO BITRIX24)
+  // Advanced filter state
   const [isAdvancedFilterOpen, setIsAdvancedFilterOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState<'all' | 'assignee' | 'owner' | 'participant' | 'observer'>('all');
   const [selectedParticipantId, setSelectedParticipantId] = useState<string>('all');
@@ -133,7 +133,7 @@ export const TasksView: React.FC = () => {
     if (selectedPriority !== 'all' && t.priority !== selectedPriority) return false;
     if (selectedAssignee !== 'all' && t.assignedUserId !== selectedAssignee) return false;
 
-    // Advanced Bitrix24 Filters
+    // Advanced filters
     if (selectedStatuses.length > 0 && !selectedStatuses.includes(t.status)) return false;
     if (selectedRole === 'assignee' && t.assignedUserId !== currentUser.id) return false;
     if (selectedRole === 'owner' && t.ownerUserId !== currentUser.id && t.creatorId !== currentUser.id) return false;
@@ -381,7 +381,7 @@ export const TasksView: React.FC = () => {
               </button>
             )}
 
-            {/* BOTÃO FILTROS AVANÇADOS BITRIX24 */}
+            {/* Botão de filtros avançados */}
             <button
               onClick={() => setIsAdvancedFilterOpen(true)}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all border ${
@@ -598,7 +598,7 @@ export const TasksView: React.FC = () => {
         </div>
       )}
 
-      {/* ADVANCED BITRIX24 FILTER DRAWER */}
+      {/* Advanced filter drawer */}
       {isAdvancedFilterOpen && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-2xs flex items-center justify-center p-4 font-sans animate-in fade-in duration-150">
           <div className="w-full max-w-xl bg-white max-h-[90vh] rounded-2xl shadow-2xl border border-slate-200 flex flex-col justify-between overflow-hidden animate-in zoom-in-95 duration-150">

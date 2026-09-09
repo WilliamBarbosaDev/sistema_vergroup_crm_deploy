@@ -84,7 +84,7 @@ const MainLayout: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#F7F9FA] text-[#17212B] font-sans antialiased">
+    <div className="flex min-h-screen w-screen overflow-hidden bg-page text-[#17212B] font-sans antialiased">
       {/* Dynamic Navigation Sidebar (Left) */}
       <Sidebar />
 
@@ -94,7 +94,7 @@ const MainLayout: React.FC = () => {
         <Header />
 
         {/* Scrollable Main Content */}
-        <main className="flex-1 overflow-y-auto overflow-x-hidden">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden bg-gradient-to-b from-white/40 to-transparent">
           {renderContent()}
         </main>
       </div>
