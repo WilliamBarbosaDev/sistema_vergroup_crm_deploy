@@ -907,6 +907,8 @@ export interface ChatChannel {
 
 // Communication: Email
 export interface EmailAccountConfig {
+  id: string;
+  userId: string;
   email: string;
   displayName: string;
   imapServer: string;
@@ -923,6 +925,7 @@ export interface EmailAccountConfig {
 export interface EmailMessage {
   id: string;
   businessUnitId: string;
+  emailAccountId?: string;
   from: { name: string; email: string };
   to: { name: string; email: string }[];
   subject: string;

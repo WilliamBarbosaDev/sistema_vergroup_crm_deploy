@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Mail,
   Send,
@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { EmailMessage, EmailAccountConfig } from '../../types';
+import { EmailAccountSwitcher } from './EmailAccountSwitcher';
 
 export const EmailInboxView: React.FC = () => {
   const {
@@ -36,8 +37,12 @@ export const EmailInboxView: React.FC = () => {
     sendEmail,
     markEmailRead,
     toggleEmailStar,
-    emailAccountConfig,
+    emailAccounts,
+    activeEmailAccountId,
+    activeEmailAccount,
+    setActiveEmailAccountId,
     saveEmailAccountConfig,
+    deleteEmailAccount,
     setSelectedDealId,
     setSelectedTaskId,
     setCurrentTab,
@@ -60,7 +65,35 @@ export const EmailInboxView: React.FC = () => {
 
   // Settings modal
   const [settingsModal, setSettingsModal] = useState(false);
-  const [configForm, setConfigForm] = useState<EmailAccountConfig>(emailAccountConfig);
+  const blankEmailAccount = () => ({
+    id: `emacc-${Date.now()}`,
+    userId: currentUser.id,
+    email: '',
+    displayName: '',
+    imapServer: '',
+    imapPort: 993,
+    imapSsl: true,
+    smtpServer: '',
+    smtpPort: 465,
+    smtpSsl: true,
+    syncIntervalMinutes: 5,
+    signature: '',
+    isEncrypted: true,
+  } as EmailAccountConfig);
+  const [configForm, setConfigForm] = useState<EmailAccountConfig>(activeEmailAccount || blankEmailAccount());
+
+  useEffect(() => {
+    if (activeEmailAccount) {
+      setConfigForm(activeEmailAccount);
+    } else if (settingsModal) {
+      setConfigForm(blankEmailAccount());
+    }
+  }, [activeEmailAccountId, activeEmailAccount, settingsModal]);
+
+  const handleCreateNewEmailAccount = () => {
+    setConfigForm(blankEmailAccount());
+    setSettingsModal(true);
+  };
 
   const displayedEmails = emails.filter((e) => {
     if (activeFolder === 'inbox' && e.folder !== 'inbox') return false;
@@ -138,8 +171,16 @@ export const EmailInboxView: React.FC = () => {
               </span>
             </div>
             <p className="text-xs text-neutral-500 mt-0.5">
-              Conectado como <strong className="text-neutral-800">{emailAccountConfig.email}</strong> • Rastreabilidade direta com Contatos, Negócios e Tarefas
+              Conta ativa no painel do usuário. Conectado como <strong className="text-neutral-800">{activeEmailAccount?.email || 'Nenhuma conta configurada'}</strong> • Rastreabilidade direta com Contatos, Negócios e Tarefas
             </p>
+            <div className="mt-3 max-w-xl">
+              <EmailAccountSwitcher
+                accounts={emailAccounts.filter((account) => account.userId === currentUser.id)}
+                activeId={activeEmailAccountId}
+                onChange={setActiveEmailAccountId}
+                onCreateNew={handleCreateNewEmailAccount}
+              />
+            </div>
           </div>
         </div>
 
@@ -151,6 +192,14 @@ export const EmailInboxView: React.FC = () => {
           >
             <Settings className="w-3.5 h-3.5" />
             <span>Configurações IMAP/SMTP</span>
+          </button>
+          <button
+            onClick={handleCreateNewEmailAccount}
+            className="flex items-center gap-1.5 px-3 py-2 border border-neutral-300 hover:bg-neutral-50 rounded-md text-xs font-semibold text-neutral-700 cursor-pointer"
+            title="Adicionar nova conta IMAP/SMTP"
+          >
+            <Mail className="w-4 h-4" />
+            <span>Nova conta</span>
           </button>
           <button
             onClick={() => setComposeModal(true)}
@@ -565,6 +614,20 @@ export const EmailInboxView: React.FC = () => {
               </div>
 
               <div className="flex justify-end gap-2 pt-3 border-t border-neutral-200">
+                {configForm.id && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      deleteEmailAccount(configForm.id);
+                      setSettingsModal(false);
+                    }}
+                    className="px-3.5 py-2 border border-red-200 text-red-700 rounded-lg text-xs font-medium hover:bg-red-50"
+                    disabled={emailAccounts.filter((account) => account.userId === currentUser.id).length <= 1}
+                    title={emailAccounts.filter((account) => account.userId === currentUser.id).length <= 1 ? 'Mantenha ao menos uma conta' : 'Remover conta atual'}
+                  >
+                    Remover conta
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => setSettingsModal(false)}
@@ -576,7 +639,7 @@ export const EmailInboxView: React.FC = () => {
                   type="submit"
                   className="px-4 py-2 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white rounded-lg text-xs font-bold shadow-xs"
                 >
-                  Salvar Parâmetros
+                  Salvar conta
                 </button>
               </div>
             </form>

@@ -207,11 +207,11 @@ export interface AppContextType {
   filterByBU: <T extends { businessUnitId?: string }>(items: T[]) => T[];
 
   // Collaborator & Invite Management
-  createInvite: (data: Partial<CollaboratorInvite>) => CollaboratorInvite;
+  createInvite: (data: Partial<CollaboratorInvite> & { allowSuperadminCreation?: boolean }) => CollaboratorInvite;
   revokeInvite: (inviteId: string) => void;
   resendInvite: (inviteId: string) => void;
   acceptInvite: (token: string, name?: string, password?: string) => void;
-  createUserDirectly: (userData: Partial<User>, sendInviteImmediately: boolean) => User;
+  createUserDirectly: (userData: Partial<User>, sendInviteImmediately: boolean, options?: { allowSuperadminCreation?: boolean }) => User;
   addDepartment: (data: { name: string; businessUnitId: string; leaderId?: string }) => Department;
   addTeam: (data: { name: string; departmentId: string; businessUnitId: string; leaderId?: string }) => Team;
 
@@ -313,8 +313,12 @@ export interface AppContextType {
   previousTab: string;
   setPreviousTab: (tab: string) => void;
 
-  emailAccountConfig: EmailAccountConfig;
+  emailAccounts: EmailAccountConfig[];
+  activeEmailAccountId: string;
+  activeEmailAccount: EmailAccountConfig | null;
+  setActiveEmailAccountId: (accountId: string) => void;
   saveEmailAccountConfig: (config: EmailAccountConfig) => void;
+  deleteEmailAccount: (accountId: string) => void;
   sendEmail: (toEmail: string, subject: string, body: string, relatedDealId?: string, relatedProjectId?: string, relatedTaskId?: string) => void;
   markEmailRead: (emailId: string) => void;
   toggleEmailStar: (emailId: string) => void;
@@ -341,6 +345,40 @@ export interface AppContextType {
 const AppContext = createContext<AppContextType | null>(null);
 
 const STORAGE_KEY = 'vergroup_crm_v4_clean';
+
+const DEFAULT_EMAIL_SIGNATURE = 'Atenciosamente,\nEquipe VERGROUP';
+
+const createDefaultEmailAccountConfig = (userId: string, email = '', displayName = ''): EmailAccountConfig => ({
+  id: `emacc-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  userId,
+  email,
+  displayName,
+  imapServer: '',
+  imapPort: 993,
+  imapSsl: true,
+  smtpServer: '',
+  smtpPort: 465,
+  smtpSsl: true,
+  syncIntervalMinutes: 5,
+  signature: DEFAULT_EMAIL_SIGNATURE,
+  isEncrypted: true,
+});
+
+const normalizeEmailAccount = (cfg: Partial<EmailAccountConfig> & { userId: string; id?: string }): EmailAccountConfig => ({
+  id: cfg.id || `emacc-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  userId: cfg.userId,
+  email: cfg.email || '',
+  displayName: cfg.displayName || cfg.email || 'Conta de e-mail',
+  imapServer: cfg.imapServer || '',
+  imapPort: cfg.imapPort || 993,
+  imapSsl: cfg.imapSsl ?? true,
+  smtpServer: cfg.smtpServer || '',
+  smtpPort: cfg.smtpPort || 465,
+  smtpSsl: cfg.smtpSsl ?? true,
+  syncIntervalMinutes: cfg.syncIntervalMinutes || 5,
+  signature: cfg.signature || DEFAULT_EMAIL_SIGNATURE,
+  isEncrypted: cfg.isEncrypted ?? true,
+});
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Auth State
@@ -705,29 +743,76 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const saved = localStorage.getItem(`${STORAGE_KEY}_auditLogs`);
     return saved ? JSON.parse(saved) : INITIAL_AUDIT_LOGS;
   });
-  const [emailAccountConfig, setEmailAccountConfig] = useState<EmailAccountConfig>(() => {
-    const saved = localStorage.getItem(`${STORAGE_KEY}_email_cfg`);
-    return saved
-      ? JSON.parse(saved)
-      : {
-          email: 'williambdesigner@gmail.com',
-          displayName: 'William Barbosa | VERGROUP',
-          imapServer: 'imap.vergroup.com.br',
-          imapPort: 993,
-          imapSsl: true,
-          smtpServer: 'smtp.vergroup.com.br',
-          smtpPort: 465,
-          smtpSsl: true,
-          syncIntervalMinutes: 5,
-          signature: 'Atenciosamente,\nWilliam Barbosa\nDiretor de Produto & Tecnologia\nVERGROUP Participações & Holding',
-          isEncrypted: true,
-        };
+  const [emailAccounts, setEmailAccounts] = useState<EmailAccountConfig[]>(() => {
+    const saved = localStorage.getItem(`${STORAGE_KEY}_email_accounts`);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved) as EmailAccountConfig[];
+        return parsed.map((cfg) => normalizeEmailAccount(cfg));
+      } catch {
+        return [];
+      }
+    }
+
+    const legacySaved = localStorage.getItem(`${STORAGE_KEY}_email_cfg`);
+    if (legacySaved) {
+      try {
+        const parsed = JSON.parse(legacySaved) as Partial<EmailAccountConfig>;
+        return [
+          normalizeEmailAccount({
+            ...parsed,
+            id: 'legacy-email-account',
+            userId: INITIAL_USERS[0]?.id || 'user-admin',
+          } as Partial<EmailAccountConfig> & { userId: string }),
+        ];
+      } catch {
+        return [];
+      }
+    }
+
+    return [];
   });
+  const [activeEmailAccountId, setActiveEmailAccountId] = useState<string>('');
+
+  const activeEmailAccount = emailAccounts.find((account) => account.id === activeEmailAccountId) || null;
+
+  useEffect(() => {
+    if (!emailAccounts.length) return;
+    const active = emailAccounts.find((account) => account.id === activeEmailAccountId);
+    const ownedAccounts = emailAccounts.filter((account) => account.userId === currentUser.id);
+    const nextAccount = ownedAccounts[0] || emailAccounts[0];
+    if (active && active.userId === currentUser.id) return;
+    if (nextAccount && nextAccount.id !== activeEmailAccountId) {
+      setActiveEmailAccountId(nextAccount.id);
+    }
+  }, [activeEmailAccountId, currentUser.id, emailAccounts]);
 
   const saveEmailAccountConfig = (cfg: EmailAccountConfig) => {
-    setEmailAccountConfig(cfg);
-    localStorage.setItem(`${STORAGE_KEY}_email_cfg`, JSON.stringify(cfg));
-    addAuditLog('update', 'email_config', currentUser.id, `Configurações IMAP/SMTP atualizadas com criptografia TLS`);
+    const normalized = normalizeEmailAccount({
+      ...cfg,
+      userId: cfg.userId || currentUser.id || INITIAL_USERS[0]?.id || 'user-admin',
+    });
+
+    setEmailAccounts((prev) => {
+      const exists = prev.some((account) => account.id === normalized.id);
+      const next = exists
+        ? prev.map((account) => (account.id === normalized.id ? normalized : account))
+        : [...prev, normalized];
+      return next;
+    });
+    setActiveEmailAccountId(normalized.id);
+    addAuditLog(
+      normalized.id.startsWith('legacy-') ? 'update' : 'create',
+      'email_config',
+      currentUser.id,
+      `Conta de e-mail ${normalized.email ? `"${normalized.email}"` : 'criada'} atualizada com IMAP/SMTP`
+    );
+  };
+
+  const deleteEmailAccount = (accountId: string) => {
+    setEmailAccounts((prev) => prev.filter((account) => account.id !== accountId));
+    setActiveEmailAccountId((prev) => (prev === accountId ? '' : prev));
+    addAuditLog('delete', 'email_config', currentUser.id, `Conta de e-mail removida`);
   };
 
   const [notifications, setNotifications] = useState<NotificationItem[]>([
@@ -797,6 +882,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem(`${STORAGE_KEY}_activities`, JSON.stringify(activities));
     localStorage.setItem(`${STORAGE_KEY}_auditLogs`, JSON.stringify(auditLogs));
     localStorage.setItem(`${STORAGE_KEY}_emails`, JSON.stringify(emails));
+    localStorage.setItem(`${STORAGE_KEY}_email_accounts`, JSON.stringify(emailAccounts));
+    localStorage.setItem(`${STORAGE_KEY}_active_email_account_id`, activeEmailAccountId);
     localStorage.setItem(`${STORAGE_KEY}_whatsapps_v2`, JSON.stringify(whatsApps));
     localStorage.setItem(`${STORAGE_KEY}_chatMessages`, JSON.stringify(chatMessages));
   }, [users, departments, teams, invites, onboardingTasks, leads, contacts, companies, deals, tasks, taskTemplates, projects, clientAccounts, activities, auditLogs, emails, whatsApps, chatMessages]);
@@ -2413,10 +2500,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Communication: Email
   const sendEmail = (toEmail: string, subject: string, body: string, relatedDealId?: string, relatedProjectId?: string, relatedTaskId?: string) => {
+    const senderAccount = activeEmailAccount || emailAccounts.find((account) => account.userId === currentUser.id) || null;
+    const fromEmail = senderAccount?.email || currentUser.email;
     const newEmail: EmailMessage = {
       id: `eml-${Date.now()}`,
       businessUnitId: selectedBusinessUnitId === 'bu-all' ? 'bu-tech' : selectedBusinessUnitId,
-      from: { name: currentUser.name, email: currentUser.email },
+      emailAccountId: senderAccount?.id,
+      from: { name: senderAccount?.displayName || currentUser.name, email: fromEmail },
       to: [{ name: toEmail.split('@')[0], email: toEmail }],
       subject,
       body,
@@ -2431,7 +2521,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       receivedAt: new Date().toISOString(),
     };
     setEmails((prev) => [newEmail, ...prev]);
-    addAuditLog('create', 'email', newEmail.id, `E-mail enviado para "${toEmail}": "${subject}"`);
+    addAuditLog('create', 'email', newEmail.id, `E-mail enviado para "${toEmail}" a partir da conta ${fromEmail}: "${subject}"`);
 
     if (relatedDealId) {
       addActivity({
@@ -2956,8 +3046,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     leaveGroupChannel,
     previousTab,
     setPreviousTab,
-    emailAccountConfig,
+    emailAccounts,
+    activeEmailAccountId,
+    activeEmailAccount,
+    setActiveEmailAccountId,
     saveEmailAccountConfig,
+    deleteEmailAccount,
     sendEmail,
     markEmailRead,
     toggleEmailStar,
