@@ -155,6 +155,7 @@ export interface User {
   hiredAt?: string;
   employeeCode?: string;
   lastPasswordChangedAt?: string;
+  passwordHash?: string;
   notificationPreferences?: {
     email?: boolean;
     push?: boolean;

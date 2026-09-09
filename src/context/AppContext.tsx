@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import bcrypt from 'bcryptjs';
 import confetti from 'canvas-confetti';
 import {
   BusinessUnit,
@@ -394,12 +395,22 @@ const AUTH_USER_DATA_KEY = 'vergroup_auth_user_data';
 
 const hasStoredAuth = (): boolean => {
   if (typeof window === 'undefined') return false;
-  return (
-    window.sessionStorage.getItem(AUTH_ACTIVE_KEY) === 'true' ||
-    window.localStorage.getItem(AUTH_ACTIVE_KEY) === 'true' ||
-    window.sessionStorage.getItem(AUTH_USER_DATA_KEY) !== null ||
-    window.localStorage.getItem(AUTH_USER_DATA_KEY) !== null
-  );
+
+  const raw =
+    window.sessionStorage.getItem(AUTH_USER_DATA_KEY) ||
+    window.localStorage.getItem(AUTH_USER_DATA_KEY);
+
+  if (!raw) return false;
+
+  try {
+    const parsed = JSON.parse(raw) as Partial<User>;
+    return (
+      window.sessionStorage.getItem(AUTH_ACTIVE_KEY) === 'true' ||
+      window.localStorage.getItem(AUTH_ACTIVE_KEY) === 'true'
+    ) && typeof parsed.passwordHash === 'string' && parsed.passwordHash.length > 0;
+  } catch {
+    return false;
+  }
 };
 
 const readStoredAuthUser = (): User => {
@@ -412,12 +423,14 @@ const readStoredAuthUser = (): User => {
   if (raw) {
     try {
       const parsed = JSON.parse(raw) as Partial<User>;
-      return {
-        ...EMPTY_USER,
-        ...parsed,
-        id: parsed.id || EMPTY_USER.id,
-        role: parsed.role || EMPTY_USER.role,
-      };
+      if (typeof parsed.passwordHash === 'string' && parsed.passwordHash.length > 0) {
+        return {
+          ...EMPTY_USER,
+          ...parsed,
+          id: parsed.id || EMPTY_USER.id,
+          role: parsed.role || EMPTY_USER.role,
+        };
+      }
     } catch {
       // Ignore malformed auth payloads and fall back below.
     }
@@ -437,33 +450,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Active User & RBAC
   const [currentUser, setCurrentUser] = useState<User>(() => readStoredAuthUser());
 
-  const login = (email: string, password?: string): boolean => {
-    const found = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
-    if (found) {
-      setCurrentUser(found);
-      setIsAuthenticated(true);
-      window.sessionStorage.setItem(AUTH_ACTIVE_KEY, 'true');
-      window.sessionStorage.setItem(AUTH_USER_ID_KEY, found.id);
-      window.sessionStorage.setItem(AUTH_USER_DATA_KEY, JSON.stringify(found));
-      window.localStorage.setItem(AUTH_ACTIVE_KEY, 'true');
-      window.localStorage.setItem(AUTH_USER_ID_KEY, found.id);
-      window.localStorage.setItem(AUTH_USER_DATA_KEY, JSON.stringify(found));
-      return true;
-    }
+  const login = (email: string, password: string): boolean => {
+    const user = users.find(
+      (u) => u.email.toLowerCase() === email.toLowerCase() && u.status === 'active' && !!u.passwordHash
+    );
 
-    if (INITIAL_USERS[0]) {
-      setCurrentUser(INITIAL_USERS[0]);
-      setIsAuthenticated(true);
-      window.sessionStorage.setItem(AUTH_ACTIVE_KEY, 'true');
-      window.sessionStorage.setItem(AUTH_USER_ID_KEY, INITIAL_USERS[0].id);
-      window.sessionStorage.setItem(AUTH_USER_DATA_KEY, JSON.stringify(INITIAL_USERS[0]));
-      window.localStorage.setItem(AUTH_ACTIVE_KEY, 'true');
-      window.localStorage.setItem(AUTH_USER_ID_KEY, INITIAL_USERS[0].id);
-      window.localStorage.setItem(AUTH_USER_DATA_KEY, JSON.stringify(INITIAL_USERS[0]));
-      return true;
-    }
+    if (!user || !bcrypt.compareSync(password, user.passwordHash || '')) return false;
 
-    return false;
+    setCurrentUser(user);
+    setIsAuthenticated(true);
+    window.sessionStorage.setItem(AUTH_ACTIVE_KEY, 'true');
+    window.sessionStorage.setItem(AUTH_USER_ID_KEY, user.id);
+    window.sessionStorage.setItem(AUTH_USER_DATA_KEY, JSON.stringify(user));
+    window.localStorage.setItem(AUTH_ACTIVE_KEY, 'true');
+    window.localStorage.setItem(AUTH_USER_ID_KEY, user.id);
+    window.localStorage.setItem(AUTH_USER_DATA_KEY, JSON.stringify(user));
+    return true;
   };
 
   const loginAsUser = (userId: string) => {
@@ -2801,6 +2803,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         status: 'active',
         isExternal: invite.isExternal,
         accessExpiresAt: invite.accessExpiresAt,
+        passwordHash: _password ? bcrypt.hashSync(_password, 10) : undefined,
         createdAt: new Date().toISOString(),
       };
 
@@ -2862,6 +2865,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       jobTitle: userData.jobTitle || 'Analista',
       phone: userData.phone || '+55 92 99000-0000',
       managerId: userData.managerId || currentUser.id,
+      passwordHash: userData.passwordHash,
       status: sendInviteImmediately ? 'active' : 'invited',
       createdAt: new Date().toISOString(),
     };

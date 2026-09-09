@@ -4,7 +4,7 @@ import { useApp } from '../../context/AppContext';
 import { VerGroupLogo } from '../common/VerGroupLogo';
 
 export const LoginView: React.FC = () => {
-  const { users, login, loginAsUser } = useApp();
+  const { login } = useApp();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -277,23 +277,26 @@ export const LoginView: React.FC = () => {
           {/* Social Buttons */}
           <div className="grid grid-cols-3 gap-3">
             <button
-              onClick={() => loginAsUser(users[0]?.id || 'usr-william')}
-              className="flex items-center justify-center py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition cursor-pointer shadow-xs"
-              title="Entrar com Google"
+              type="button"
+              disabled
+              className="flex items-center justify-center py-2.5 rounded-xl border border-slate-200 bg-slate-100 opacity-60 cursor-not-allowed shadow-xs"
+              title="Login social desativado"
             >
               <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
             </button>
             <button
-              onClick={() => loginAsUser(users[0]?.id || 'usr-william')}
-              className="flex items-center justify-center py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition cursor-pointer shadow-xs"
-              title="Entrar com Facebook"
+              type="button"
+              disabled
+              className="flex items-center justify-center py-2.5 rounded-xl border border-slate-200 bg-slate-100 opacity-60 cursor-not-allowed shadow-xs"
+              title="Login social desativado"
             >
               <img src="https://www.svgrepo.com/show/448224/facebook.svg" alt="Facebook" className="w-5 h-5" />
             </button>
             <button
-              onClick={() => loginAsUser(users[0]?.id || 'usr-william')}
-              className="flex items-center justify-center py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition cursor-pointer shadow-xs"
-              title="Entrar com Apple"
+              type="button"
+              disabled
+              className="flex items-center justify-center py-2.5 rounded-xl border border-slate-200 bg-slate-100 opacity-60 cursor-not-allowed shadow-xs"
+              title="Login social desativado"
             >
               <img src="https://www.svgrepo.com/show/511330/apple-173.svg" alt="Apple" className="w-5 h-5" />
             </button>

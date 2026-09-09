@@ -57,6 +57,7 @@ export const EMPTY_USER: User = {
   timezone: '',
   status: 'inactive',
   employeeCode: '',
+  passwordHash: '',
   notificationPreferences: {
     email: false,
     push: false,
@@ -79,6 +80,7 @@ export const INITIAL_USERS: User[] = [
     jobTitle: 'Administrador do Sistema',
     status: 'active',
     role: 'superadmin',
+    passwordHash: '$2b$10$JWA/ih8TMFvXpoIOBZAP6ecGJvWNZvX83y4YQ8zHOW6gnkMpCK3T.',
   },
 ];
 
