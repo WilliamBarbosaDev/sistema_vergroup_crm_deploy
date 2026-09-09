@@ -66,14 +66,21 @@ import {
   EMPTY_USER,
 } from '../mock/initialData';
 
-const PROD_BASELINE_FLAG = 'VERGROUP_PROD_BASELINE_V1';
-if (typeof window !== 'undefined') {
-  if (!localStorage.getItem(PROD_BASELINE_FLAG)) {
-    localStorage.clear();
-    localStorage.setItem(PROD_BASELINE_FLAG, 'true');
-    window.location.reload();
+const createSecureId = (prefix: string): string => {
+  const cryptoObj = globalThis.crypto;
+  if (cryptoObj?.randomUUID) {
+    return prefix ? `${prefix}-${cryptoObj.randomUUID()}` : cryptoObj.randomUUID();
   }
-}
+
+  if (cryptoObj?.getRandomValues) {
+    const bytes = new Uint8Array(16);
+    cryptoObj.getRandomValues(bytes);
+    const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+    return prefix ? `${prefix}-${hex}` : hex;
+  }
+
+  return prefix ? `${prefix}-${Date.now().toString(36)}` : Date.now().toString(36);
+};
 
 
 export type NavigationTab = 
@@ -350,7 +357,7 @@ const STORAGE_KEY = 'vergroup_crm_v4_clean';
 const DEFAULT_EMAIL_SIGNATURE = 'Atenciosamente,\nEquipe VERGROUP';
 
 const createDefaultEmailAccountConfig = (userId: string, email = '', displayName = ''): EmailAccountConfig => ({
-  id: `emacc-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  id: createSecureId('emacc'),
   userId,
   email,
   displayName,
@@ -366,7 +373,7 @@ const createDefaultEmailAccountConfig = (userId: string, email = '', displayName
 });
 
 const normalizeEmailAccount = (cfg: Partial<EmailAccountConfig> & { userId: string; id?: string }): EmailAccountConfig => ({
-  id: cfg.id || `emacc-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  id: cfg.id || createSecureId('emacc'),
   userId: cfg.userId,
   email: cfg.email || '',
   displayName: cfg.displayName || cfg.email || 'Conta de e-mail',
@@ -384,7 +391,8 @@ const normalizeEmailAccount = (cfg: Partial<EmailAccountConfig> & { userId: stri
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Auth State
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    return localStorage.getItem('vergroup_auth_active') === 'true';
+    if (typeof window === 'undefined') return false;
+    return window.sessionStorage.getItem('vergroup_auth_active') === 'true';
   });
 
   // Navigation
@@ -399,8 +407,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (found) {
       setCurrentUser(found);
       setIsAuthenticated(true);
-      localStorage.setItem('vergroup_auth_active', 'true');
-      localStorage.setItem('vergroup_auth_user_id', found.id);
+      window.sessionStorage.setItem('vergroup_auth_active', 'true');
+      window.sessionStorage.setItem('vergroup_auth_user_id', found.id);
       return true;
     }
     // Fallback: if email matches domain, login as primary admin
@@ -415,8 +423,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (found) {
       setCurrentUser(found);
       setIsAuthenticated(true);
-      localStorage.setItem('vergroup_auth_active', 'true');
-      localStorage.setItem('vergroup_auth_user_id', found.id);
+      window.sessionStorage.setItem('vergroup_auth_active', 'true');
+      window.sessionStorage.setItem('vergroup_auth_user_id', found.id);
     }
   };
 
@@ -2646,7 +2654,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Collaborator & Invite Management Mutations
   const createInvite = (data: Partial<CollaboratorInvite>): CollaboratorInvite => {
-    const token = `inv_${data.type || 'sec'}_${Math.random().toString(36).substring(2, 10)}${Date.now().toString(36)}`;
+    const token = `inv_${data.type || 'sec'}_${createSecureId('invite')}`;
     const newInvite: CollaboratorInvite = {
       id: `inv-${Date.now()}`,
       type: data.type || 'link',

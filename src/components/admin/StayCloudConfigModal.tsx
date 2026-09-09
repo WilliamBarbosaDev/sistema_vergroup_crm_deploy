@@ -9,11 +9,11 @@ interface StayCloudConfigModalProps {
 export const StayCloudConfigModal: React.FC<StayCloudConfigModalProps> = ({ onClose }) => {
   const { addAuditLog } = useApp();
 
-  const [supabaseUrl, setSupabaseUrl] = useState('https://vergroup-crm-prod.supabase.co');
-  const [supabaseAnonKey, setSupabaseAnonKey] = useState('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZlcmdyb3VwLXByb2QiLCJyb2xlIjoiYW5vbiJ9...');
-  const [staycloudDomain, setStaycloudDomain] = useState('crm.vergroup.staycloud.app');
-  const [smtpHost, setSmtpHost] = useState('smtp.vergroup.com.br');
-  const [smtpPort, setSmtpPort] = useState('587');
+  const [supabaseUrl, setSupabaseUrl] = useState('');
+  const [supabaseAnonKey, setSupabaseAnonKey] = useState('');
+  const [staycloudDomain, setStaycloudDomain] = useState('');
+  const [smtpHost, setSmtpHost] = useState('');
+  const [smtpPort, setSmtpPort] = useState('');
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   const handleSave = (e: React.FormEvent) => {
