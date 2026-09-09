@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Shield,
   Building,
@@ -32,6 +32,7 @@ import {
   X,
   FileCheck,
   PhoneCall,
+  MoreHorizontal,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { UserRole, CollaboratorInvite, User, Pipeline, BusinessUnit } from '../../types';
@@ -46,10 +47,10 @@ import { CatalogTab } from './CatalogTab';
 import { ImportsTab } from './ImportsTab';
 import { AdminGovernanceTab } from './AdminGovernanceTab';
 import { WebFormsTab } from './WebFormsTab';
-import { Tabs } from '../ui/vercel-tabs';
 import { PermissionEngineService, CAPABILITIES_REGISTRY } from '../../services/permissionEngine';
 import { PermissionScope } from '../../types';
 import { UserAvatar } from '../common/UserAvatar';
+import { UserEditModal } from './UserEditModal';
 
 export const AdminView: React.FC = () => {
   const {
@@ -100,6 +101,7 @@ export const AdminView: React.FC = () => {
   const [tunConditionType, setTunConditionType] = useState<'on_deal_won' | 'on_deal_lost' | 'on_enter_stage'>('on_deal_won');
   const [activeAcceptInvite, setActiveAcceptInvite] = useState<CollaboratorInvite | null>(null);
   const [activeCockpitCollaborator, setActiveCockpitCollaborator] = useState<User | null>(null);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
 
   // Permission Explainer & Hierarchical Matrix States
   const [explainerUserId, setExplainerUserId] = useState<string>(currentUser.id);
@@ -123,6 +125,7 @@ export const AdminView: React.FC = () => {
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>('all');
   const [selectedDeptFilter, setSelectedDeptFilter] = useState<string>('all');
   const [selectedBuFilter, setSelectedBuFilter] = useState<string>('all');
+  const [selectedRoleFilter, setSelectedRoleFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [copiedInviteId, setCopiedInviteId] = useState<string | null>(null);
 
@@ -138,6 +141,56 @@ export const AdminView: React.FC = () => {
   // Calculated Metrics
   const activeUsersCount = users.filter(u => u.status === 'active').length;
   const pendingInvitesCount = invites.filter(i => i.status === 'pending').length;
+  const roleFilterOptions = [
+    { value: 'all', label: 'Todos os papéis' },
+    ...Array.from(new Set(users.map((user) => user.role))).map((role) => ({
+      value: role,
+      label: role.toUpperCase().replace(/_/g, ' '),
+    })),
+  ];
+
+  const statusLabels: Record<string, string> = {
+    active: 'Ativo',
+    inactive: 'Inativo',
+    invited: 'Convite pendente',
+    suspended: 'Suspenso',
+    blocked: 'Bloqueado',
+    offline: 'Offline',
+    absent: 'Ausente',
+  };
+
+  const navigationGroups = [
+    {
+      title: 'Pessoas',
+      items: [
+        { id: 'users', label: 'Usuários', badge: users.length },
+        { id: 'invites', label: 'Convites', badge: pendingInvitesCount },
+        { id: 'organogram', label: 'Organograma' },
+      ],
+    },
+    {
+      title: 'Estrutura',
+      items: [
+        { id: 'units', label: 'Empresas / BUs', badge: businessUnits.length },
+        { id: 'matrix', label: 'Hierarquia' },
+      ],
+    },
+    {
+      title: 'Acessos',
+      items: [
+        { id: 'matrix', label: 'Permissões' },
+        { id: 'governance', label: 'Governança' },
+      ],
+    },
+    {
+      title: 'Operação',
+      items: [
+        { id: 'pipelines', label: 'Pipelines & Funis', badge: pipelines.length },
+        { id: 'catalog', label: 'Produtos & Serviços', badge: catalogItems.length },
+        { id: 'imports', label: 'Migração / Importação' },
+      ],
+    },
+  ];
 
   // Multi-tenant User Filter (Non-superadmin admins see only their BU users)
   const filteredUsers = users.filter((u) => {
@@ -145,6 +198,7 @@ export const AdminView: React.FC = () => {
     if (selectedStatusFilter !== 'all' && u.status !== selectedStatusFilter) return false;
     if (selectedDeptFilter !== 'all' && u.departmentId !== selectedDeptFilter) return false;
     if (selectedBuFilter !== 'all' && u.businessUnitId !== selectedBuFilter) return false;
+    if (selectedRoleFilter !== 'all' && u.role !== selectedRoleFilter) return false;
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       return u.name.toLowerCase().includes(term) || u.email.toLowerCase().includes(term) || u.jobTitle.toLowerCase().includes(term);
@@ -212,107 +266,215 @@ export const AdminView: React.FC = () => {
   return (
     <div id="admin-view" className="p-4 md:p-6 max-w-full space-y-6 font-sans select-none">
       {/* Header */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-xl bg-[#ECF8F1] text-[#0F8A4B] flex items-center justify-center border border-[#0F8A4B]/20 shadow-2xs">
-            <Shield className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-base font-black text-slate-900 tracking-tight">
-                Administração, Empresas, Hierarquia & Permissões
-              </h1>
-              <span className="text-xs font-black px-2.5 py-0.5 bg-[#ECF8F1] text-[#0F8A4B] rounded-md border border-[#0F8A4B]/20">
-                VERGROUP Governança
-              </span>
+      <div className="space-y-4">
+        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="flex items-start gap-4 min-w-0">
+              <div className="w-12 h-12 rounded-2xl bg-[#ECF8F1] text-[#0F8A4B] flex items-center justify-center border border-[#0F8A4B]/20 shrink-0 shadow-2xs">
+                <Shield className="w-6 h-6" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight whitespace-nowrap">
+                    Administração & Governança
+                  </h1>
+                  <span className="text-[10px] font-black px-2.5 py-1 bg-[#ECF8F1] text-[#0F8A4B] rounded-md border border-[#0F8A4B]/20 uppercase tracking-[0.2em]">
+                    Central Administrativa
+                  </span>
+                </div>
+                <p className="text-sm md:text-[15px] text-slate-600 font-medium mt-1 max-w-3xl">
+                  Gerencie pessoas, empresas, acessos, estrutura organizacional e processos.
+                </p>
+              </div>
             </div>
-            <p className="text-xs text-slate-500 font-semibold mt-0.5">
-              Administração de pessoas, organograma funcional, matriz de permissões RBAC e privilege ceiling
-            </p>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => setShowInviteModal(true)}
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white rounded-xl text-xs font-black shadow-md cursor-pointer transition-colors"
+              >
+                <UserPlus className="w-4 h-4" />
+                + Convidar Colaborador
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-3 xl:grid-cols-4">
+            {navigationGroups.map((group) => (
+              <div key={group.title} className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-500 mb-3">{group.title}</p>
+                <div className="flex flex-wrap gap-2">
+                  {group.items
+                    .filter((item) => {
+                      if (item.id === 'catalog' && !isSuperadmin && !currentUser.capabilities?.includes('catalog.manage')) return false;
+                      if (item.id === 'imports' && !isSuperadmin && !currentUser.capabilities?.includes('imports.manage')) return false;
+                      return true;
+                    })
+                    .map((item) => {
+                      const active = activeTab === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          onClick={() => setActiveTab(item.id as any)}
+                          className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-[11px] font-black border transition-colors cursor-pointer ${
+                            active
+                              ? 'bg-[#0F8A4B] text-white border-[#0F8A4B] shadow-sm'
+                              : 'bg-white text-slate-700 border-slate-200 hover:border-[#0F8A4B]/30 hover:text-[#0B6B3A]'
+                          }`}
+                        >
+                          <span>{item.label}</span>
+                          {item.badge !== undefined && (
+                            <span className={`min-w-5 h-5 px-1.5 rounded-full text-[10px] font-black inline-flex items-center justify-center ${active ? 'bg-white/15 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                              {item.badge}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Top Header Actions */}
-        <div className="flex items-center gap-3">
+        <div className="bg-slate-900 text-white rounded-2xl border border-slate-800 p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4 shadow-md">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-300 flex items-center justify-center border border-emerald-400/20 shrink-0">
+              <ShieldAlert className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-xs font-black uppercase tracking-[0.22em] text-white/90">Auditoria de Governança</h4>
+              <p className="text-sm text-slate-300 font-medium mt-1 max-w-3xl">
+                Verifique inconsistências em estrutura, permissões e responsabilidades.
+              </p>
+            </div>
+          </div>
 
           <button
-            onClick={() => setShowInviteModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white rounded-xl text-xs font-black shadow-md cursor-pointer transition-all"
+            onClick={handleRunAiAdminAudit}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white text-slate-900 hover:bg-slate-100 rounded-xl text-xs font-black cursor-pointer transition-colors"
           >
-            <UserPlus className="w-4 h-4" />
-            <span>+ Convidar Colaborador</span>
+            <Sparkles className="w-4 h-4 text-[#0F8A4B]" />
+            Executar Auditoria
           </button>
-
-          {/* Tab Switcher */}
-          <Tabs
-            tabs={[
-              { id: 'users', label: 'Usuários', badge: users.length },
-              { id: 'organogram', label: 'Organograma Visual' },
-              { id: 'invites', label: 'Convites', badge: invites.length },
-              { id: 'units', label: 'Empresas (BUs)', badge: businessUnits.length },
-              { id: 'matrix', label: 'Matriz de Permissões' },
-              { id: 'governance', label: 'Governança Operacional' },
-              { id: 'pipelines', label: 'Pipelines & Funis', badge: pipelines.length },
-              { id: 'catalog', label: 'Produtos & Serviços', badge: catalogItems.length },
-              { id: 'imports', label: 'Migração / Importação' },
-            ].filter(t => {
-              if (t.id === 'catalog' && !isSuperadmin && !currentUser.capabilities?.includes('catalog.manage')) return false;
-              if (t.id === 'imports' && !isSuperadmin && !currentUser.capabilities?.includes('imports.manage')) return false;
-              return true;
-            })}
-            activeTab={activeTab}
-            onTabChange={(id) => setActiveTab(id as any)}
-          />
         </div>
-      </div>
 
-      {/* VER AI ADMIN COPILOT BANNER */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-950 p-4 rounded-2xl border border-emerald-500/30 text-white flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-md">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-amber-400 flex items-center justify-center font-black border border-emerald-400/30">
-            <Sparkles className="w-5 h-5" />
+        {aiAuditReport && (
+          <div className="p-4 bg-white rounded-2xl border border-slate-200 text-xs text-slate-800 font-medium leading-relaxed whitespace-pre-wrap shadow-2xs">
+            {aiAuditReport}
           </div>
-          <div>
-            <h4 className="text-xs font-black text-white flex items-center gap-2">
-              <span>VER AI — Auditoria Proativa de Estrutura Organizacional</span>
-              <span className="text-[10px] bg-emerald-500/30 text-emerald-300 font-extrabold px-2 py-0.5 rounded border border-emerald-500/40">
-                Governance AI Worker
-              </span>
-            </h4>
-            <p className="text-[11px] text-slate-300 mt-0.5">
-              Análise de gaps funcionais, privilégio teto, usuários sem gestor ou sem departamento atribuído
-            </p>
-          </div>
-        </div>
-
-        <button
-          onClick={handleRunAiAdminAudit}
-          className="px-4 py-2 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white rounded-xl text-xs font-black cursor-pointer shrink-0 transition-colors"
-        >
-          ⚡ Auditar Governança Humanal
-        </button>
+        )}
       </div>
-
-      {aiAuditReport && (
-        <div className="p-4 bg-white rounded-2xl border border-emerald-200 text-xs text-slate-800 font-medium leading-relaxed whitespace-pre-wrap shadow-2xs animate-in fade-in">
-          {aiAuditReport}
-        </div>
-      )}
 
       {/* TAB 1: USUÁRIOS ATIVOS */}
+
       {activeTab === 'users' && (
         <div className="space-y-4">
-          {/* Table Container */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs space-y-4">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-sm font-black text-slate-900 uppercase tracking-[0.18em]">Usuários</h2>
+                  <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-[#ECF8F1] text-[#0B6B3A] border border-[#0F8A4B]/20">
+                    {filteredUsers.length} encontrados
+                  </span>
+                  <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+                    {activeUsersCount} ativos
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 font-medium mt-1">Filtros combinados por BU, departamento, papel e status.</p>
+              </div>
+
+              <button
+                onClick={() => setShowInviteModal(true)}
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white rounded-xl text-xs font-black shadow-md cursor-pointer transition-colors"
+              >
+                <UserPlus className="w-4 h-4" />
+                + Convidar Colaborador
+              </button>
+            </div>
+
+            <div className="grid gap-3 lg:grid-cols-5">
+              <label className="block">
+                <span className="mb-1.5 block text-[10px] font-black uppercase tracking-wider text-slate-500">Busca</span>
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Nome, e-mail ou cargo"
+                    className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-xs font-semibold text-slate-800 outline-none focus:border-[#0F8A4B]"
+                  />
+                </div>
+              </label>
+
+              <label className="block">
+                <span className="mb-1.5 block text-[10px] font-black uppercase tracking-wider text-slate-500">Empresa / BU</span>
+                <select
+                  value={selectedBuFilter}
+                  onChange={(e) => setSelectedBuFilter(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#0F8A4B]"
+                >
+                  <option value="all">Todas as empresas</option>
+                  {businessUnits.map((bu) => (
+                    <option key={bu.id} value={bu.id}>{bu.tradeName || bu.name}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="block">
+                <span className="mb-1.5 block text-[10px] font-black uppercase tracking-wider text-slate-500">Departamento</span>
+                <select
+                  value={selectedDeptFilter}
+                  onChange={(e) => setSelectedDeptFilter(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#0F8A4B]"
+                >
+                  <option value="all">Todos os departamentos</option>
+                  {departments.map((dept) => (
+                    <option key={dept.id} value={dept.id}>{dept.name}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="block">
+                <span className="mb-1.5 block text-[10px] font-black uppercase tracking-wider text-slate-500">Papel</span>
+                <select
+                  value={selectedRoleFilter}
+                  onChange={(e) => setSelectedRoleFilter(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#0F8A4B]"
+                >
+                  {roleFilterOptions.map((role) => (
+                    <option key={role.value} value={role.value}>{role.label}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="block">
+                <span className="mb-1.5 block text-[10px] font-black uppercase tracking-wider text-slate-500">Status</span>
+                <select
+                  value={selectedStatusFilter}
+                  onChange={(e) => setSelectedStatusFilter(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#0F8A4B]"
+                >
+                  <option value="all">Todos os status</option>
+                  {Object.entries(statusLabels).map(([value, label]) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          </div>
+
           <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse font-sans">
                 <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-extrabold uppercase text-[10px]">
                   <tr>
                     <th className="p-3.5">Colaborador</th>
-                    <th className="p-3.5">Empresa Principal</th>
-                    <th className="p-3.5">Departamento & Cargo</th>
-                    <th className="p-3.5">Gestor / Supervisor</th>
-                    <th className="p-3.5">Role / Papel</th>
+                    <th className="p-3.5">Cargo / Departamento</th>
+                    <th className="p-3.5">Empresa / BU</th>
+                    <th className="p-3.5">Papel</th>
+                    <th className="p-3.5">Gestor</th>
                     <th className="p-3.5">Status</th>
                     <th className="p-3.5 text-center">Ações</th>
                   </tr>
@@ -322,75 +484,90 @@ export const AdminView: React.FC = () => {
                     const bu = businessUnits.find((b) => b.id === u.businessUnitId);
                     const dept = departments.find((d) => d.id === u.departmentId);
                     const manager = users.find((m) => m.id === u.managerId);
-                    const openTaskCount = tasks.filter((t) => t.assignedUserId === u.id && t.status !== 'completed').length;
+                    const supervisor = users.find((m) => m.id === u.supervisorId);
+                    const roleLabel = u.role.toUpperCase().replace(/_/g, ' ');
+                    const statusLabel = statusLabels[u.status] || u.status;
 
                     return (
                       <tr key={u.id} className="hover:bg-slate-50/80 transition-colors">
                         <td className="p-3.5">
-                          <div className="flex items-center gap-3">
-                            <UserAvatar name={u.name} avatarUrl={u.avatar} size="sm" status={u.status} showStatus={false} />
-                            <div>
-                              <strong className="text-slate-900 font-black block">{u.name}</strong>
-                              <span className="text-slate-500 text-[11px]">{u.email}</span>
+                          <div className="flex items-center gap-3 min-w-0">
+                            <UserAvatar name={u.name} avatarUrl={u.avatar} size="sm" status={u.status} />
+                            <div className="min-w-0">
+                              <strong className="text-slate-900 font-black block truncate">{u.name}</strong>
+                              <span className="text-slate-500 text-[11px] block truncate">{u.email}</span>
                             </div>
                           </div>
                         </td>
 
                         <td className="p-3.5">
-                          <span className="font-bold text-slate-800">{bu?.tradeName || u.businessUnitId}</span>
+                          <strong className="text-slate-900 font-bold block">{u.jobTitle || 'Sem cargo definido'}</strong>
+                          <span className="text-slate-500 text-[11px]">{dept?.name || 'Departamento não definido'}</span>
                         </td>
 
                         <td className="p-3.5">
-                          <strong className="text-slate-900 font-bold block">{u.jobTitle}</strong>
-                          <span className="text-slate-500 text-[11px]">{dept?.name || 'Geral'}</span>
-                        </td>
-
-                        <td className="p-3.5 text-slate-700 font-medium">
-                          {manager?.name || <span className="text-slate-400 italic">Sem gestor</span>}
-                        </td>
-
-                        <td className="p-3.5">
-                          <span className="font-mono text-[10px] font-black px-2 py-0.5 bg-indigo-50 text-indigo-800 rounded border border-indigo-200 uppercase">
-                            {u.role}
+                          <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-bold text-slate-700">
+                            {bu?.tradeName || bu?.name || 'Sem empresa vinculada'}
                           </span>
                         </td>
 
                         <td className="p-3.5">
-                          <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase ${
-                            u.status === 'active' ? 'bg-emerald-100 text-[#0B6B3A]' : 'bg-rose-100 text-rose-800'
+                          <span className="inline-flex items-center rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-indigo-800">
+                            {roleLabel}
+                          </span>
+                        </td>
+
+                        <td className="p-3.5 text-slate-700 font-medium">
+                          <div className="flex flex-col gap-0.5">
+                            <span>{manager?.name || <span className="italic text-slate-400">Sem gestor</span>}</span>
+                            {supervisor && supervisor.id !== manager?.id && (
+                              <span className="text-[11px] text-slate-500">Supervisor: {supervisor.name}</span>
+                            )}
+                          </div>
+                        </td>
+
+                        <td className="p-3.5">
+                          <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wide border ${
+                            u.status === 'active'
+                              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                              : u.status === 'invited'
+                                ? 'bg-amber-50 text-amber-800 border-amber-200'
+                                : 'bg-slate-100 text-slate-700 border-slate-200'
                           }`}>
-                            {u.status}
+                            {statusLabel}
                           </span>
                         </td>
 
                         <td className="p-3.5 text-center">
-                          <div className="flex items-center justify-center gap-2">
-                            <button
-                              onClick={() => setActiveCockpitCollaborator(u)}
-                              className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-[11px] rounded-lg border border-slate-200 cursor-pointer"
-                            >
-                              Cockpit 360º
-                            </button>
-
-                            {u.status === 'active' ? (
-                              <button
-                                onClick={() => {
-                                  setUserToSuspend(u);
-                                  setReassignTargetUserId('');
-                                }}
-                                className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-[11px] rounded-lg border border-rose-200 cursor-pointer"
-                              >
-                                Suspender
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => updateUserStatus(u.id, 'active')}
-                                className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-[#0B6B3A] font-bold text-[11px] rounded-lg border border-emerald-200 cursor-pointer"
-                              >
-                                Reativar
-                              </button>
-                            )}
-                          </div>
+                          <details className="relative inline-block group">
+                            <summary className="list-none inline-flex items-center justify-center w-9 h-9 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 cursor-pointer text-slate-700 shadow-2xs">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </summary>
+                            <div className="absolute right-0 z-20 mt-2 w-52 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl text-left">
+                              <button onClick={() => setActiveCockpitCollaborator(u)} className="w-full px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 text-left cursor-pointer">Ver perfil</button>
+                              <button onClick={() => setEditingUser(u)} className="w-full px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 text-left cursor-pointer">Editar</button>
+                              <button onClick={() => { setActiveTab('matrix'); setExplainerUserId(u.id); }} className="w-full px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 text-left cursor-pointer">Alterar permissões</button>
+                              <button onClick={() => { setActiveTab('matrix'); setExplainerUserId(u.id); }} className="w-full px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 text-left cursor-pointer">Ver acessos</button>
+                              {u.status === 'active' ? (
+                                <button
+                                  onClick={() => {
+                                    setUserToSuspend(u);
+                                    setReassignTargetUserId('');
+                                  }}
+                                  className="w-full px-3 py-2 rounded-xl text-xs font-bold text-rose-700 hover:bg-rose-50 text-left cursor-pointer"
+                                >
+                                  Suspender
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => updateUserStatus(u.id, 'active')}
+                                  className="w-full px-3 py-2 rounded-xl text-xs font-bold text-emerald-700 hover:bg-emerald-50 text-left cursor-pointer"
+                                >
+                                  Reativar
+                                </button>
+                              )}
+                            </div>
+                          </details>
                         </td>
                       </tr>
                     );
@@ -401,7 +578,6 @@ export const AdminView: React.FC = () => {
           </div>
         </div>
       )}
-
       {/* TAB 2: ORGANOGRAMA VISUAL INTERATIVO (ÁRVORE HIERÁRQUICA) */}
       {activeTab === 'organogram' && (
         <div className="bg-white p-6 rounded-2xl border border-slate-200 text-slate-900 space-y-6 shadow-2xs font-sans">
@@ -1472,6 +1648,13 @@ export const AdminView: React.FC = () => {
         <AcceptInviteModal
           invite={activeAcceptInvite}
           onClose={() => setActiveAcceptInvite(null)}
+        />
+      )}
+
+      {editingUser && (
+        <UserEditModal
+          user={editingUser}
+          onClose={() => setEditingUser(null)}
         />
       )}
 
