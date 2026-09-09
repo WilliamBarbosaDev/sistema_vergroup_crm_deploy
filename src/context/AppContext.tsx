@@ -381,7 +381,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const logout = () => {
     setIsAuthenticated(false);
-    localStorage.setItem('vergroup_auth_active', 'false');
+    setCurrentUser(INITIAL_USERS[0]);
+    setCurrentTab('cockpit');
+    setSelectedBusinessUnitId('bu-all');
+    setSelectedDealId(null);
+    setSelectedTaskId(null);
+    setSelectedContactId(null);
+    setSelectedClientId(null);
+    setIsSearchOpen(false);
+    setQuickCreateType(null);
+    setIsTaskCreateOpen(false);
+    setTaskCreateContext(null);
+    localStorage.removeItem('vergroup_auth_active');
+    localStorage.removeItem('vergroup_auth_user_id');
+    sessionStorage.clear();
   };
   
   // Drawers & Modals

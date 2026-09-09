@@ -6,12 +6,21 @@ import { VerGroupLogo } from '../common/VerGroupLogo';
 export const LoginView: React.FC = () => {
   const { users, login, loginAsUser } = useApp();
 
-  const [email, setEmail] = useState('williambdesigner@gmail.com');
-  const [password, setPassword] = useState('••••••••••••');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
+  const [rememberMe, setRememberMe] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    setEmail('');
+    setPassword('');
+    setShowPassword(false);
+    setErrorMessage('');
+    setIsSubmitting(false);
+    setRememberMe(false);
+  }, []);
 
   // Administrable Login Customization State (Stored in localStorage)
   const [bgImageUrl, setBgImageUrl] = useState(() => {
@@ -168,6 +177,8 @@ export const LoginView: React.FC = () => {
                   placeholder="seu.nome@vergroup.com.br"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="off"
+                  name="login-email"
                   className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50/70 text-slate-900 font-bold text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0F8A4B]/30 focus:border-[#0F8A4B] transition"
                   required
                 />
@@ -197,6 +208,8 @@ export const LoginView: React.FC = () => {
                   placeholder="••••••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="off"
+                  name="login-password"
                   className="w-full pl-10 pr-10 py-3 rounded-xl border border-slate-200 bg-slate-50/70 text-slate-900 font-bold text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0F8A4B]/30 focus:border-[#0F8A4B] transition"
                   required
                 />
