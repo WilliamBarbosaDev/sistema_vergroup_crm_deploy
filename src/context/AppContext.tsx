@@ -141,6 +141,7 @@ export interface AppContextType {
   // Auth & Session
   isAuthenticated: boolean;
   login: (email: string, password?: string) => boolean;
+  bootstrapAdminAccount: (data: { name: string; email: string; password: string }) => boolean;
   loginAsUser: (userId: string) => void;
   logout: () => void;
 
@@ -465,6 +466,59 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     window.localStorage.setItem(AUTH_ACTIVE_KEY, 'true');
     window.localStorage.setItem(AUTH_USER_ID_KEY, user.id);
     window.localStorage.setItem(AUTH_USER_DATA_KEY, JSON.stringify(user));
+    return true;
+  };
+
+  const bootstrapAdminAccount = (data: { name: string; email: string; password: string }): boolean => {
+    const email = data.email.trim().toLowerCase();
+    const name = data.name.trim();
+    const password = data.password;
+
+    if (!email || !name || !password) return false;
+
+    const passwordHash = bcrypt.hashSync(password, 10);
+    const existingUser = users.find((u) => u.email.toLowerCase() === email);
+    const adminUser: User = existingUser
+      ? {
+          ...existingUser,
+          name,
+          displayName: name,
+          firstName: existingUser.firstName || name.split(' ')[0] || name,
+          lastName: existingUser.lastName || name.split(' ').slice(1).join(' '),
+          role: 'superadmin',
+          status: 'active',
+          passwordHash,
+          lastPasswordChangedAt: new Date().toISOString(),
+        }
+      : {
+          ...EMPTY_USER,
+          id: `usr-${Date.now()}`,
+          name,
+          firstName: name.split(' ')[0] || name,
+          lastName: name.split(' ').slice(1).join(' '),
+          displayName: name,
+          email,
+          personalEmail: email,
+          role: 'superadmin',
+          status: 'active',
+          passwordHash,
+          lastPasswordChangedAt: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+        };
+
+    setUsers((prev) => {
+      const withoutSameEmail = prev.filter((u) => u.email.toLowerCase() !== email);
+      return [adminUser, ...withoutSameEmail];
+    });
+    setCurrentUser(adminUser);
+    setIsAuthenticated(true);
+    window.sessionStorage.setItem(AUTH_ACTIVE_KEY, 'true');
+    window.sessionStorage.setItem(AUTH_USER_ID_KEY, adminUser.id);
+    window.sessionStorage.setItem(AUTH_USER_DATA_KEY, JSON.stringify(adminUser));
+    window.localStorage.setItem(AUTH_ACTIVE_KEY, 'true');
+    window.localStorage.setItem(AUTH_USER_ID_KEY, adminUser.id);
+    window.localStorage.setItem(AUTH_USER_DATA_KEY, JSON.stringify(adminUser));
+    addAuditLog('create', 'User', adminUser.id, `actor_type: human_user | action: admin.bootstrap | email: ${adminUser.email}`);
     return true;
   };
 
