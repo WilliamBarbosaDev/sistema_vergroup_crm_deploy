@@ -110,6 +110,7 @@ export const Sidebar: React.FC = () => {
       title: 'Administração',
       items: [
         { id: 'admin-org', label: 'Empresas & Pessoas', icon: Settings },
+        { id: 'admin-integrations', label: 'Integrações', icon: Key },
       ],
     },
   ];

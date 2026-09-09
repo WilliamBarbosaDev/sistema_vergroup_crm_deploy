@@ -25,6 +25,7 @@ import { AnalyticsView } from './components/management/AnalyticsView';
 import { AutomationsView } from './components/management/AutomationsView';
 import { AuditView } from './components/management/AuditView';
 import { AdminView } from './components/admin/AdminView';
+import IntegrationsView from './components/admin/IntegrationsView';
 import { AIAgentsManagementView } from './components/ai/AIAgentsManagementView';
 
 import { TaskCreateWorkspace } from './components/work/TaskCreateWorkspace';
@@ -81,6 +82,8 @@ const MainLayout: React.FC = () => {
       case 'admin-users':
       case 'admin-security':
         return <AdminView />;
+      case 'admin-integrations':
+        return <IntegrationsView />;
       default:
         return <CockpitView />;
     }
