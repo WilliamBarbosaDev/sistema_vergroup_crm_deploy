@@ -211,7 +211,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
       <div className="w-full max-w-5xl h-full bg-[#F4F6F8] shadow-2xl flex flex-col overflow-hidden border-l border-slate-200 card-elevated">
         
         {/* TOP HEADER CORPORATIVO */}
-        <div className="bg-slate-900 text-white px-6 py-4 flex flex-col gap-3 shrink-0 border-b border-slate-800">
+        <div className="bg-white px-6 py-4 flex flex-col gap-3 shrink-0 border-b border-emerald-100">
           <div className="flex items-center justify-between">
             
             {/* Header User Identity */}
@@ -223,12 +223,12 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
 
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-base font-black tracking-tight text-white">{draft.firstName} {draft.lastName}</h2>
-                  <span className="text-[10px] font-black px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 uppercase tracking-wider">
+                  <h2 className="text-base font-black tracking-tight text-slate-900">{draft.firstName} {draft.lastName}</h2>
+                  <span className="text-[10px] font-black px-2 py-0.5 rounded bg-emerald-50 text-[#0B6B3A] border border-emerald-200 uppercase tracking-wider">
                     {currentUser.role === 'superadmin' ? 'SUPERADMIN' : currentUser.role}
                   </span>
                 </div>
-                <p className="text-xs text-slate-400 font-semibold mt-0.5 flex items-center gap-2">
+                <p className="text-xs text-slate-500 font-semibold mt-0.5 flex items-center gap-2">
                   <span>{currentUser.jobTitle || 'Superadministrador & Diretor'}</span>
                   <span>•</span>
                   <span className="text-emerald-400 font-mono font-bold">{currentUser.email}</span>

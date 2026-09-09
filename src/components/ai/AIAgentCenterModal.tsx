@@ -1,596 +1,323 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
-  Sparkles,
-  Bot,
-  X,
-  Zap,
-  CheckCircle2,
   AlertCircle,
+  ArrowRight,
+  Bot,
+  ChevronRight,
+  Clock3,
+  Eye,
+  Gauge,
   MessageSquare,
-  ShieldCheck,
   Play,
   Settings,
-  Brain,
-  Send,
-  User,
-  Plus,
-  Trash2,
-  Lock,
+  ShieldCheck,
+  Sparkles,
+  X,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { AIAgentRecord, canManageAIAgents, loadAIAgents } from './aiAgentsRegistry';
 
 interface AIAgentCenterModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-export interface AgentInfo {
-  id: string;
-  name: string;
-  role: string;
-  status: 'active' | 'learning' | 'paused';
-  icon: string;
-  color: string;
-  description: string;
-  triggers: string[];
-  systemPrompt?: string;
-  isCustom?: boolean;
-  createdBy?: string;
-  stats: { executions: number; accuracy: string; lastRun: string };
+function formatAgentValue(value?: string | number | null) {
+  if (value === null || value === undefined || value === '') return 'Não definido';
+  return String(value);
 }
 
-const DEFAULT_AGENTS: AgentInfo[] = [
-  {
-    id: 'agent-copilot',
-    name: 'Agente Executivo VER Copilot',
-    role: 'Auditoria de SLA & Priorização Operacional',
-    status: 'active',
-    icon: '✨',
-    color: 'bg-emerald-50 text-[#0B6B3A] border-emerald-200',
-    description: 'Varre eventos de domínio, calcula pontuações de risco e sugere reatribuição preventiva de tarefas com prazo crítico.',
-    triggers: ['Evento de Domínio: TaskOverdueEvent', 'SLA Clock Ticker (5m)', 'Manual Trigger'],
-    stats: { executions: 1420, accuracy: '99.4%', lastRun: 'há 2 minutos' },
-  },
-  {
-    id: 'agent-commercial',
-    name: 'Agente Comercial & Prospecção',
-    role: 'Qualificação de Leads & Follow-up de Funil',
-    status: 'active',
-    icon: '📈',
-    color: 'bg-blue-50 text-blue-700 border-blue-200',
-    description: 'Analisa o comportamento dos leads no funil comercial e agenda reuniões de follow-up automaticamente.',
-    triggers: ['DealStageChangedEvent', 'NewLeadCapturedEvent', 'WhatsApp Message Received'],
-    stats: { executions: 890, accuracy: '98.8%', lastRun: 'há 5 minutos' },
-  },
-  {
-    id: 'agent-finance',
-    name: 'Agente Financeiro & Contratos',
-    role: 'Monitoramento de Recorrência & MRR',
-    status: 'active',
-    icon: '💲',
-    color: 'bg-amber-50 text-amber-700 border-amber-200',
-    description: 'Monitora contratos com clientes, prevê inadimplência e notifica gestores sobre vencimentos próximos.',
-    triggers: ['ContractRenewalEvent', 'MonthlyBillingCycleTicker', 'ClientStatusCheck'],
-    stats: { executions: 530, accuracy: '99.9%', lastRun: 'há 12 minutos' },
-  },
-  {
-    id: 'agent-support',
-    name: 'Agente de Atendimento W-API',
-    role: 'Triagem Inteligente WhatsApp & E-mail',
-    status: 'active',
-    icon: '💬',
-    color: 'bg-[#ECF8F1] text-[#0B6B3A] border-emerald-200',
-    description: 'Realiza pré-atendimento automático de mensagens no WhatsApp W-API e e-mails corporativos.',
-    triggers: ['WhatsAppInboundWebhook', 'EmailReceivedWebhook', 'ClientRequestTrigger'],
-    stats: { executions: 2150, accuracy: '97.6%', lastRun: 'há 1 minuto' },
-  },
-];
+function metricText(agent: AIAgentRecord) {
+  if (!agent.executionCount && !agent.lastExecutionAt && !agent.accuracy) return 'Sem histórico ainda';
 
-const LOCAL_STORAGE_KEY = 'vergroup_ai_custom_agents_v1';
+  const parts: string[] = [];
+  if (agent.executionCount !== undefined && agent.executionCount !== null) parts.push(`${agent.executionCount} execuções`);
+  if (agent.lastExecutionAt) parts.push(`última execução ${agent.lastExecutionAt}`);
+  if (agent.accuracy) parts.push(`acurácia ${agent.accuracy}`);
+  return parts.join(' • ');
+}
 
 export const AIAgentCenterModal: React.FC<AIAgentCenterModalProps> = ({ isOpen, onClose }) => {
-  const { tasks, deals, currentUser, addAuditLog } = useApp();
-  const [selectedAgentId, setSelectedAgentId] = useState<string>('agent-copilot');
-  const [promptInput, setPromptInput] = useState<string>('');
-  
-  // Dynamic Agents list combining defaults and stored custom agents
-  const [agents, setAgents] = useState<AgentInfo[]>(() => {
-    try {
-      const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (saved) {
-        const custom: AgentInfo[] = JSON.parse(saved);
-        return [...DEFAULT_AGENTS, ...custom];
-      }
-    } catch (e) {
-      console.error('Erro ao carregar agentes customizados:', e);
+  const { currentUser, setCurrentTab } = useApp();
+  const [agents] = useState<AIAgentRecord[]>(() => loadAIAgents());
+  const [selectedAgentId, setSelectedAgentId] = useState<string>(() => loadAIAgents()[0]?.id ?? '');
+  const [prompt, setPrompt] = useState('');
+  const [messages, setMessages] = useState<Array<{ role: 'user' | 'agent'; text: string; time: string }>>([]);
+
+  const canManage = useMemo(() => canManageAIAgents(currentUser), [currentUser]);
+  const selectedAgent = agents.find((agent) => agent.id === selectedAgentId) ?? agents[0];
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!selectedAgent && agents.length > 0) {
+      setSelectedAgentId(agents[0].id);
     }
-    return DEFAULT_AGENTS;
-  });
-
-  // Modal for Admin Create New Agent
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
-  const [newAgentName, setNewAgentName] = useState<string>('');
-  const [newAgentRole, setNewAgentRole] = useState<string>('');
-  const [newAgentIcon, setNewAgentIcon] = useState<string>('🤖');
-  const [newAgentColor, setNewAgentColor] = useState<string>('bg-purple-50 text-purple-700 border-purple-200');
-  const [newAgentDescription, setNewAgentDescription] = useState<string>('');
-  const [newAgentSystemPrompt, setNewAgentSystemPrompt] = useState<string>('');
-  const [selectedTriggers, setSelectedTriggers] = useState<string[]>(['Manual Trigger']);
-
-  const [chatLog, setChatLog] = useState<{ sender: 'user' | 'agent'; text: string; time: string }[]>([
-    {
-      sender: 'agent',
-      text: `Olá ${currentUser.name.split(' ')[0]}! Sou o **Agente Executivo VER Copilot**. Realizei a varredura contínua de ${tasks.length} tarefas e ${deals.length} negócios no funil. Como posso ajudar agora?`,
-      time: 'Agora mesmo',
-    },
-  ]);
+  }, [agents, selectedAgent]);
 
   if (!isOpen) return null;
 
-  // Check if current user is Administrator
-  const isAdmin = ['superadmin', 'company_admin', 'director', 'manager'].includes(currentUser.role);
-
-  const activeAgent = agents.find((a) => a.id === selectedAgentId) || agents[0];
-
-  const availableIcons = ['🤖', '⚡', '🎯', '🛡️', '📊', '🧠', '💼', '💬', '📈', '✨', '🔍', '⚖️'];
-  const availableTriggers = [
-    'Evento de Domínio: TaskOverdueEvent',
-    'DealStageChangedEvent',
-    'NewLeadCapturedEvent',
-    'WhatsAppInboundWebhook',
-    'EmailReceivedWebhook',
-    'ContractRenewalEvent',
-    'SLA Clock Ticker (5m)',
-    'Manual Trigger',
-  ];
-
-  const toggleTrigger = (trigger: string) => {
-    setSelectedTriggers((prev) =>
-      prev.includes(trigger) ? prev.filter((t) => t !== trigger) : [...prev, trigger]
-    );
-  };
-
-  const handleCreateAgent = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newAgentName.trim() || !newAgentRole.trim()) return;
-
-    const newAgent: AgentInfo = {
-      id: `agent-custom-${Date.now()}`,
-      name: newAgentName.trim(),
-      role: newAgentRole.trim(),
-      status: 'active',
-      icon: newAgentIcon,
-      color: newAgentColor,
-      description: newAgentDescription.trim() || 'Agente orquestrador personalizado criado pelo Administrador.',
-      triggers: selectedTriggers,
-      systemPrompt: newAgentSystemPrompt.trim(),
-      isCustom: true,
-      createdBy: currentUser.name,
-      stats: { executions: 0, accuracy: '100%', lastRun: 'Agora mesmo' },
-    };
-
-    const updated = [...agents, newAgent];
-    setAgents(updated);
-    
-    // Persist custom agents in localStorage
-    const customOnly = updated.filter((a) => a.isCustom);
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(customOnly));
-
-    // Audit log entry
-    if (addAuditLog) {
-      addAuditLog('create', 'AIAgent', newAgent.id, `Criou novo agente IA autônomo: "${newAgent.name}"`);
-    }
-
-    setSelectedAgentId(newAgent.id);
-    setIsCreateModalOpen(false);
-
-    // Reset form
-    setNewAgentName('');
-    setNewAgentRole('');
-    setNewAgentDescription('');
-    setNewAgentSystemPrompt('');
-    setSelectedTriggers(['Manual Trigger']);
-
-    // Log welcome message from new agent
-    setChatLog((prev) => [
+  const sendPrompt = () => {
+    if (!prompt.trim() || !selectedAgent) return;
+    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const userText = prompt.trim();
+    setPrompt('');
+    setMessages((prev) => [
       ...prev,
+      { role: 'user', text: userText, time: now },
       {
-        sender: 'agent',
-        text: `🤖 **Agente [${newAgent.name}] Inicializado!** Fui cadastrado por ${currentUser.name} com os gatilhos: ${newAgent.triggers.join(', ')}. Estou operando em conformidade com as diretrizes do sistema.`,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        role: 'agent',
+        text: `Comando recebido por ${selectedAgent.name}. Posso apoiar com execução, configuração ou leitura do histórico em ${selectedAgent.scope ?? 'sua área'}.`,
+        time: now,
       },
     ]);
   };
 
-  const handleDeleteAgent = (agentId: string) => {
-    if (!isAdmin) return;
-    const target = agents.find((a) => a.id === agentId);
-    if (!target || !target.isCustom) return;
+  const panel = (
+    <div className="fixed inset-0 z-[1000]">
+      <div className="absolute inset-0 bg-slate-950/55 backdrop-blur-sm" onClick={onClose} />
 
-    if (confirm(`Tem certeza que deseja remover o agente "${target.name}"?`)) {
-      const updated = agents.filter((a) => a.id !== agentId);
-      setAgents(updated);
-      const customOnly = updated.filter((a) => a.isCustom);
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(customOnly));
-      
-      if (addAuditLog) {
-        addAuditLog('delete', 'AIAgent', agentId, `Removeu o agente IA: "${target.name}"`);
-      }
-
-      if (selectedAgentId === agentId) {
-        setSelectedAgentId('agent-copilot');
-      }
-    }
-  };
-
-  const handleSendMessage = () => {
-    if (!promptInput.trim()) return;
-    const userText = promptInput;
-    setPromptInput('');
-    
-    setChatLog((prev) => [
-      ...prev,
-      { sender: 'user', text: userText, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) },
-    ]);
-
-    setTimeout(() => {
-      setChatLog((prev) => [
-        ...prev,
-        {
-          sender: 'agent',
-          text: `[${activeAgent.name}]: Analisei o comando "${userText}". Execução em conformidade com as regras do seu papel de ${currentUser.role.toUpperCase()}. Domínio operado com sucesso.`,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        },
-      ]);
-    }, 600);
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 font-sans select-none animate-in fade-in duration-150">
-      <div className="bg-white rounded-xl border border-[#E2E6EA] shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
-        
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-[#E2E6EA] flex items-center justify-between bg-[#F8FAFB]">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-[#ECF8F1] text-[#0B6B3A] rounded-lg">
-              <Sparkles className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-base font-semibold text-slate-900 font-display">Centro de Inteligência & Agentes VER AI</h2>
-                <span className="text-[10px] font-mono bg-[#0F8A4B] text-white px-2 py-0.5 rounded-full font-bold uppercase">
-                  {agents.length} Agentes Ativos
-                </span>
+      <div className="absolute inset-0 flex items-center justify-center p-4 md:p-6">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Centro de IA & Agentes"
+          className="relative w-[94vw] h-[88vh] max-w-[1600px] rounded-3xl border border-slate-200 bg-white shadow-[0_30px_80px_rgba(15,23,42,0.35)] overflow-hidden flex flex-col"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-[#F7FBF8] to-white flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3 min-w-0">
+              <div className="p-2.5 rounded-2xl bg-[#ECF8F1] text-[#0B6B3A] shrink-0">
+                <Sparkles className="w-5 h-5" />
               </div>
-              <p className="text-xs text-slate-500 font-normal">
-                Orquestração de agentes autônomos via MCP & Tool Registry Engine (PRD AI-First 4.0)
-              </p>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-lg md:text-xl font-semibold text-slate-900">Centro de IA & Agentes</h2>
+                  <span className="text-[10px] uppercase tracking-wider font-bold bg-[#0F8A4B] text-white px-2 py-0.5 rounded-full">
+                    {agents.length} agentes
+                  </span>
+                </div>
+                <p className="text-sm text-slate-500 mt-1 max-w-3xl">
+                  Visão operacional dos agentes existentes no sistema, com acesso rápido, status e comandos.
+                </p>
+              </div>
             </div>
-          </div>
 
-          <div className="flex items-center gap-2">
-            {/* Create Agent Action Button */}
-            {isAdmin ? (
+            <div className="flex items-center gap-2 shrink-0">
               <button
-                onClick={() => setIsCreateModalOpen(true)}
-                className="btn-primary text-xs flex items-center gap-1.5 bg-[#0F8A4B] hover:bg-[#0B6B3A] text-white px-3 py-1.5 rounded-lg font-medium cursor-pointer shadow-xs transition-all"
+                type="button"
+                onClick={() => {
+                  setCurrentTab('ai-agents');
+                  onClose();
+                }}
+                className="inline-flex items-center gap-2 rounded-xl bg-[#0F8A4B] px-3.5 py-2 text-sm font-semibold text-white hover:bg-[#0B6B3A] transition-colors"
               >
-                <Plus className="w-4 h-4" />
-                <span>Criar Novo Agente</span>
+                <ArrowRight className="w-4 h-4" />
+                <span>Abrir Gestão Completa</span>
               </button>
-            ) : (
-              <div title="Criação de novos agentes restrita aos Administradores" className="flex items-center gap-1 text-[11px] text-slate-400 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
-                <Lock className="w-3 h-3" />
-                <span>Criação Restrita a Admins</span>
-              </div>
-            )}
-
-            <button
-              onClick={onClose}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-
-        {/* Content Body */}
-        <div className="flex-1 overflow-hidden grid grid-cols-1 md:grid-cols-12 divide-y md:divide-y-0 md:divide-x divide-[#E2E6EA]">
-          
-          {/* Left Column: Agent Selector List */}
-          <div className="md:col-span-5 p-4 overflow-y-auto space-y-2.5 bg-[#F8FAFB]">
-            <div className="flex items-center justify-between px-1 mb-1">
-              <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                Agentes Especiais ({agents.length})
-              </p>
-              {isAdmin && (
-                <button
-                  onClick={() => setIsCreateModalOpen(true)}
-                  className="text-[11px] text-[#0F8A4B] font-semibold hover:underline flex items-center gap-1 cursor-pointer"
-                >
-                  <Plus className="w-3 h-3" />
-                  <span>Novo Agente</span>
-                </button>
-              )}
-            </div>
-
-            {agents.map((agent) => {
-              const isSelected = agent.id === selectedAgentId;
-              return (
-                <div
-                  key={agent.id}
-                  onClick={() => setSelectedAgentId(agent.id)}
-                  className={`p-3 rounded-lg border text-xs transition-all cursor-pointer group relative ${
-                    isSelected
-                      ? 'bg-white border-[#0F8A4B] shadow-2xs'
-                      : 'bg-white/60 border-[#E2E6EA] hover:bg-white hover:border-slate-300'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-1.5">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm">{agent.icon}</span>
-                      <strong className="text-slate-900 font-semibold">{agent.name}</strong>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <span className={`text-[10px] px-1.5 py-0.2 rounded border font-semibold ${agent.color}`}>
-                        {agent.isCustom ? 'Personalizado' : 'Nativo'}
-                      </span>
-                      {agent.isCustom && isAdmin && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteAgent(agent.id);
-                          }}
-                          className="p-1 text-slate-400 hover:text-red-600 rounded cursor-pointer"
-                          title="Remover Agente Personalizado"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                  <p className="text-[11px] text-slate-500 leading-snug line-clamp-2">{agent.description}</p>
-                  
-                  <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400 font-mono">
-                    <span>{agent.stats.executions} execuções</span>
-                    <span>Precisão: {agent.stats.accuracy}</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Right Column: Interactive AI Agent Terminal / Chat */}
-          <div className="md:col-span-7 flex flex-col bg-white p-4 overflow-hidden">
-            
-            {/* Agent Header Details */}
-            <div className="pb-3 border-b border-[#E2E6EA] flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">{activeAgent.icon}</span>
-                  <h3 className="text-sm font-semibold text-slate-900 font-display">{activeAgent.name}</h3>
-                </div>
-                <p className="text-xs text-slate-500 font-normal mt-0.5">{activeAgent.role}</p>
-              </div>
-
-              <div className="flex items-center gap-1.5 text-xs text-[#0B6B3A] font-semibold bg-[#ECF8F1] px-2.5 py-1 rounded-md border border-[#0F8A4B]/20">
-                <Brain className="w-3.5 h-3.5" />
-                <span>MCP Connected</span>
-              </div>
-            </div>
-
-            {/* Chat History Container */}
-            <div className="flex-1 overflow-y-auto py-3 space-y-3 custom-scrollbar text-xs">
-              {chatLog.map((msg, i) => (
-                <div
-                  key={i}
-                  className={`flex gap-2.5 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  {msg.sender === 'agent' && (
-                    <div className="p-1.5 bg-[#ECF8F1] text-[#0B6B3A] rounded-lg shrink-0 h-fit">
-                      <Sparkles className="w-4 h-4" />
-                    </div>
-                  )}
-
-                  <div
-                    className={`max-w-[85%] p-3 rounded-lg leading-relaxed ${
-                      msg.sender === 'user'
-                        ? 'bg-[#0F8A4B] text-white font-medium'
-                        : 'bg-[#F5F7F8] text-slate-800 border border-[#E2E6EA]'
-                    }`}
-                  >
-                    <p>{msg.text}</p>
-                    <span className={`block text-[10px] mt-1 ${msg.sender === 'user' ? 'text-emerald-100' : 'text-slate-400'}`}>
-                      {msg.time}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Command Input Bar */}
-            <div className="pt-3 border-t border-[#E2E6EA]">
-              <div className="flex items-center gap-2 bg-[#F5F7F8] p-1.5 rounded-lg border border-[#E2E6EA]">
-                <input
-                  type="text"
-                  value={promptInput}
-                  onChange={(e) => setPromptInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                  placeholder={`Instruir ${activeAgent.name}...`}
-                  className="bg-transparent text-xs text-slate-900 focus:outline-none w-full px-2 font-medium"
-                />
-                <button
-                  onClick={handleSendMessage}
-                  className="btn-primary text-xs flex items-center gap-1.5 shrink-0 px-3 py-1.5 bg-[#0F8A4B]"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>Enviar</span>
-                </button>
-              </div>
-            </div>
-
-          </div>
-
-        </div>
-      </div>
-
-      {/* CREATE NEW AGENT WORKSPACE MODAL (ADMIN ONLY) */}
-      {isCreateModalOpen && (
-        <div className="fixed inset-0 z-60 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-[#E2E6EA] shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-150">
-            
-            <div className="px-6 py-4 border-b border-[#E2E6EA] flex items-center justify-between bg-[#F8FAFB]">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 bg-[#ECF8F1] text-[#0B6B3A] rounded-lg">
-                  <Bot className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-slate-900 font-display">Cadastrar Novo Agente IA Autônomo</h3>
-                  <p className="text-xs text-slate-500 font-normal">Exclusivo para Administradores do VERGROUP</p>
-                </div>
-              </div>
               <button
-                onClick={() => setIsCreateModalOpen(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
+                type="button"
+                onClick={onClose}
+                className="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+                aria-label="Fechar"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
+          </div>
 
-            <form onSubmit={handleCreateAgent} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto custom-scrollbar text-xs">
-              
-              {/* Name & Role */}
-              <div className="space-y-3">
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    Nome do Agente <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={newAgentName}
-                    onChange={(e) => setNewAgentName(e.target.value)}
-                    placeholder="Ex: Agente de Cobrança & Notificação de Inadimplência"
-                    className="w-full px-3 py-2 border border-[#E2E6EA] rounded-lg focus:outline-none focus:border-[#0F8A4B] text-slate-900 font-medium"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    Função Operacional / Especialidade <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={newAgentRole}
-                    onChange={(e) => setNewAgentRole(e.target.value)}
-                    placeholder="Ex: Monitoramento de faturas vencidas e disparo de régua de WhatsApp"
-                    className="w-full px-3 py-2 border border-[#E2E6EA] rounded-lg focus:outline-none focus:border-[#0F8A4B] text-slate-900 font-medium"
-                  />
-                </div>
+          <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 min-h-0 bg-slate-50">
+            <aside className="lg:col-span-4 border-r border-slate-200 bg-white min-h-0 overflow-y-auto p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">Agentes existentes</h3>
+                <span className="text-xs text-slate-400">Registros reais carregados</span>
               </div>
 
-              {/* Icon & Color */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Ícone Emoji</label>
-                  <div className="flex items-center gap-1.5 overflow-x-auto p-1.5 border border-[#E2E6EA] rounded-lg custom-scrollbar">
-                    {availableIcons.map((ico) => (
+              {agents.map((agent) => {
+                const active = selectedAgent?.id === agent.id;
+                return (
+                  <button
+                    key={agent.id}
+                    type="button"
+                    onClick={() => setSelectedAgentId(agent.id)}
+                    className={`w-full text-left rounded-2xl border p-4 transition-all ${
+                      active
+                        ? 'border-[#0F8A4B] bg-[#ECF8F1] shadow-sm'
+                        : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-base">{agent.id === 'agent-support' ? '💬' : agent.id === 'agent-finance' ? '💲' : agent.id === 'agent-commercial' ? '📈' : '✨'}</span>
+                          <p className="font-semibold text-slate-900 truncate">{agent.name}</p>
+                        </div>
+                        <p className="mt-1 text-sm text-slate-500 line-clamp-2">{agent.description}</p>
+                      </div>
+                      <span className={`shrink-0 inline-flex items-center rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-wide ${active ? 'bg-white text-[#0B6B3A]' : 'bg-slate-100 text-slate-600'}`}>
+                        {agent.status}
+                      </span>
+                    </div>
+
+                    <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-500">
+                      <div>
+                        <p className="font-medium text-slate-400 uppercase tracking-wide">Tipo</p>
+                        <p className="text-slate-700">{agent.type}</p>
+                      </div>
+                      <div>
+                        <p className="font-medium text-slate-400 uppercase tracking-wide">Função</p>
+                        <p className="text-slate-700 line-clamp-1">{agent.function ?? 'Não definido'}</p>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 text-[11px] text-slate-500 flex items-center gap-2">
+                      <Gauge className="w-3.5 h-3.5" />
+                      <span>{metricText(agent)}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </aside>
+
+            <section className="lg:col-span-8 min-h-0 overflow-hidden flex flex-col">
+              <div className="grid grid-cols-1 xl:grid-cols-5 min-h-0 flex-1">
+                <div className="xl:col-span-3 p-5 min-h-0 overflow-y-auto bg-white border-b xl:border-b-0 xl:border-r border-slate-200">
+                  {selectedAgent ? (
+                    <>
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-lg font-semibold text-slate-900">{selectedAgent.name}</h3>
+                            <span className="inline-flex items-center rounded-full bg-[#ECF8F1] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#0B6B3A]">
+                              {selectedAgent.status}
+                            </span>
+                          </div>
+                          <p className="text-sm text-slate-500 mt-1">{selectedAgent.description}</p>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button type="button" className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                            <Eye className="w-4 h-4" />
+                            Abrir agente
+                          </button>
+                          <button type="button" className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                            <Settings className="w-4 h-4" />
+                            Configurar
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div className="rounded-2xl border border-slate-200 p-4 bg-slate-50">
+                          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Tipo</p>
+                          <p className="mt-1 text-slate-900 font-medium">{selectedAgent.type}</p>
+                        </div>
+                        <div className="rounded-2xl border border-slate-200 p-4 bg-slate-50">
+                          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Business Unit</p>
+                          <p className="mt-1 text-slate-900 font-medium">{formatAgentValue(selectedAgent.businessUnit)}</p>
+                        </div>
+                        <div className="rounded-2xl border border-slate-200 p-4 bg-slate-50">
+                          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Provider</p>
+                          <p className="mt-1 text-slate-900 font-medium">{formatAgentValue(selectedAgent.provider)}</p>
+                        </div>
+                        <div className="rounded-2xl border border-slate-200 p-4 bg-slate-50">
+                          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Modelo</p>
+                          <p className="mt-1 text-slate-900 font-medium">{formatAgentValue(selectedAgent.model)}</p>
+                        </div>
+                        <div className="rounded-2xl border border-slate-200 p-4 bg-slate-50">
+                          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Escopo</p>
+                          <p className="mt-1 text-slate-900 font-medium">{formatAgentValue(selectedAgent.scope)}</p>
+                        </div>
+                        <div className="rounded-2xl border border-slate-200 p-4 bg-slate-50">
+                          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Última execução</p>
+                          <p className="mt-1 text-slate-900 font-medium">{formatAgentValue(selectedAgent.lastExecutionAt)}</p>
+                        </div>
+                      </div>
+
+                      <div className="mt-5 rounded-2xl border border-slate-200 p-4">
+                        <div className="flex items-center gap-2 mb-3 text-slate-700">
+                          <ShieldCheck className="w-4 h-4 text-[#0F8A4B]" />
+                          <h4 className="font-semibold">Atalhos de interação</h4>
+                        </div>
+                        <div className="flex flex-wrap gap-2 text-sm">
+                          <button type="button" className="rounded-full bg-slate-100 px-3 py-1.5 text-slate-700 hover:bg-slate-200">Ver histórico</button>
+                          <button type="button" className="rounded-full bg-slate-100 px-3 py-1.5 text-slate-700 hover:bg-slate-200">Ativar / Desativar</button>
+                          <button type="button" className="rounded-full bg-slate-100 px-3 py-1.5 text-slate-700 hover:bg-slate-200">Duplicar</button>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="h-full flex items-center justify-center text-slate-500">Nenhum agente selecionado.</div>
+                  )}
+                </div>
+
+                <div className="xl:col-span-2 min-h-0 bg-slate-50 p-5 flex flex-col gap-4 overflow-y-auto">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                    <div className="flex items-center gap-2 text-slate-900 font-semibold">
+                      <MessageSquare className="w-4 h-4 text-[#0F8A4B]" />
+                      Interação rápida
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1">Envie instruções rápidas para o agente selecionado.</p>
+                    <div className="mt-3 space-y-3">
+                      <textarea
+                        value={prompt}
+                        onChange={(e) => setPrompt(e.target.value)}
+                        placeholder={`Instruir ${selectedAgent?.name ?? 'agente'}...`}
+                        className="w-full min-h-[120px] rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-[#0F8A4B]/20 focus:border-[#0F8A4B]"
+                      />
                       <button
                         type="button"
-                        key={ico}
-                        onClick={() => setNewAgentIcon(ico)}
-                        className={`p-1.5 rounded text-sm transition-all cursor-pointer ${
-                          newAgentIcon === ico ? 'bg-[#ECF8F1] border border-[#0F8A4B] scale-110' : 'hover:bg-slate-100'
-                        }`}
+                        onClick={sendPrompt}
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#0F8A4B] px-4 py-3 text-sm font-semibold text-white hover:bg-[#0B6B3A] transition-colors"
                       >
-                        {ico}
+                        <Play className="w-4 h-4" />
+                        Enviar instrução
                       </button>
-                    ))}
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4 flex-1 min-h-[220px]">
+                    <div className="flex items-center gap-2 text-slate-900 font-semibold">
+                      <Clock3 className="w-4 h-4 text-[#0F8A4B]" />
+                      Respostas recentes
+                    </div>
+                    <div className="mt-3 space-y-3 max-h-[280px] overflow-y-auto pr-1">
+                      {messages.length === 0 ? (
+                        <div className="rounded-2xl border border-dashed border-slate-200 p-4 text-sm text-slate-500">
+                          Sem interações ainda.
+                        </div>
+                      ) : (
+                        messages.map((message, index) => (
+                          <div
+                            key={index}
+                            className={`rounded-2xl p-3 text-sm ${message.role === 'user' ? 'bg-[#ECF8F1] text-slate-900' : 'bg-slate-50 text-slate-700 border border-slate-200'}`}
+                          >
+                            <div className="flex items-center justify-between gap-3 text-[11px] uppercase tracking-wide text-slate-400 mb-1">
+                              <span>{message.role === 'user' ? 'Você' : 'Agente'}</span>
+                              <span>{message.time}</span>
+                            </div>
+                            <p className="whitespace-pre-line">{message.text}</p>
+                          </div>
+                        ))
+                      )}
+                    </div>
                   </div>
                 </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Badge de Estilo</label>
-                  <select
-                    value={newAgentColor}
-                    onChange={(e) => setNewAgentColor(e.target.value)}
-                    className="w-full px-3 py-2 border border-[#E2E6EA] rounded-lg focus:outline-none focus:border-[#0F8A4B] bg-white font-medium"
-                  >
-                    <option value="bg-purple-50 text-purple-700 border-purple-200">Roxo (Especialista)</option>
-                    <option value="bg-emerald-50 text-[#0B6B3A] border-emerald-200">Verde (Operacional)</option>
-                    <option value="bg-blue-50 text-blue-700 border-blue-200">Azul (Comercial)</option>
-                    <option value="bg-amber-50 text-amber-700 border-amber-200">Âmbar (Financeiro)</option>
-                  </select>
-                </div>
               </div>
-
-              {/* Triggers */}
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">
-                  Gatilhos de Disparo Automático (Triggers)
-                </label>
-                <div className="space-y-1.5 p-2.5 border border-[#E2E6EA] rounded-lg bg-[#F8FAFB] max-h-36 overflow-y-auto">
-                  {availableTriggers.map((trig) => (
-                    <label key={trig} className="flex items-center gap-2 cursor-pointer text-slate-800">
-                      <input
-                        type="checkbox"
-                        checked={selectedTriggers.includes(trig)}
-                        onChange={() => toggleTrigger(trig)}
-                        className="rounded text-[#0F8A4B] focus:ring-[#0F8A4B]"
-                      />
-                      <span>{trig}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* Description */}
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Descrição Curta</label>
-                <textarea
-                  rows={2}
-                  value={newAgentDescription}
-                  onChange={(e) => setNewAgentDescription(e.target.value)}
-                  placeholder="Resumo do comportamento autônomo deste agente..."
-                  className="w-full px-3 py-2 border border-[#E2E6EA] rounded-lg focus:outline-none focus:border-[#0F8A4B] text-slate-900 font-medium resize-none"
-                />
-              </div>
-
-              {/* System Prompt Instructions */}
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Instruções do Agente (System Prompt)</label>
-                <textarea
-                  rows={3}
-                  value={newAgentSystemPrompt}
-                  onChange={(e) => setNewAgentSystemPrompt(e.target.value)}
-                  placeholder="Você é o agente responsável por... Siga as regras RLS do grupo VERGROUP..."
-                  className="w-full px-3 py-2 border border-[#E2E6EA] rounded-lg focus:outline-none focus:border-[#0F8A4B] text-slate-900 font-medium resize-none"
-                />
-              </div>
-
-              {/* Submit / Actions */}
-              <div className="pt-3 border-t border-[#E2E6EA] flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsCreateModalOpen(false)}
-                  className="btn-secondary px-4 py-2"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="btn-primary bg-[#0F8A4B] text-white px-4 py-2 font-semibold flex items-center gap-1.5"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  <span>Salvar e Ativar Agente</span>
-                </button>
-              </div>
-
-            </form>
+            </section>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
+
+  return createPortal(panel, document.body);
 };

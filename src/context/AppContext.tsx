@@ -78,6 +78,7 @@ if (typeof window !== 'undefined') {
 
 export type NavigationTab = 
   | 'cockpit'
+  | 'ai-agents'
   | 'crm-deals'
   | 'crm-leads'
   | 'crm-contacts'

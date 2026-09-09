@@ -25,6 +25,7 @@ import { AnalyticsView } from './components/management/AnalyticsView';
 import { AutomationsView } from './components/management/AutomationsView';
 import { AuditView } from './components/management/AuditView';
 import { AdminView } from './components/admin/AdminView';
+import { AIAgentsManagementView } from './components/ai/AIAgentsManagementView';
 
 import { TaskCreateWorkspace } from './components/work/TaskCreateWorkspace';
 
@@ -39,6 +40,8 @@ const MainLayout: React.FC = () => {
     switch (currentTab) {
       case 'cockpit':
         return <CockpitView />;
+      case 'ai-agents':
+        return <AIAgentsManagementView />;
       case 'crm-deals':
         return <DealsPipelineView />;
       case 'crm-leads':
