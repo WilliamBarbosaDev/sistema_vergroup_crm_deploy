@@ -4,7 +4,7 @@ import { useApp } from '../../context/AppContext';
 import { VerGroupLogo } from '../common/VerGroupLogo';
 
 export const LoginView: React.FC = () => {
-  const { login, bootstrapAdminAccount } = useApp();
+  const { login, bootstrapAdminAccount, users } = useApp();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -51,6 +51,11 @@ export const LoginView: React.FC = () => {
   const [tempQuote, setTempQuote] = useState(quoteText);
   const [tempAuthorName, setTempAuthorName] = useState(authorName);
   const [tempAuthorTitle, setTempAuthorTitle] = useState(authorTitle);
+
+  const hasActiveAdmin = users.some(
+    (user) => user.role === 'superadmin' && user.status === 'active' && !!user.passwordHash
+  );
+  const showAdminBootstrap = !hasActiveAdmin;
 
   const validateEmail = (inputEmail: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inputEmail);
@@ -173,52 +178,54 @@ export const LoginView: React.FC = () => {
           )}
 
           {/* Admin Setup */}
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 space-y-3">
-            <div className="space-y-1">
-              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-700">Primeiro acesso / senha admin</p>
-              <h2 className="text-sm font-black text-slate-900">Criar ou redefinir o acesso administrativo</h2>
-              <p className="text-xs font-medium text-slate-600 leading-relaxed">
-                Use esta área em produção para criar o primeiro administrador ou redefinir a senha sem usar console.
-              </p>
-            </div>
-
-            {setupError && (
-              <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-[11px] font-bold text-rose-700">
-                {setupError}
+          {showAdminBootstrap && (
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 space-y-3">
+              <div className="space-y-1">
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-700">Primeiro acesso / senha admin</p>
+                <h2 className="text-sm font-black text-slate-900">Criar ou redefinir o acesso administrativo</h2>
+                <p className="text-xs font-medium text-slate-600 leading-relaxed">
+                  Use esta área em produção para criar o primeiro administrador ou redefinir a senha sem usar console.
+                </p>
               </div>
-            )}
 
-            <form onSubmit={handleBootstrapAdmin} className="grid gap-2">
-              <input
-                type="text"
-                value={adminName}
-                onChange={(e) => setAdminName(e.target.value)}
-                placeholder="Nome do administrador"
-                className="w-full rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#0F8A4B]"
-              />
-              <input
-                type="email"
-                value={adminEmail}
-                onChange={(e) => setAdminEmail(e.target.value)}
-                placeholder="admin@empresa.com"
-                className="w-full rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#0F8A4B]"
-              />
-              <input
-                type="password"
-                value={adminPassword}
-                onChange={(e) => setAdminPassword(e.target.value)}
-                placeholder="Defina a senha do admin"
-                className="w-full rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#0F8A4B]"
-              />
-              <button
-                type="submit"
-                disabled={isBootstrapping}
-                className="mt-1 inline-flex items-center justify-center rounded-xl bg-[#0F8A4B] px-4 py-3 text-xs font-black text-white hover:bg-[#0B6B3A] disabled:opacity-60"
-              >
-                {isBootstrapping ? 'Salvando...' : 'Criar / redefinir senha do admin'}
-              </button>
-            </form>
-          </div>
+              {setupError && (
+                <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-[11px] font-bold text-rose-700">
+                  {setupError}
+                </div>
+              )}
+
+              <form onSubmit={handleBootstrapAdmin} className="grid gap-2">
+                <input
+                  type="text"
+                  value={adminName}
+                  onChange={(e) => setAdminName(e.target.value)}
+                  placeholder="Nome do administrador"
+                  className="w-full rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#0F8A4B]"
+                />
+                <input
+                  type="email"
+                  value={adminEmail}
+                  onChange={(e) => setAdminEmail(e.target.value)}
+                  placeholder="admin@empresa.com"
+                  className="w-full rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#0F8A4B]"
+                />
+                <input
+                  type="password"
+                  value={adminPassword}
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                  placeholder="Defina a senha do admin"
+                  className="w-full rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#0F8A4B]"
+                />
+                <button
+                  type="submit"
+                  disabled={isBootstrapping}
+                  className="mt-1 inline-flex items-center justify-center rounded-xl bg-[#0F8A4B] px-4 py-3 text-xs font-black text-white hover:bg-[#0B6B3A] disabled:opacity-60"
+                >
+                  {isBootstrapping ? 'Salvando...' : 'Criar / redefinir senha do admin'}
+                </button>
+              </form>
+            </div>
+          )}
 
           <form onSubmit={handleSignIn} className="space-y-5">
             {/* Email Input */}
