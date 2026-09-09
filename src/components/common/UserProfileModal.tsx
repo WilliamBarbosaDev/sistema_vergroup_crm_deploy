@@ -1,4 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   X,
   User,
@@ -203,7 +204,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
   const fieldLabelClass = 'block text-[11px] font-black text-slate-500 uppercase tracking-wider mb-1';
   const fieldInputClass = 'w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:border-[#0F8A4B] focus:ring-2 focus:ring-[#0F8A4B]/10 disabled:bg-slate-50 disabled:text-slate-700 transition-all';
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-2xs flex justify-end animate-in fade-in duration-200 font-sans select-none">
       
       {/* Right drawer panel (ficha de colaborador premium) */}
@@ -718,6 +719,5 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
         </div>
 
       </div>
-    </div>
-  );
+    </div>, document.body);
 };
