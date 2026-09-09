@@ -388,34 +388,82 @@ const normalizeEmailAccount = (cfg: Partial<EmailAccountConfig> & { userId: stri
   isEncrypted: cfg.isEncrypted ?? true,
 });
 
+const AUTH_ACTIVE_KEY = 'vergroup_auth_active';
+const AUTH_USER_ID_KEY = 'vergroup_auth_user_id';
+const AUTH_USER_DATA_KEY = 'vergroup_auth_user_data';
+
+const hasStoredAuth = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  return (
+    window.sessionStorage.getItem(AUTH_ACTIVE_KEY) === 'true' ||
+    window.localStorage.getItem(AUTH_ACTIVE_KEY) === 'true' ||
+    window.sessionStorage.getItem(AUTH_USER_DATA_KEY) !== null ||
+    window.localStorage.getItem(AUTH_USER_DATA_KEY) !== null
+  );
+};
+
+const readStoredAuthUser = (): User => {
+  if (typeof window === 'undefined') return EMPTY_USER;
+
+  const raw =
+    window.sessionStorage.getItem(AUTH_USER_DATA_KEY) ||
+    window.localStorage.getItem(AUTH_USER_DATA_KEY);
+
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw) as Partial<User>;
+      return {
+        ...EMPTY_USER,
+        ...parsed,
+        id: parsed.id || EMPTY_USER.id,
+        role: parsed.role || EMPTY_USER.role,
+      };
+    } catch {
+      // Ignore malformed auth payloads and fall back below.
+    }
+  }
+
+  return INITIAL_USERS[0] ?? EMPTY_USER;
+};
+
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Auth State
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    return window.sessionStorage.getItem('vergroup_auth_active') === 'true';
-  });
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => hasStoredAuth());
 
   // Navigation
   const [currentTab, setCurrentTab] = useState<NavigationTab>('cockpit');
   const [selectedBusinessUnitId, setSelectedBusinessUnitId] = useState<string>('bu-all');
-  
+
   // Active User & RBAC
-  const [currentUser, setCurrentUser] = useState<User>(EMPTY_USER);
+  const [currentUser, setCurrentUser] = useState<User>(() => readStoredAuthUser());
 
   const login = (email: string, password?: string): boolean => {
     const found = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
     if (found) {
       setCurrentUser(found);
       setIsAuthenticated(true);
-      window.sessionStorage.setItem('vergroup_auth_active', 'true');
-      window.sessionStorage.setItem('vergroup_auth_user_id', found.id);
+      window.sessionStorage.setItem(AUTH_ACTIVE_KEY, 'true');
+      window.sessionStorage.setItem(AUTH_USER_ID_KEY, found.id);
+      window.sessionStorage.setItem(AUTH_USER_DATA_KEY, JSON.stringify(found));
+      window.localStorage.setItem(AUTH_ACTIVE_KEY, 'true');
+      window.localStorage.setItem(AUTH_USER_ID_KEY, found.id);
+      window.localStorage.setItem(AUTH_USER_DATA_KEY, JSON.stringify(found));
       return true;
     }
-    // Fallback: if email matches domain, login as primary admin
-    setCurrentUser(INITIAL_USERS[0]);
-    setIsAuthenticated(true);
-    localStorage.setItem('vergroup_auth_active', 'true');
-    return true;
+
+    if (INITIAL_USERS[0]) {
+      setCurrentUser(INITIAL_USERS[0]);
+      setIsAuthenticated(true);
+      window.sessionStorage.setItem(AUTH_ACTIVE_KEY, 'true');
+      window.sessionStorage.setItem(AUTH_USER_ID_KEY, INITIAL_USERS[0].id);
+      window.sessionStorage.setItem(AUTH_USER_DATA_KEY, JSON.stringify(INITIAL_USERS[0]));
+      window.localStorage.setItem(AUTH_ACTIVE_KEY, 'true');
+      window.localStorage.setItem(AUTH_USER_ID_KEY, INITIAL_USERS[0].id);
+      window.localStorage.setItem(AUTH_USER_DATA_KEY, JSON.stringify(INITIAL_USERS[0]));
+      return true;
+    }
+
+    return false;
   };
 
   const loginAsUser = (userId: string) => {
@@ -423,14 +471,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (found) {
       setCurrentUser(found);
       setIsAuthenticated(true);
-      window.sessionStorage.setItem('vergroup_auth_active', 'true');
-      window.sessionStorage.setItem('vergroup_auth_user_id', found.id);
+      window.sessionStorage.setItem(AUTH_ACTIVE_KEY, 'true');
+      window.sessionStorage.setItem(AUTH_USER_ID_KEY, found.id);
+      window.sessionStorage.setItem(AUTH_USER_DATA_KEY, JSON.stringify(found));
+      window.localStorage.setItem(AUTH_ACTIVE_KEY, 'true');
+      window.localStorage.setItem(AUTH_USER_ID_KEY, found.id);
+      window.localStorage.setItem(AUTH_USER_DATA_KEY, JSON.stringify(found));
     }
   };
 
   const logout = () => {
     setIsAuthenticated(false);
-    setCurrentUser(INITIAL_USERS[0]);
+    setCurrentUser(EMPTY_USER);
     setCurrentTab('cockpit');
     setSelectedBusinessUnitId('bu-all');
     setSelectedDealId(null);
@@ -441,9 +493,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setQuickCreateType(null);
     setIsTaskCreateOpen(false);
     setTaskCreateContext(null);
-    localStorage.removeItem('vergroup_auth_active');
-    localStorage.removeItem('vergroup_auth_user_id');
-    sessionStorage.clear();
+    window.sessionStorage.removeItem(AUTH_ACTIVE_KEY);
+    window.sessionStorage.removeItem(AUTH_USER_ID_KEY);
+    window.sessionStorage.removeItem(AUTH_USER_DATA_KEY);
+    window.localStorage.removeItem(AUTH_ACTIVE_KEY);
+    window.localStorage.removeItem(AUTH_USER_ID_KEY);
+    window.localStorage.removeItem(AUTH_USER_DATA_KEY);
   };
   
   // Drawers & Modals

@@ -66,7 +66,21 @@ export const EMPTY_USER: User = {
   createdAt: '',
 };
 
-export const INITIAL_USERS: User[] = [];
+export const INITIAL_USERS: User[] = [
+  {
+    ...EMPTY_USER,
+    id: 'usr-admin',
+    name: 'Admin Sistema',
+    firstName: 'Admin',
+    lastName: 'Sistema',
+    displayName: 'Admin Sistema',
+    email: 'admin@vergroup.com.br',
+    personalEmail: 'admin@vergroup.com.br',
+    jobTitle: 'Administrador do Sistema',
+    status: 'active',
+    role: 'superadmin',
+  },
+];
 
 export const INITIAL_INVITES: CollaboratorInvite[] = [];
 
