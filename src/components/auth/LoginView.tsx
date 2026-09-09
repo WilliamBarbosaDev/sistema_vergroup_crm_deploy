@@ -88,28 +88,29 @@ export const LoginView: React.FC = () => {
     }, 450);
   };
 
-  const handleBootstrapAdmin = (e: React.FormEvent) => {
+  const handleBootstrapAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
     setSetupError('');
     setIsBootstrapping(true);
 
-    const ok = bootstrapAdminAccount({
-      name: adminName,
-      email: adminEmail,
-      password: adminPassword,
-    });
+    try {
+      const ok = await bootstrapAdminAccount({
+        name: adminName,
+        email: adminEmail,
+        password: adminPassword,
+      });
 
-    if (!ok) {
-      setSetupError('Preencha nome, e-mail e senha para criar o acesso administrativo.');
+      if (!ok) {
+        setSetupError('Preencha nome, e-mail e senha para criar o acesso administrativo.');
+        return;
+      }
+
+      setAdminPassword('');
+    } catch {
+      setSetupError('Não foi possível salvar o acesso administrativo agora. Tente novamente.');
+    } finally {
       setIsBootstrapping(false);
-      return;
     }
-
-    // Simula o processamento do hash (remover em produção real)
-    setTimeout(() => {
-      setIsBootstrapping(false);
-      window.location.reload(); // Força recarregar a página para atualizar a interface
-    }, 1500);
   };
 
   return (

@@ -141,7 +141,7 @@ export interface AppContextType {
   // Auth & Session
   isAuthenticated: boolean;
   login: (email: string, password?: string) => boolean;
-  bootstrapAdminAccount: (data: { name: string; email: string; password: string }) => boolean;
+  bootstrapAdminAccount: (data: { name: string; email: string; password: string }) => Promise<boolean>;
   loginAsUser: (userId: string) => void;
   logout: () => void;
 
@@ -469,14 +469,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return true;
   };
 
-  const bootstrapAdminAccount = (data: { name: string; email: string; password: string }): boolean => {
+  const bootstrapAdminAccount = async (data: { name: string; email: string; password: string }): Promise<boolean> => {
     const email = data.email.trim().toLowerCase();
     const name = data.name.trim();
     const password = data.password;
 
     if (!email || !name || !password) return false;
 
-    const passwordHash = bcrypt.hashSync(password, 10);
+    const passwordHash = await bcrypt.hash(password, 4);
     const existingUser = users.find((u) => u.email.toLowerCase() === email);
     const adminUser: User = existingUser
       ? {
