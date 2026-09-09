@@ -19,6 +19,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Sparkles,
+  Key,
 } from 'lucide-react';
 import { useApp, NavigationTab } from '../../context/AppContext';
 import { VerGroupLogo } from './VerGroupLogo';

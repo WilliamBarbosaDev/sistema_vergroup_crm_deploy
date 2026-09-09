@@ -144,8 +144,8 @@ export const AdminView: React.FC = () => {
   const roleFilterOptions = [
     { value: 'all', label: 'Todos os papéis' },
     ...Array.from(new Set(users.map((user) => user.role))).map((role) => ({
-      value: role,
-      label: role.toUpperCase().replace(/_/g, ' '),
+      value: String(role),
+      label: String(role).toUpperCase().replace(/_/g, ' '),
     })),
   ];
 

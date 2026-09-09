@@ -1035,6 +1035,89 @@ export interface AuditLog {
   timestamp: string;
 }
 
+export type IntegrationEnvironment = 'production' | 'sandbox';
+
+export interface ApiKeyRecord {
+  id: string;
+  organizationId?: string;
+  businessUnitId?: string;
+  userId?: string;
+  applicationName?: string;
+  name: string;
+  scopes: string[];
+  environment: IntegrationEnvironment;
+  status: 'active' | 'inactive' | 'revoked';
+  keyPrefix: string;
+  secretLast4: string;
+  lastUsedAt?: string;
+  createdByUserId?: string;
+  createdByName?: string;
+  revokedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface OutboundWebhookConfig {
+  id: string;
+  organizationId?: string;
+  businessUnitId?: string;
+  name: string;
+  url: string;
+  method: 'POST' | 'PUT' | 'PATCH';
+  events: string[];
+  headers: Record<string, string>;
+  secretLast4: string;
+  status: 'active' | 'inactive';
+  maxRetries: number;
+  retryBackoffSeconds: number;
+  createdByUserId?: string;
+  createdByName?: string;
+  lastAttemptAt?: string;
+  lastStatusCode?: number;
+  failureCount: number;
+  deliveryCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface InboundWebhookEndpoint {
+  id: string;
+  organizationId?: string;
+  businessUnitId?: string;
+  name: string;
+  slug: string;
+  acceptedEvents: string[];
+  payloadSchema?: Record<string, unknown>;
+  status: 'active' | 'inactive';
+  secretLast4: string;
+  createdByUserId?: string;
+  createdByName?: string;
+  lastReceivedAt?: string;
+  lastError?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IntegrationDeliveryLog {
+  id: string;
+  integrationType: 'api_key' | 'webhook_outbound' | 'webhook_inbound';
+  integrationId: string;
+  businessUnitId?: string;
+  direction: 'outbound' | 'inbound';
+  eventName: string;
+  endpointUrl?: string;
+  method?: string;
+  statusCode?: number;
+  responseBody?: string;
+  payload?: Record<string, unknown>;
+  attemptNumber: number;
+  totalAttempts: number;
+  succeeded: boolean;
+  maskedSecret?: string;
+  actorName?: string;
+  createdAt: string;
+}
+
 // Permission Engine & Hierarchy Types (VERGROUP Core)
 export type PermissionScope = 
   | 'own' 
